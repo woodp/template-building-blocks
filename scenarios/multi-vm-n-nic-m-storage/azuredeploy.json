@@ -28,7 +28,7 @@
           "uri": "[concat(variables('baseUri'), '/buildingBlocks/multi-vm-n-nic-m-storage/azuredeploy.json')]"
         },
         "parameters": {
-          "parametersLink": "[parameters('templateParameterUri')]",
+          "parameterFileLink": { "value": "[parameters('templateParameterUri')]" },
           "protectedSettings": {
             "value": {
               "adminPassword": "[parameters('adminPassword')]",

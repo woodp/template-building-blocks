@@ -102,6 +102,7 @@
                   "size": "[parameters('source').size]",
                   "adminUsername": "[parameters('source').adminUsername]",
                   "osType": "[toLower(parameters('source').osType)]",
+                  "osAuthenticationType": "[toLower(parameters('source').osAuthenticationType)]",
                   "nics": "[reference(variables('nicSettingDeploymentName')).outputs.result.value]",
                   "imageReference": {
                     "publisher": "[parameters('source').imageReference.publisher]",

@@ -24,7 +24,27 @@
     "nicsDeployment": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployNics-', variables('templateUniqueString'))]",
     "extensionsDeployment": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployExts-', variables('templateUniqueString'))]",
     "diagnosticsExtensionTemplate": "[uri(deployment().properties.templateLink.uri, concat('single-vm-n-nic-diagnostics-extension-', parameters('virtualMachinesSetting').osType, '.json'))]",
-    "diagnosticsExtensionDeployment": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployDiag-', variables('templateUniqueString'))]"
+    "diagnosticsExtensionDeployment": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployDiag-', variables('templateUniqueString'))]",
+    "osConfigurationSettings": {
+      "windows": {
+        "password": null,
+        "ssh": null
+      },
+      "linux": {
+        "password": null,
+        "ssh": {
+          "disablePasswordAuthentication": "true",
+          "ssh": {
+            "publicKeys": [
+              {
+                "path": "[concat('/home/', parameters('virtualMachinesSetting').adminUsername, '/.ssh/authorized_keys')]",
+                "keyData": "[parameters('protectedSettings').sshPublicKey]"
+              }
+            ]
+          }
+        }
+      }
+    }
   },
   "resources": [
     {
@@ -111,7 +131,7 @@
           "computerName": "[parameters('virtualMachinesSetting').computerName]",
           "adminUsername": "[parameters('virtualMachinesSetting').adminUsername]",
           "adminPassword": "[parameters('protectedSettings').adminPassword]",
-          "[concat(toLower(parameters('virtualMachinesSetting').osType), 'Configuration')]": "[parameters('virtualMachinesSetting')[concat(toLower(parameters('virtualMachinesSetting').osType), 'Configuration')]]"
+          "[concat(toLower(parameters('virtualMachinesSetting').osType), 'Configuration')]": "[variables('osConfigurationSettings')[toLower(parameters('virtualMachinesSetting').osType)][toLower(parameters('virtualMachinesSetting').osAuthenticationType)]]"
         },
         "storageProfile": {
           "imageReference": {
