@@ -13,7 +13,7 @@
     "sshPublicKey": { "type": "securestring", "defaultValue": null }
   },
   "variables": {
-    "baseUri": "https://raw.githubusercontent.com/mspnp/template-building-blocks/master/templates",
+    "baseUri": "https://github.com/mspnp/template-building-blocks/tree/roshar/securekeys/templates",
     "templateParts": "[split(parameters('templateParameterUri'),'/')]",
     "templateDescription": "[split(variables('templateParts')[sub(length(variables('templateParts')), 1)], '.')[0]]"
   },
