@@ -16,7 +16,7 @@
     "parametersDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-params-', variables('templateUniqueString'))]",
     "parametersTemplate": "[uri(deployment().properties.templateLink.uri, 'n-vm-parameterLink-resolver.json')]",
     "nVMDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployNVM-', variables('templateUniqueString'))]",
-    "nVMTemplate": "[uri(deployment().properties.templateLink.uri, 'azuredeploy.json')]"
+    "nVMTemplate": "[uri(deployment().properties.templateLink.uri, 'n-vm-deploy.json')]"
   },
   "resources": [
     {
@@ -37,6 +37,9 @@
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2015-01-01",
       "name": "[variables('nVMDeploymentName')]",
+      "dependsOn": [
+        "[variables('parametersDeploymentName')]"
+      ],
       "properties": {
         "mode": "Incremental",
         "templateLink": {
@@ -49,13 +52,13 @@
             }
           },
           "virtualMachinesSettings": {
-            "value": "[reference('parametersDeploymentName').outputs.virtualMachinesSettings.value]"
+            "value": "[reference(variables('parametersDeploymentName')).outputs.virtualMachinesSettings.value]"
           },
           "virtualNetworkSettings": {
-            "value": "[reference('parametersDeploymentName').outputs.virtualNetworkSettings.value]"
+            "value": "[reference(variables('parametersDeploymentName')).outputs.virtualNetworkSettings.value]"
           },
           "buildingBlockSettings": {
-            "value": "[reference('parametersDeploymentName').outputs.buildingBlockSettings.value]"
+            "value": "[reference(variables('parametersDeploymentName')).outputs.buildingBlockSettings.value]"
           },
           "protectedSettings": {
             "value": "[parameters('protectedSettings')]"
