@@ -5,114 +5,71 @@
     "deploymentContext": {
       "type": "object",
       "defaultValue": {
-        "parentTemplateUniqueString": "bbLB"
+        "parentTemplateUniqueString": "bbVM"
       }
     },
-    "loadBalancerSettings": {
-      "type": "object",
-      "metadata": {
-        "description": "Settings for infrastructure"
-      }
-    },
-    "virtualMachinesSettings": {
-      "type": "object",
-      "metadata": {
-        "description": "Settings for virtual machines"
-      }
-    },
-    "virtualNetworkSettings": {
-      "type": "object",
-      "metadata": {
-        "description": "Settings for virtual network"
-      }
-    },
-    "buildingBlockSettings": {
-      "type": "object",
-      "metadata": {
-        "description": "Settings for building block"
-      }
-    }
+    "parameterFileLink": { "type": "string" },
+    "protectedSettings": { "type": "secureObject" }
   },
   "variables": {
-    "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('loadBalancerSettings')), string(parameters('virtualMachinesSettings')), string(parameters('virtualNetworkSettings')), string(parameters('buildingBlockSettings'))))]",
-    "location": "[resourceGroup().location]",
-    "lbName": "[parameters('loadBalancerSettings').name]",
-    "loadBalancerTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/loadBalancer/loadBalancer.json')]",
-    "multiVMTemplate": "[uri(deployment().properties.templateLink.uri, '../multi-vm-n-nic-m-storage/azuredeploy.json')]",
-    "backendPoolNicTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/loadBalancer/lb-add-backendPool-nics.json')]",
-    "vmDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployVMs-', variables('templateUniqueString'))]",
-    "lbDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployLB-', variables('templateUniqueString'))]",
-    "updateNicDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-addNicsToLbBep-', variables('templateUniqueString'))]"
+    "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), parameters('parameterFileLink')))]",
+    "parametersDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-params-', variables('templateUniqueString'))]",
+    "parametersTemplate": "[uri(deployment().properties.templateLink.uri, 'parameterLink-resolver.json')]",
+    "lbVMsDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployLBnVMs-', variables('templateUniqueString'))]",
+    "lbVMsTemplate": "[uri(deployment().properties.templateLink.uri, 'loadBalancer-backend-n-vm-deploy.json')]"
   },
   "resources": [
     {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2015-01-01",
-      "name": "[variables('vmDeploymentName')]",
+      "name": "[variables('parametersDeploymentName')]",
       "properties": {
         "mode": "Incremental",
-        "templateLink": { "uri": "[variables('multiVMTemplate')]" },
-        "parameters": {
-          "deploymentContext": {
-            "value": {
-              "parentTemplateUniqueString": "[concat(variables('templateUniqueString'), '-deployVMs')]"
-            }
-          },
-          "virtualMachinesSettings": { "value": "[parameters('virtualMachinesSettings')]" },
-          "virtualNetworkSettings": { "value": "[parameters('virtualNetworkSettings')]" },
-          "buildingBlockSettings": { "value": "[parameters('buildingBlockSettings')]" }
+        "templateLink": {
+          "uri": "[variables('parametersTemplate')]"
+        },
+        "parametersLink": {
+          "uri": "[parameters('parameterFileLink')]"
         }
       }
     },
     {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2015-01-01",
-      "name": "[variables('lbDeploymentName')]",
-      "properties": {
-        "mode": "Incremental",
-        "templateLink": { "uri": "[variables('loadBalancerTemplate')]" },
-        "parameters": {
-          "deploymentContext": {
-            "value": {
-              "parentTemplateUniqueString": "[concat(variables('templateUniqueString'), '-deployLB')]"
-            }
-          },
-          "loadBalancerSettings": { "value": "[parameters('loadBalancerSettings')]" },
-          "virtualNetworkSettings": { "value": "[parameters('virtualNetworkSettings')]" },
-          "buildingBlockSettings": { "value": "[parameters('buildingBlockSettings')]" }
-        }
-      }
-    },
-    {
-      "type": "Microsoft.Resources/deployments",
-      "apiVersion": "2015-01-01",
-      "name": "[variables('updateNicDeploymentName')]",
+      "name": "[variables('lbVMsDeploymentName')]",
       "dependsOn": [
-        "[variables('vmDeploymentName')]",
-        "[variables('lbDeploymentName')]"
+        "[variables('parametersDeploymentName')]"
       ],
       "properties": {
         "mode": "Incremental",
-        "templateLink": { "uri": "[variables('backendPoolNicTemplate')]" },
+        "templateLink": {
+          "uri": "[variables('lbVMsTemplate')]"
+        },
         "parameters": {
           "deploymentContext": {
             "value": {
-              "parentTemplateUniqueString": "[concat(variables('templateUniqueString'), '-addNicsToLbBep')]"
+              "parentTemplateUniqueString": "[concat(variables('templateUniqueString'), '-deployLBnVMs')]"
             }
           },
-          "virtualMachinesSettings": { "value": "[parameters('virtualMachinesSettings')]" },
-          "vnetName": { "value": "[parameters('virtualNetworkSettings').name]" },
-          "vmStartIndex": { "value": "[parameters('buildingBlockSettings').vmStartIndex]" },
-          "vmCount": { "value": "[parameters('buildingBlockSettings').vmCount]" },
-          "loadBalancerSettings": { "value": "[parameters('loadBalancerSettings')]" }
+          "loadBalancerSettings": {
+            "value": "[reference(variables('parametersDeploymentName')).outputs.loadBalancerSettings.value]"
+          },
+          "virtualMachinesSettings": {
+            "value": "[reference(variables('parametersDeploymentName')).outputs.virtualMachinesSettings.value]"
+          },
+          "virtualNetworkSettings": {
+            "value": "[reference(variables('parametersDeploymentName')).outputs.virtualNetworkSettings.value]"
+          },
+          "buildingBlockSettings": {
+            "value": "[reference(variables('parametersDeploymentName')).outputs.buildingBlockSettings.value]"
+          },
+          "protectedSettings": {
+            "value": "[parameters('protectedSettings')]"
+          }
         }
       }
     }
   ],
   "outputs": {
-    "resources": {
-      "type": "array",
-      "value": "[concat(reference(variables('vmDeploymentName')).outputResources, reference(variables('lbDeploymentName')).outputResources)]"
-    }
   }
 }
