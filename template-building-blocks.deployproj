@@ -74,6 +74,8 @@
     <None Include="templates\buildingBlocks\dmz\mappers\routeTableSettings-routes.json" />
     <None Include="templates\buildingBlocks\dmz\mappers\virtualMachineSettings.json" />
     <None Include="templates\buildingBlocks\loadBalancer-backend-n-vm\azuredeploy.json" />
+    <None Include="templates\buildingBlocks\loadBalancer-backend-n-vm\loadBalancer-backend-n-vm-deploy.json" />
+    <None Include="templates\buildingBlocks\loadBalancer-backend-n-vm\parameterLink-resolver.json" />
     <None Include="templates\buildingBlocks\multi-vm-n-nic-m-storage\azuredeploy.json" />
     <None Include="templates\buildingBlocks\multi-vm-n-nic-m-storage\n-vm-deploy.json" />
     <None Include="templates\buildingBlocks\multi-vm-n-nic-m-storage\n-vm-parameterLink-resolver.json" />
