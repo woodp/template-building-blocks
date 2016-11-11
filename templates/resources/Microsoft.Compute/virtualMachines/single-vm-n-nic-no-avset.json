@@ -8,6 +8,12 @@
       "metadata": {
         "description": "Settings for virtual machines."
       }
+    },
+    "protectedSettings": {
+      "type": "secureObject",
+      "metadata": {
+        "description": "Protected settings for building block"
+      }
     }
   },
   "variables": {
@@ -104,7 +110,7 @@
         "osProfile": {
           "computerName": "[parameters('virtualMachinesSetting').computerName]",
           "adminUsername": "[parameters('virtualMachinesSetting').adminUsername]",
-          "adminPassword": "[parameters('virtualMachinesSetting').adminPassword]",
+          "adminPassword": "[parameters('protectedSettings').adminPassword]",
           "[concat(toLower(parameters('virtualMachinesSetting').osType), 'Configuration')]": "[parameters('virtualMachinesSetting')[concat(toLower(parameters('virtualMachinesSetting').osType), 'Configuration')]]"
         },
         "storageProfile": {

@@ -26,6 +26,12 @@
         "description": "Settings for building block"
       }
     },
+    "protectedSettings": {
+      "type": "secureObject",
+      "metadata": {
+        "description": "Protected settings for building block"
+      }
+    },
     "context": {
       "type": "object",
       "metadata": {
@@ -95,6 +101,7 @@
           },
           "virtualMachinesSettings": { "value": "[parameters('virtualMachinesSettings')]" },
           "virtualNetworkSettings": { "value": "[parameters('virtualNetworkSettings')]" },
+          "protectedSettings": { "value": "[parameters('protectedSettings')]" },
           "context": {
             "value": {
               "storageAccounts": {

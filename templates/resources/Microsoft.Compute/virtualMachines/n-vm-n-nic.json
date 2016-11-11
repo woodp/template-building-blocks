@@ -20,6 +20,12 @@
         "description": "Settings for virtual network"
       }
     },
+    "protectedSettings": {
+      "type": "secureObject",
+      "metadata": {
+        "description": "Protected settings for building block"
+      }
+    },
     "context": {
       "type": "object",
       "metadata": {
@@ -89,7 +95,8 @@
           },
           "virtualMachinesSetting": {
             "value": "[reference(variables('vmSettingsDeploymentName')).outputs.result.value[copyindex()]]"
-          }
+          },
+          "protectedSettings": { "value": "[parameters('protectedSettings')]" }
         }
       }
     }
