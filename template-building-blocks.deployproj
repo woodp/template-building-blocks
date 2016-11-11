@@ -75,6 +75,8 @@
     <None Include="templates\buildingBlocks\dmz\mappers\virtualMachineSettings.json" />
     <None Include="templates\buildingBlocks\loadBalancer-backend-n-vm\azuredeploy.json" />
     <None Include="templates\buildingBlocks\multi-vm-n-nic-m-storage\azuredeploy.json" />
+    <None Include="templates\buildingBlocks\multi-vm-n-nic-m-storage\n-vm-deploy.json" />
+    <None Include="templates\buildingBlocks\multi-vm-n-nic-m-storage\n-vm-parameterLink-resolver.json" />
     <None Include="templates\buildingBlocks\networkSecurityGroups\azuredeploy.json" />
     <None Include="templates\buildingBlocks\dmz\azuredeploy.json" />
     <None Include="templates\buildingBlocks\userDefinedRoutes\azuredeploy.json" />
@@ -119,10 +121,6 @@
     <None Include="templates\resources\Microsoft.Compute\virtualMachines\single-vm-n-nic-diagnostics-extension-linux.json" />
     <None Include="templates\resources\Microsoft.Compute\virtualMachines\single-vm-n-nic-no-avset.json" />
     <None Include="templates\resources\Microsoft.Compute\virtualMachines\single-vm-n-nic.json" />
-    <None Include="templates\resources\Microsoft.Compute\virtualMachines\virtualMachine-configuration-settings-linux-password.json" />
-    <None Include="templates\resources\Microsoft.Compute\virtualMachines\virtualMachine-configuration-settings-linux-ssh.json" />
-    <None Include="templates\resources\Microsoft.Compute\virtualMachines\virtualMachine-configuration-settings-linux.json" />
-    <None Include="templates\resources\Microsoft.Compute\virtualMachines\virtualMachine-configuration-settings-windows.json" />
     <None Include="templates\resources\Microsoft.Compute\virtualMachines\virtualMachine-datadisk.json" />
     <None Include="templates\resources\Microsoft.Compute\virtualMachines\virtualMachine-nic.json" />
     <None Include="templates\resources\Microsoft.Compute\virtualMachines\virtualMachines-nics-settings.json" />

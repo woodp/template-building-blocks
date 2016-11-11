@@ -8,7 +8,9 @@
       "metadata": {
         "description": "Template parameters file to use with the building block template."
       }
-    }
+    },
+    "adminPassword": { "type": "securestring", "defaultValue": null },
+    "sshPublicKey": { "type": "securestring", "defaultValue": null }
   },
   "variables": {
     "baseUri": "https://raw.githubusercontent.com/mspnp/template-building-blocks/master/templates",
@@ -25,12 +27,19 @@
         "templateLink": {
           "uri": "[concat(variables('baseUri'), '/buildingBlocks/multi-vm-n-nic-m-storage/azuredeploy.json')]"
         },
-        "parametersLink": {
-          "uri": "[parameters('templateParameterUri')]"
+        "parameters": {
+          "parametersLink": "[parameters('templateParameterUri')]",
+          "protectedSettings": {
+            "value": {
+              "adminPassword": "[parameters('adminPassword')]",
+              "sshPublicKey": "[parameters('sshPublicKey')]"
+            }
+          }
         }
+
       }
     }
   ],
-    "outputs": {
-    }
+  "outputs": {
+  }
 }

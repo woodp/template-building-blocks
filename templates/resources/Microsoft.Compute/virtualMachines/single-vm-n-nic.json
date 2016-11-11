@@ -8,6 +8,12 @@
         "parentTemplateUniqueString": "singleVM"
       }
     },
+    "protectedSettings": {
+      "type": "secureObject",
+      "metadata": {
+        "description": "Protected settings for building block"
+      }
+    },
     "virtualMachinesSetting": {
       "type": "object",
       "metadata": {
@@ -42,7 +48,8 @@
               "parentTemplateUniqueString": "[concat(variables('templateUniqueString'), '-', variables('suffixToUse'))]"
             }
           },
-          "virtualMachinesSetting": { "value": "[parameters('virtualMachinesSetting')]" }
+          "virtualMachinesSetting": { "value": "[parameters('virtualMachinesSetting')]" },
+          "protectedSettings": { "value": "[parameters('protectedSettings')]" }
         }
       }
     }

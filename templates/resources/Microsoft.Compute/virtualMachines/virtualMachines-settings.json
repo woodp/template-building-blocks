@@ -21,33 +21,11 @@
     "storageAccountContainerName": "vhds",
     "vmName": "[concat(parameters('context').vmNamePrefix, '-vm', add(parameters('context').vmNamePostFixStartIndex, parameters('iteration')))]",
     "computerName": "[concat(parameters('source').computerNamePrefix, add(parameters('context').vmNamePostFixStartIndex, parameters('iteration')))]",
-    "osSettingDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-osSetting-', variables('templateUniqueString'))]",
     "nicSettingDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-nicSettings-', variables('templateUniqueString'))]",
     "dataDiskSettingDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-dataDiskSettings-', variables('templateUniqueString'))]",
     "vmSettingDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-vmSetting-', variables('templateUniqueString'))]",
   },
   "resources": [
-    {
-      "type": "Microsoft.Resources/deployments",
-      "apiVersion": "2015-01-01",
-      "name": "[variables('osSettingDeploymentName')]",
-      "properties": {
-        "mode": "Incremental",
-        "templateLink": {
-          "uri": "[uri(deployment().properties.templateLink.uri, concat('virtualMachine-configuration-settings-', toLower(parameters('source').osType), '.json'))]"
-        },
-        "parameters": {
-          "deploymentContext": {
-            "value": {
-              "parentTemplateUniqueString": "[concat(variables('templateUniqueString'), '-osSetting')]"
-            }
-          },
-          "source": {
-            "value": "[parameters('source')]"
-          }
-        }
-      }
-    },
     {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2015-01-01",
@@ -123,9 +101,7 @@
                   "availabilitySetName": "[parameters('context').availabilitySetName]",
                   "size": "[parameters('source').size]",
                   "adminUsername": "[parameters('source').adminUsername]",
-                  "adminPassword": "[reference(variables('osSettingDeploymentName')).outputs.result.value.adminPassword]",
                   "osType": "[toLower(parameters('source').osType)]",
-                  "[concat(toLower(parameters('source').osType), 'Configuration')]": "[reference(variables('osSettingDeploymentName')).outputs.result.value.configuration]",
                   "nics": "[reference(variables('nicSettingDeploymentName')).outputs.result.value]",
                   "imageReference": {
                     "publisher": "[parameters('source').imageReference.publisher]",
