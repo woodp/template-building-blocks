@@ -44,7 +44,7 @@
     "location": "[resourceGroup().location]",
     "lbName": "[parameters('loadBalancerSettings').name]",
     "loadBalancerTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/loadBalancer/loadBalancer.json')]",
-    "multiVMTemplate": "[uri(deployment().properties.templateLink.uri, '../multi-vm-n-nic-m-storage/azuredeploy.json')]",
+    "multiVMTemplate": "[uri(deployment().properties.templateLink.uri, '../multi-vm-n-nic-m-storage/multi-vm-n-nic-m-storage-deploy.json')]",
     "backendPoolNicTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/loadBalancer/lb-add-backendPool-nics.json')]",
     "vmDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployVMs-', variables('templateUniqueString'))]",
     "lbDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployLB-', variables('templateUniqueString'))]",

@@ -12,9 +12,7 @@
       "size": "[parameters('context').dmzSettings.applianceSettings.virtualMachineSettings.size]",
       "osType": "linux",
       "adminUsername": "[parameters('context').dmzSettings.applianceSettings.virtualMachineSettings.adminUsername]",
-      "adminPassword": "[parameters('context').dmzSettings.applianceSettings.virtualMachineSettings.adminPassword]",
       "osAuthenticationType": "[parameters('context').dmzSettings.applianceSettings.virtualMachineSettings.osAuthenticationType]",
-      "sshPublicKey": "[parameters('context').dmzSettings.applianceSettings.virtualMachineSettings.sshPublicKey]",
       "nics": [
         {
           "isPublic": "false",

@@ -8,6 +8,14 @@
       "metadata": {
         "description": "Template parameters file to use with the building block template."
       }
+    },
+    "adminPassword": {
+      "type": "securestring",
+      "defaultValue": null
+    },
+    "sshPublicKey": {
+      "type": "securestring",
+      "defaultValue": null
     }
   },
   "variables": {
@@ -25,8 +33,14 @@
         "templateLink": {
           "uri": "[concat(variables('baseUri'), '/buildingBlocks/dmz/azuredeploy.json')]"
         },
-        "parametersLink": {
-          "uri": "[parameters('templateParameterUri')]"
+        "parameters": {
+          "parameterFileLink": { "value": "[parameters('templateParameterUri')]" },
+          "protectedSettings": {
+            "value": {
+              "adminPassword": "[parameters('adminPassword')]",
+              "sshPublicKey": "[parameters('sshPublicKey')]"
+            }
+          }
         }
       }
     }
