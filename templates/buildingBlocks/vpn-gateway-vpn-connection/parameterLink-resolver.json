@@ -1,0 +1,32 @@
+﻿{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "virtualNetworkSettings": {
+      "type": "object"
+    },
+    "virtualNetworkGatewaySettings": {
+      "type": "object"
+    },
+    "connectionSettings": {
+      "type": "object"
+    }
+  },
+  "variables": { },
+  "resources": [
+  ],
+  "outputs": {
+    "virtualNetworkSettings": {
+      "type": "object",
+      "value": "[parameters('virtualNetworkSettings')]"
+    },
+    "virtualNetworkGatewaySettings": {
+      "type": "object",
+      "value": "[parameters('virtualNetworkGatewaySettings')]"
+    },
+    "connectionSettings": {
+      "type": "object",
+      "value": "[parameters('connectionSettings')]"
+    }
+  }
+}

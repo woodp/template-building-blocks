@@ -5,6 +5,12 @@
     "deploymentContext": { "type": "object" },
     "connectionSettings": {
       "type": "object"
+    },
+    "protectedSettings": {
+      "type": "secureObject",
+      "metadata": {
+        "description": "Protected settings for building block"
+      }
     }
   },
   "variables": {
@@ -30,16 +36,12 @@
         "parameters": {
           "connectionSettings": {
             "value": "[parameters('connectionSettings')]"
+          },
+          "protectedSettings": {
+            "value": "[parameters('protectedSettings')]"
           }
         }
       }
-    },
-    {
-      "apiVersion": "2016-03-30",
-      "name": "[parameters('connectionSettings').name]",
-      "type": "Microsoft.Network/connections",
-      "location": "[resourceGroup().location]",
-      "properties": "[reference(variables('deploymentName')).outputs.properties.value]"
     }
   ],
   "outputs": {

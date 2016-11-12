@@ -4,24 +4,38 @@
   "parameters": {
     "connectionSettings": {
       "type": "object"
+    },
+    "protectedSettings": {
+      "type": "secureObject",
+      "metadata": {
+        "description": "Protected settings for building block"
+      }
     }
   },
   "variables": {
   },
-  "resources": [ ],
-  "outputs": {
-    "properties": {
-      "type": "object",
-      "value": {
-        "connectionType": "ExpressRoute",
-        "routingWeight": 10,
-        "virtualNetworkGateway1": {
-          "id": "[resourceId(parameters('connectionSettings').virtualNetworkGateway1.resourceGroup, 'Microsoft.Network/virtualNetworkGateways', parameters('connectionSettings').virtualNetworkGateway1.name)]"
-        },
-        "peer": {
-          "id": "[resourceId(parameters('connectionSettings').expressRouteCircuit.resourceGroup, 'Microsoft.Network/expressRouteCircuits', parameters('connectionSettings').expressRouteCircuit.name)]"
+  "resources": [
+    {
+      "apiVersion": "2016-03-30",
+      "name": "[parameters('connectionSettings').name]",
+      "type": "Microsoft.Network/connections",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "type": "object",
+        "value": {
+          "connectionType": "ExpressRoute",
+          "routingWeight": 10,
+          "virtualNetworkGateway1": {
+            "id": "[resourceId(parameters('connectionSettings').virtualNetworkGateway1.resourceGroup, 'Microsoft.Network/virtualNetworkGateways', parameters('connectionSettings').virtualNetworkGateway1.name)]"
+          },
+          "peer": {
+            "id": "[resourceId(parameters('connectionSettings').expressRouteCircuit.resourceGroup, 'Microsoft.Network/expressRouteCircuits', parameters('connectionSettings').expressRouteCircuit.name)]"
+          }
         }
       }
     }
+  ],
+  "outputs": {
+
   }
 }

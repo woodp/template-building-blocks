@@ -8,6 +8,9 @@
       "metadata": {
         "description": "Template parameters file to use with the building block template."
       }
+    },
+    "sharedKey": {
+      "type": "securestring"
     }
   },
   "variables": {
@@ -25,8 +28,13 @@
         "templateLink": {
           "uri": "[concat(variables('baseUri'), '/buildingBlocks/vpn-gateway-vpn-connection/azuredeploy.json')]"
         },
-        "parametersLink": {
-          "uri": "[parameters('templateParameterUri')]"
+        "parameters": {
+          "parameterFileLink": { "value": "[parameters('templateParameterUri')]" },
+          "protectedSettings": {
+            "value": {
+              "sharedKey": "[parameters('sharedKey')]"
+            }
+          }
         }
       }
     }

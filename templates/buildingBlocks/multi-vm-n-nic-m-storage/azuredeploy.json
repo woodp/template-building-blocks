@@ -14,9 +14,9 @@
   "variables": {
     "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), parameters('parameterFileLink')))]",
     "parametersDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-params-', variables('templateUniqueString'))]",
-    "parametersTemplate": "[uri(deployment().properties.templateLink.uri, 'n-vm-parameterLink-resolver.json')]",
+    "parametersTemplate": "[uri(deployment().properties.templateLink.uri, 'parameterLink-resolver.json')]",
     "nVMDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployNVM-', variables('templateUniqueString'))]",
-    "nVMTemplate": "[uri(deployment().properties.templateLink.uri, 'n-vm-deploy.json')]"
+    "nVMTemplate": "[uri(deployment().properties.templateLink.uri, 'multi-vm-n-nic-m-storage-deploy.json')]"
   },
   "resources": [
     {
