@@ -20,7 +20,6 @@
       "value": {
         "name": "bb-hybrid-vpn-cn",
         "connectionType": "IPsec",
-        "sharedKey": "123secret",
         "virtualNetworkGateway1": {
           "name": "bb-hybrid-vpn-vgw"
         },

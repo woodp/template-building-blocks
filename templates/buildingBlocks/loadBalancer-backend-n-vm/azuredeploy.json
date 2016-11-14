@@ -71,5 +71,9 @@
     }
   ],
   "outputs": {
+    "resources": {
+      "type": "array",
+      "value": "[reference(variables('lbVMsDeploymentName')).outputs.resources.value]"
+    }
   }
 }

@@ -65,5 +65,9 @@
     }
   ],
   "outputs": {
+    "resources": {
+      "type": "array",
+      "value": "[reference(variables('dmzDeploymentName')).outputs.resources.value]"
+    }
   }
 }

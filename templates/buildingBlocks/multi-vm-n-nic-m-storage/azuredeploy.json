@@ -68,5 +68,9 @@
     }
   ],
   "outputs": {
+    "resources": {
+      "type": "array",
+      "value": "[reference(variables('nVMDeploymentName')).outputs.resources.value]"
+    }
   }
 }

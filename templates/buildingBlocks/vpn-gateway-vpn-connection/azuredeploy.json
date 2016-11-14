@@ -68,5 +68,9 @@
     }
   ],
   "outputs": {
+    "resources": {
+      "type": "array",
+      "value": "[reference(variables('vpnDeploymentName')).outputs.resources.value]"
+    }
   }
 }
