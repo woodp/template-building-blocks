@@ -1,0 +1,31 @@
+﻿{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "dmzSettings": {
+      "type": "object",
+      "metadata": {
+        "description": "Settings for DMZ"
+      }
+    },
+    "virtualNetworkSettings": {
+      "type": "object",
+      "metadata": {
+        "description": "Settings for virtual network"
+      }
+    }
+  },
+  "variables": { },
+  "resources": [
+  ],
+  "outputs": {
+    "dmzSettings": {
+      "type": "object",
+      "value": "[parameters('dmzSettings')]"
+    },
+    "virtualNetworkSettings": {
+      "type": "object",
+      "value": "[parameters('virtualNetworkSettings')]"
+    }
+  }
+}
