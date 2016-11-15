@@ -30,11 +30,7 @@
         },
         "parameters": {
           "parameterFileLink": { "value": "[parameters('templateParameterUri')]" },
-          "protectedSettings": {
-            "value": {
-              "sharedKey": "[parameters('sharedKey')]"
-            }
-          }
+          "sharedKey": { "value": "[parameters('sharedKey')]" }
         }
       }
     }

@@ -9,7 +9,14 @@
       }
     },
     "parameterFileLink": { "type": "string" },
-    "protectedSettings": { "type": "secureObject" }
+    "adminPassword": {
+      "type": "securestring",
+      "defaultValue": null
+    },
+    "sshPublicKey": {
+      "type": "securestring",
+      "defaultValue": null
+    }
   },
   "variables": {
     "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), parameters('parameterFileLink')))]",
@@ -58,7 +65,10 @@
             "value": "[reference(variables('parametersDeploymentName')).outputs.virtualNetworkSettings.value]"
           },
           "protectedSettings": {
-            "value": "[parameters('protectedSettings')]"
+            "value": {
+              "adminPassword": "[parameters('adminPassword')]",
+              "sshPublicKey": "[parameters('sshPublicKey')]"
+            }
           }
         }
       }

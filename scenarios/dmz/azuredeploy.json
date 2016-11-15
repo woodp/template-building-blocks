@@ -35,12 +35,8 @@
         },
         "parameters": {
           "parameterFileLink": { "value": "[parameters('templateParameterUri')]" },
-          "protectedSettings": {
-            "value": {
-              "adminPassword": "[parameters('adminPassword')]",
-              "sshPublicKey": "[parameters('sshPublicKey')]"
-            }
-          }
+          "adminPassword": { "value": "[parameters('adminPassword')]" },
+          "sshPublicKey": { "value": "[parameters('sshPublicKey')]" }
         }
       }
     }
