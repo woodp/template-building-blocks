@@ -9,7 +9,9 @@
       }
     },
     "parameterFileLink": { "type": "string" },
-    "protectedSettings": { "type": "secureObject" }
+    "sharedKey": {
+      "type": "securestring"
+    }
   },
   "variables": {
     "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), parameters('parameterFileLink')))]",
@@ -61,7 +63,9 @@
             "value": "[reference(variables('parametersDeploymentName')).outputs.connectionSettings.value]"
           },
           "protectedSettings": {
-            "value": "[parameters('protectedSettings')]"
+            "value": {
+              "sharedKey": "[parameters('sharedKey')]"
+            }
           }
         }
       }
