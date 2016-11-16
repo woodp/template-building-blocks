@@ -5,71 +5,124 @@
     "deploymentContext": {
       "type": "object",
       "defaultValue": {
-        "parentTemplateUniqueString": "bbdmz"
+        "parentTemplateUniqueString": "bbDMZ"
       }
     },
-    "parameterFileLink": { "type": "string" },
-    "adminPassword": {
-      "type": "securestring",
-      "defaultValue": null
+    "dmzSettings": {
+      "type": "object",
+      "metadata": {
+        "description": "Settings for DMZ"
+      }
     },
-    "sshPublicKey": {
-      "type": "securestring",
-      "defaultValue": null
-    }
+    "virtualNetworkSettings": {
+      "type": "object",
+      "metadata": {
+        "description": "Settings for virtual network"
+      }
+    },
+    "protectedSettings": { "type": "secureObject" }
   },
   "variables": {
-    "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), parameters('parameterFileLink')))]",
-    "parametersDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-params-', variables('templateUniqueString'))]",
-    "parametersTemplate": "[uri(deployment().properties.templateLink.uri, 'parameterLink-resolver.json')]",
-    "dmzDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployDmz-', variables('templateUniqueString'))]",
-    "dmzTemplate": "[uri(deployment().properties.templateLink.uri, 'dmz-deploy.json')]"
+    "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('dmzSettings')), string(parameters('virtualNetworkSettings'))))]",
+
+    "dmzSettingsTemplateName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-dmzSettings-', variables('templateUniqueString'))]",
+    "routeTableDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-nvaRt-', variables('templateUniqueString'))]",
+    "lbDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-nvaLbVMs-', variables('templateUniqueString'))]",
+    "subnetsDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-nvaSubnets-', variables('templateUniqueString'))]",
+
+    "dmzSettingsTemplate": "[uri(deployment().properties.templateLink.uri, 'mappers/dmzSettings.json')]",
+    "loadBalancerTemplate": "[uri(deployment().properties.templateLink.uri, '../loadBalancer-backend-n-vm/loadBalancer-backend-n-vm-deploy.json')]",
+    "subnetTemplates": {
+      "yes": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/virtualNetworks/subnets-nop.json')]",
+      "no": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/virtualNetworks/subnets-new.json')]"
+    },
+    "routeTableTemplates": {
+      "yes": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/routeTables/routeTable-nop.json')]",
+      "no": "[uri(deployment().properties.templateLink.uri, '../userDefinedRoutes/azuredeploy.json')]"
+    }
   },
   "resources": [
     {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2015-01-01",
-      "name": "[variables('parametersDeploymentName')]",
+      "name": "[variables('dmzSettingsTemplateName')]",
       "properties": {
         "mode": "Incremental",
-        "templateLink": {
-          "uri": "[variables('parametersTemplate')]"
-        },
-        "parametersLink": {
-          "uri": "[parameters('parameterFileLink')]"
+        "templateLink": { "uri": "[variables('dmzSettingsTemplate')]" },
+        "parameters": {
+          "deploymentContext": {
+            "value": {
+              "parentTemplateUniqueString": "[concat(variables('templateUniqueString') , '-dmzSettings')]"
+            }
+          },
+          "dmzSettings": {
+            "value": "[parameters('dmzSettings')]"
+          }
         }
       }
     },
     {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2015-01-01",
-      "name": "[variables('dmzDeploymentName')]",
-      "dependsOn": [
-        "[variables('parametersDeploymentName')]"
-      ],
+      "name": "[variables('subnetsDeploymentName')]",
       "properties": {
         "mode": "Incremental",
-        "templateLink": {
-          "uri": "[variables('dmzTemplate')]"
-        },
+        "templateLink": { "uri": "[variables('subnetTemplates')[tolower(parameters('dmzSettings').subnets.useExistingSubnets)]]" },
         "parameters": {
           "deploymentContext": {
             "value": {
-              "parentTemplateUniqueString": "[concat(variables('templateUniqueString'), '-deployDmz')]"
+              "parentTemplateUniqueString": "[concat(variables('templateUniqueString'), '-nvaSubnets')]"
             }
           },
-          "dmzSettings": {
-            "value": "[reference(variables('parametersDeploymentName')).outputs.dmzSettings.value]"
-          },
-          "virtualNetworkSettings": {
-            "value": "[reference(variables('parametersDeploymentName')).outputs.virtualNetworkSettings.value]"
-          },
-          "protectedSettings": {
+          "subnets": { "value": "[parameters('dmzSettings').subnets]" },
+          "virtualNetworkSettings": { "value": "[parameters('virtualNetworkSettings')]" }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "name": "[variables('lbDeploymentName')]",
+      "dependsOn": [
+        "[variables('subnetsDeploymentName')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": { "uri": "[variables('loadBalancerTemplate')]" },
+        "parameters": {
+          "deploymentContext": {
             "value": {
-              "adminPassword": "[parameters('adminPassword')]",
-              "sshPublicKey": "[parameters('sshPublicKey')]"
+              "parentTemplateUniqueString": "[concat(variables('templateUniqueString'), '-nvaLbVMs')]"
             }
+          },
+          "virtualMachinesSettings": { "value": "[reference(variables('dmzSettingsTemplateName')).outputs.vmSettings.value]" },
+          "virtualNetworkSettings": { "value": "[parameters('virtualNetworkSettings')]" },
+          "buildingBlockSettings": { "value": "[reference(variables('dmzSettingsTemplateName')).outputs.buildingBlockSettings.value]" },
+          "loadBalancerSettings": { "value": "[reference(variables('dmzSettingsTemplateName')).outputs.loadBalancerSettings.value]" },
+          "protectedSettings": {
+            "value": "[parameters('protectedSettings')]"
           }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "name": "[variables('routeTableDeploymentName')]",
+      "dependsOn": [
+        "[variables('lbDeploymentName')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": { "uri": "[variables('routeTableTemplates')[tolower(parameters('dmzSettings').endpoint.hasPublicEndpoint)]]" },
+        "parameters": {
+          "deploymentContext": {
+            "value": {
+              "parentTemplateUniqueString": "[concat(variables('templateUniqueString'), '-nvaRt')]"
+            }
+          },
+          "virtualNetworkSettings": { "value": "[parameters('virtualNetworkSettings')]" },
+          "routeTableSettings": { "value": "[reference(variables('dmzSettingsTemplateName')).outputs.routeTableSettings.value]" }
         }
       }
     }
@@ -77,7 +130,7 @@
   "outputs": {
     "resources": {
       "type": "array",
-      "value": "[reference(variables('dmzDeploymentName')).outputs.resources.value]"
+      "value": "[concat(reference(variables('routeTableDeploymentName')).outputResources, reference(variables('lbDeploymentName')).outputResources)]"
     }
   }
 }

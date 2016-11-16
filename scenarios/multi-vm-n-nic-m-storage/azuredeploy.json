@@ -14,23 +14,56 @@
   },
   "variables": {
     "baseUri": "https://github.com/mspnp/template-building-blocks/tree/roshar/securekeys/templates",
+    "scenariosBaseUri": "https://raw.githubusercontent.com/mspnp/template-building-blocks/master/scenarios",
+
     "templateParts": "[split(parameters('templateParameterUri'),'/')]",
-    "templateDescription": "[split(variables('templateParts')[sub(length(variables('templateParts')), 1)], '.')[0]]"
+    "templateDescription": "[split(variables('templateParts')[sub(length(variables('templateParts')), 1)], '.')[0]]",
+    "parametersTemplate": "[concat(variables('scenariosBaseUri'), '/multi-vm-n-nic-m-storage/', 'parameterLink-resolver.json')]",
+    "parametersDeploymentName": "vms-params-Deployment"
   },
   "resources": [
     {
       "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "name": "[variables('parametersDeploymentName')]",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('parametersTemplate')]"
+        },
+        "parametersLink": {
+          "uri": "[parameters('templateParameterUri')]"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
       "apiVersion": "2016-02-01",
       "name": "[concat('deploy-', variables('templateDescription'))]",
+      "dependsOn": [
+        "[variables('parametersDeploymentName')]"
+      ],
       "properties": {
         "mode": "Incremental",
         "templateLink": {
           "uri": "[concat(variables('baseUri'), '/buildingBlocks/multi-vm-n-nic-m-storage/azuredeploy.json')]"
         },
         "parameters": {
-          "parameterFileLink": { "value": "[parameters('templateParameterUri')]" },
-          "adminPassword": { "value": "[parameters('adminPassword')]" },
-          "sshPublicKey": { "value": "[parameters('sshPublicKey')]" }
+          "virtualMachinesSettings": {
+            "value": "[reference(variables('parametersDeploymentName')).outputs.virtualMachinesSettings.value]"
+          },
+          "virtualNetworkSettings": {
+            "value": "[reference(variables('parametersDeploymentName')).outputs.virtualNetworkSettings.value]"
+          },
+          "buildingBlockSettings": {
+            "value": "[reference(variables('parametersDeploymentName')).outputs.buildingBlockSettings.value]"
+          },
+          "protectedSettings": {
+            "value": {
+              "adminPassword": "[parameters('adminPassword')]",
+              "sshPublicKey": "[parameters('sshPublicKey')]"
+            }
+          }
         }
 
       }
