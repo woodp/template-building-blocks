@@ -74,7 +74,7 @@
     "virtualNetworkSettings": {
       "value": {
         "name": "bb-dev-vnet",
-        "resourceGroup": "bb-dev-rg"
+        "resourceGroup": "dmz-scenario4-rg"
       }
     }
   }
