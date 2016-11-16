@@ -159,7 +159,7 @@
     "virtualNetworkSettings": {
       "value": {
         "name": "bb-dev-vnet",
-        "resourceGroup": "bb-dev-rg"
+        "resourceGroup": "lb-scenario2-rg"
       },
       "metadata": {
         "description": "Infrastructure Settings"

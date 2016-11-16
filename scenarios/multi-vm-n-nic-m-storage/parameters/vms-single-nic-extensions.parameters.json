@@ -84,7 +84,7 @@
     "virtualNetworkSettings": {
       "value": {
         "name": "bb-dev-vnet",
-        "resourceGroup": "bb-dev-rg"
+        "resourceGroup": "vms-scenario4-rg"
       }
     },
     "buildingBlockSettings": {
