@@ -2,26 +2,23 @@
   "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "templateParameterUri": {
-      "type": "string",
-      "minLength": 1,
-      "metadata": {
-        "description": "Template parameters file to use with the building block template."
+    "deploymentContext": {
+      "type": "object",
+      "defaultValue": {
+        "parentTemplateUniqueString": "bbVM"
       }
     },
+    "parameterFileLink": { "type": "string" },
     "sharedKey": {
       "type": "securestring"
     }
   },
   "variables": {
-    "baseUri": "https://raw.githubusercontent.com/mspnp/template-building-blocks/master/templates",
-    "scenariosBaseUri": "https://raw.githubusercontent.com/mspnp/template-building-blocks/master/scenarios",
-
-    "templateParts": "[split(parameters('templateParameterUri'),'/')]",
-    "templateDescription": "[split(variables('templateParts')[sub(length(variables('templateParts')), 1)], '.')[0]]",
-    "parametersTemplate": "[concat(variables('scenariosBaseUri'), '/vpn-gateway-vpn-connection/', 'parameterLink-resolver.json')]",
-    "parametersDeploymentName": "vpn-params-Deployment"
-
+    "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), parameters('parameterFileLink')))]",
+    "parametersDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-params-', variables('templateUniqueString'))]",
+    "parametersTemplate": "[uri(deployment().properties.templateLink.uri, 'parameterLink-resolver.json')]",
+    "vpnDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployVpn-', variables('templateUniqueString'))]",
+    "vpnTemplate": "[uri(deployment().properties.templateLink.uri, 'vpn-gateway-vpn-connection-deploy.json')]"
   },
   "resources": [
     {
@@ -34,23 +31,28 @@
           "uri": "[variables('parametersTemplate')]"
         },
         "parametersLink": {
-          "uri": "[parameters('templateParameterUri')]"
+          "uri": "[parameters('parameterFileLink')]"
         }
       }
     },
     {
       "type": "Microsoft.Resources/deployments",
-      "apiVersion": "2016-02-01",
-      "name": "[concat('deploy-', variables('templateDescription'))]",
+      "apiVersion": "2015-01-01",
+      "name": "[variables('vpnDeploymentName')]",
       "dependsOn": [
         "[variables('parametersDeploymentName')]"
       ],
       "properties": {
         "mode": "Incremental",
         "templateLink": {
-          "uri": "[concat(variables('baseUri'), '/buildingBlocks/vpn-gateway-vpn-connection/azuredeploy.json')]"
+          "uri": "[variables('vpnTemplate')]"
         },
         "parameters": {
+          "deploymentContext": {
+            "value": {
+              "parentTemplateUniqueString": "[concat(variables('templateUniqueString'), '-deployVpn')]"
+            }
+          },
           "virtualNetworkSettings": {
             "value": "[reference(variables('parametersDeploymentName')).outputs.virtualNetworkSettings.value]"
           },
@@ -69,6 +71,10 @@
       }
     }
   ],
-    "outputs": {
+  "outputs": {
+    "resources": {
+      "type": "array",
+      "value": "[reference(variables('vpnDeploymentName')).outputs.resources.value]"
     }
+  }
 }

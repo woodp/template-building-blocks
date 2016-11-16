@@ -20,23 +20,53 @@
   },
   "variables": {
     "baseUri": "https://raw.githubusercontent.com/mspnp/template-building-blocks/master/templates",
+    "scenariosBaseUri": "https://raw.githubusercontent.com/mspnp/template-building-blocks/master/scenarios",
     "templateParts": "[split(parameters('templateParameterUri'),'/')]",
-    "templateDescription": "[split(variables('templateParts')[sub(length(variables('templateParts')), 1)], '.')[0]]"
+    "templateDescription": "[split(variables('templateParts')[sub(length(variables('templateParts')), 1)], '.')[0]]",
+    "parametersTemplate": "[concat(variables('scenariosBaseUri'), '/dmz/', 'parameterLink-resolver.json')]",
+    "parametersDeploymentName": "dmz-params-Deployment"
+
   },
   "resources": [
     {
       "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "name": "[variables('parametersDeploymentName')]",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('parametersTemplate')]"
+        },
+        "parametersLink": {
+          "uri": "[parameters('templateParameterUri')]"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
       "apiVersion": "2016-02-01",
       "name": "[concat('deploy-', variables('templateDescription'))]",
+      "dependsOn": [
+        "[variables('parametersDeploymentName')]"
+      ],
       "properties": {
         "mode": "Incremental",
         "templateLink": {
           "uri": "[concat(variables('baseUri'), '/buildingBlocks/dmz/azuredeploy.json')]"
         },
         "parameters": {
-          "parameterFileLink": { "value": "[parameters('templateParameterUri')]" },
-          "adminPassword": { "value": "[parameters('adminPassword')]" },
-          "sshPublicKey": { "value": "[parameters('sshPublicKey')]" }
+          "dmzSettings": {
+            "value": "[reference(variables('parametersDeploymentName')).outputs.dmzSettings.value]"
+          },
+          "virtualNetworkSettings": {
+            "value": "[reference(variables('parametersDeploymentName')).outputs.virtualNetworkSettings.value]"
+          },
+          "protectedSettings": {
+            "value": {
+              "adminPassword": "[parameters('adminPassword')]",
+              "sshPublicKey": "[parameters('sshPublicKey')]"
+            }
+          }
         }
       }
     }

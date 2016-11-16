@@ -1,80 +1,93 @@
 ﻿{
-  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
     "deploymentContext": {
       "type": "object",
       "defaultValue": {
-        "parentTemplateUniqueString": "bbVM"
+        "parentTemplateUniqueString": "bbVPN"
       }
     },
-    "parameterFileLink": { "type": "string" },
-    "sharedKey": {
-      "type": "securestring"
+    "virtualNetworkSettings": {
+      "type": "object"
+    },
+    "virtualNetworkGatewaySettings": {
+      "type": "object"
+    },
+    "connectionSettings": {
+      "type": "object"
+    },
+    "protectedSettings": {
+      "type": "secureObject",
+      "metadata": {
+        "description": "Protected settings for building block"
+      }
     }
   },
   "variables": {
-    "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), parameters('parameterFileLink')))]",
-    "parametersDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-params-', variables('templateUniqueString'))]",
-    "parametersTemplate": "[uri(deployment().properties.templateLink.uri, 'parameterLink-resolver.json')]",
-    "vpnDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployVpn-', variables('templateUniqueString'))]",
-    "vpnTemplate": "[uri(deployment().properties.templateLink.uri, 'vpn-gateway-vpn-connection-deploy.json')]"
+    "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('virtualNetworkSettings')), string(parameters('virtualNetworkGatewaySettings')), string(parameters('connectionSettings'))))]",
+    "virtualNetworkGatewayTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/virtualNetworkGateways/virtualNetworkGateway.json')]",
+    "connectionTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/connections/connection.json')]",
+    "connectionDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployConn-', variables('templateUniqueString'))]",
+    "virtualNetworkGatewayDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployGW-', variables('templateUniqueString'))]"
   },
   "resources": [
     {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2015-01-01",
-      "name": "[variables('parametersDeploymentName')]",
+      "name": "[variables('virtualNetworkGatewayDeploymentName')]",
       "properties": {
         "mode": "Incremental",
         "templateLink": {
-          "uri": "[variables('parametersTemplate')]"
+          "uri": "[variables('virtualNetworkGatewayTemplate')]"
         },
-        "parametersLink": {
-          "uri": "[parameters('parameterFileLink')]"
+        "parameters": {
+          "deploymentContext": {
+            "value": {
+              "parentTemplateUniqueString": "[concat(variables('templateUniqueString'), '-deployGW')]"
+            }
+          },
+          "virtualNetworkSettings": {
+            "value": "[parameters('virtualNetworkSettings')]"
+          },
+          "virtualNetworkGatewaySettings": {
+            "value": "[parameters('virtualNetworkGatewaySettings')]"
+          }
         }
       }
     },
     {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2015-01-01",
-      "name": "[variables('vpnDeploymentName')]",
-      "dependsOn": [
-        "[variables('parametersDeploymentName')]"
-      ],
+      "name": "[variables('connectionDeploymentName')]",
       "properties": {
         "mode": "Incremental",
         "templateLink": {
-          "uri": "[variables('vpnTemplate')]"
+          "uri": "[variables('connectionTemplate')]"
         },
         "parameters": {
           "deploymentContext": {
             "value": {
-              "parentTemplateUniqueString": "[concat(variables('templateUniqueString'), '-deployVpn')]"
+              "parentTemplateUniqueString": "[concat(variables('templateUniqueString'), '-deployConn')]"
             }
-          },
-          "virtualNetworkSettings": {
-            "value": "[reference(variables('parametersDeploymentName')).outputs.virtualNetworkSettings.value]"
-          },
-          "virtualNetworkGatewaySettings": {
-            "value": "[reference(variables('parametersDeploymentName')).outputs.virtualNetworkGatewaySettings.value]"
           },
           "connectionSettings": {
-            "value": "[reference(variables('parametersDeploymentName')).outputs.connectionSettings.value]"
+            "value": "[parameters('connectionSettings')]"
           },
           "protectedSettings": {
-            "value": {
-              "sharedKey": "[parameters('sharedKey')]"
-            }
+            "value": "[parameters('protectedSettings')]"
           }
         }
-      }
+      },
+      "dependsOn": [
+        "[variables('virtualNetworkGatewayDeploymentName')]"
+      ]
     }
   ],
   "outputs": {
     "resources": {
       "type": "array",
-      "value": "[reference(variables('vpnDeploymentName')).outputs.resources.value]"
+      "value": "[concat(reference(variables('virtualNetworkGatewayDeploymentName')).outputResources, reference(variables('connectionDeploymentName')).outputResources)]"
     }
   }
 }
