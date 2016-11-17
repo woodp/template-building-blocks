@@ -34,7 +34,7 @@
       "location": "[resourceGroup().location]",
       "dependsOn": [
         "[parameters('connectionSettings').localNetworkGateway.name]"
-      ]
+      ],
       "properties": {
         "type": "object",
         "value": {
