@@ -31,7 +31,7 @@
     "subnetsDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-nvaSubnets-', variables('templateUniqueString'))]",
 
     "dmzSettingsTemplate": "[uri(deployment().properties.templateLink.uri, 'mappers/dmzSettings.json')]",
-    "loadBalancerTemplate": "[uri(deployment().properties.templateLink.uri, '../loadBalancer-backend-n-vm/azuredeploy.json')]",
+    "loadBalancerTemplate": "[uri(deployment().properties.templateLink.uri, '../loadBalancer-backend-n-vm/loadBalancer-backend-n-vm-deploy.json')]",
     "subnetTemplates": {
       "yes": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/virtualNetworks/subnets-nop.json')]",
       "no": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/virtualNetworks/subnets-new.json')]"
