@@ -21,17 +21,14 @@
       "type": "Microsoft.Network/connections",
       "location": "[resourceGroup().location]",
       "properties": {
-        "type": "object",
-        "value": {
-          "connectionType": "Vnet2Vnet",
-          "routingWeight": 10,
-          "sharedKey": "[parameters('protectedSettings').sharedKey]",
-          "virtualNetworkGateway1": {
-            "id": "[resourceId(parameters('connectionSettings').virtualNetworkGateway1.resourceGroup, 'Microsoft.Network/virtualNetworkGateways', parameters('connectionSettings').virtualNetworkGateway1.name)]"
-          },
-          "virtualNetworkGateway2": {
-            "id": "[resourceId(parameters('connectionSettings').virtualNetworkGateway2.resourceGroup, 'Microsoft.Network/virtualNetworkGateways', parameters('connectionSettings').virtualNetworkGateway2.name)]"
-          }
+        "connectionType": "Vnet2Vnet",
+        "routingWeight": 10,
+        "sharedKey": "[parameters('protectedSettings').sharedKey]",
+        "virtualNetworkGateway1": {
+          "id": "[resourceId(parameters('connectionSettings').virtualNetworkGateway1.resourceGroup, 'Microsoft.Network/virtualNetworkGateways', parameters('connectionSettings').virtualNetworkGateway1.name)]"
+        },
+        "virtualNetworkGateway2": {
+          "id": "[resourceId(parameters('connectionSettings').virtualNetworkGateway2.resourceGroup, 'Microsoft.Network/virtualNetworkGateways', parameters('connectionSettings').virtualNetworkGateway2.name)]"
         }
       }
     }

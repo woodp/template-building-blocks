@@ -36,17 +36,14 @@
         "[parameters('connectionSettings').localNetworkGateway.name]"
       ],
       "properties": {
-        "type": "object",
-        "value": {
-          "connectionType": "IPsec",
-          "routingWeight": 10,
-          "sharedKey": "[parameters('protectedSettings').sharedKey]",
-          "virtualNetworkGateway1": {
-            "id": "[resourceId('Microsoft.Network/virtualNetworkGateways', parameters('connectionSettings').virtualNetworkGateway1.name)]"
-          },
-          "localNetworkGateway2": {
-            "id": "[resourceId('Microsoft.Network/localNetworkGateways', parameters('connectionSettings').localNetworkGateway.name)]"
-          }
+        "connectionType": "IPsec",
+        "routingWeight": 10,
+        "sharedKey": "[parameters('protectedSettings').sharedKey]",
+        "virtualNetworkGateway1": {
+          "id": "[resourceId('Microsoft.Network/virtualNetworkGateways', parameters('connectionSettings').virtualNetworkGateway1.name)]"
+        },
+        "localNetworkGateway2": {
+          "id": "[resourceId('Microsoft.Network/localNetworkGateways', parameters('connectionSettings').localNetworkGateway.name)]"
         }
       }
     }

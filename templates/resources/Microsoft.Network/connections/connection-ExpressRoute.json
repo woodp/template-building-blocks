@@ -21,16 +21,13 @@
       "type": "Microsoft.Network/connections",
       "location": "[resourceGroup().location]",
       "properties": {
-        "type": "object",
-        "value": {
-          "connectionType": "ExpressRoute",
-          "routingWeight": 10,
-          "virtualNetworkGateway1": {
-            "id": "[resourceId(parameters('connectionSettings').virtualNetworkGateway1.resourceGroup, 'Microsoft.Network/virtualNetworkGateways', parameters('connectionSettings').virtualNetworkGateway1.name)]"
-          },
-          "peer": {
-            "id": "[resourceId(parameters('connectionSettings').expressRouteCircuit.resourceGroup, 'Microsoft.Network/expressRouteCircuits', parameters('connectionSettings').expressRouteCircuit.name)]"
-          }
+        "connectionType": "ExpressRoute",
+        "routingWeight": 10,
+        "virtualNetworkGateway1": {
+          "id": "[resourceId(parameters('connectionSettings').virtualNetworkGateway1.resourceGroup, 'Microsoft.Network/virtualNetworkGateways', parameters('connectionSettings').virtualNetworkGateway1.name)]"
+        },
+        "peer": {
+          "id": "[resourceId(parameters('connectionSettings').expressRouteCircuit.resourceGroup, 'Microsoft.Network/expressRouteCircuits', parameters('connectionSettings').expressRouteCircuit.name)]"
         }
       }
     }
