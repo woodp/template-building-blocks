@@ -1,0 +1,15 @@
+//const StringCannotBeNullUndefinedEmptyOrOnlyWhitespace = 'Field cannot be null, undefined, empty, or only whitespace';
+
+//export { StringCannotBeNullUndefinedEmptyOrOnlyWhitespace };
+//exports.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace = StringCannotBeNullUndefinedEmptyOrOnlyWhitespace;
+exports.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace = 'Field cannot be null, undefined, empty, or only whitespace';
+exports.ArrayCannotBeNull = 'Array cannot be null';
+exports.InvalidCidr = 'CIDR is invalid';
+exports.InvalidIpAddress = 'IP Address is invalid';
+exports.routeTable = {
+    routes: {
+        NextHopIpAddressCannotBePresent: 'nextHopIpAddress cannot be present for specified nextHopType',
+        NextHopIpAddressMustBePresent: 'nextHopIpAddress must be present for nextHopType=VirtualAppliance',
+        InvalidNextHopType: 'nextHopType is not valid'
+    }
+};
