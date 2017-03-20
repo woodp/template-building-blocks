@@ -1,4 +1,6 @@
 let _ = require('../lodashMixins.js');
+let v = require('./validation.js');
+let validationMessages = require('./ValidationMessages.js');
 
 let defaults = {
     addressPrefixes: ["11.0.0.0/24"],
@@ -6,9 +8,10 @@ let defaults = {
     dnsServers: [ "default.mysite.com" ]
 };
 
-function isNullOrWhitespace(result, parentKey, key, value) {
+function isNullOrWhitespace(result, parentKey, key, value, parent) {
     let retVal = !_.isNullOrWhitespace(value);
     if (!retVal) {
+        //result.concat(_.join([parentKey, key], '.'));
         result.push(_.join((parentKey ? [parentKey, key] : [key]), '.'));
     }
 
@@ -20,9 +23,12 @@ function isValidCidr(value) {
     return cidrRegex.test(value);
 }
 
-function validateCidr(result, parentKey, key, value) {
+function validateCidr(result, parentKey, key, value, parent) {
     if (!isValidCidr(value)) {
-        result.push(_.join((parentKey ? [parentKey, key] : [key]), '.'));
+        result.push({
+            name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
+            message: validationMessages.InvalidCidr
+        })
     }
 }
 
@@ -45,6 +51,64 @@ exports.transform = function (settings) {
         }
     };
 }
+
+exports.virtualNetworkSettingsDefaults = defaults;
+
+exports.virtualNetworkValidations2 = {
+    name: isNullOrWhitespace,
+    addressPrefixes: validateCidr,
+    subnets: (result, parentKey, key, value) => {
+        let validations = {
+            name: isNullOrWhitespace,
+            addressPrefix: validateCidr
+        };
+
+        v.reduce(validations, value, parentKey, result);
+    },
+    dnsServers: isNullOrWhitespace
+}
+exports.virtualNetworkValidations = {
+        name: isNullOrWhitespace,
+        addressPrefixes: (result, parentKey, key, value) => {
+            if (_.isNil(value)) {
+                result.push(key);
+                return;
+            } else {
+                return _.reduce(value, (result, value, index) => {
+                    isNullOrWhitespace(result, key, key + '[' + index + ']', value);
+                    return result;
+                });
+            }
+        },
+        subnets: (result, parentKey, key, value) => {
+            let validations = {
+                name: isNullOrWhitespace,
+                addressPrefix: validateCidr
+            };
+
+            if (_.isNil(value)) {
+                result.push(key);
+            } else {
+                _.reduce(value, (result, subnet, index) => {
+                    _.reduce(validations, (result, validation, key) => {
+                        validation(result, 'subnets[' + index + ']', key, subnet[key]);
+                        return result;
+                    }, result);
+                    return result;
+                }, result);
+            }
+        },
+        dnsServers: (result, parentKey, key, value) => {
+            if (_.isNil(value)) {
+                result.push(key);
+            } else {
+                return _.reduce(value, (result, value, index) => {
+                    isNullOrWhitespace(result, key, key + '[' + index + ']', value);
+                    return result;
+                });
+            }
+        }
+    };
 
 exports.validateRequiredSettings = function (settings) {
     let validations = {

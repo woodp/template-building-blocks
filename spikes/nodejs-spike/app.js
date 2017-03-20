@@ -1,11 +1,12 @@
 //import _ from 'lodash';
 
-var restify = require('restify');
+let restify = require('restify');
 //var merge = require('lodash.merge');
 
 //var _ = require('lodash');
-var _ = require('./lodashMixins.js');
-var vmSettings = require('./templates/virtualMachineSettings.js');
+let _ = require('./lodashMixins.js');
+let validation = require('./templates/validation.js');
+let vmSettings = require('./templates/virtualMachineSettings.js');
 let vnetSettings = require('./templates/virtualNetworkSettings.js');
 let routeSettings = require('./templates/routeTableSettings.js');
 
@@ -464,81 +465,49 @@ function objectMerge(req, res, next) {
 }
 
 function vnetTests(req, res, next) {
-  let settings = vnetSettings.validateRequiredSettings({
-    "name": "ra-single-vm-vnet",
-        "addressPrefixes": [
+  //let settings = vnetSettings.validateRequiredSettings({
+  let settings = validation.mergeAndValidate({
+    name: "ra-single-vm-vnet",
+        addressPrefixes: [
           "10.0.0.0/16"
         ],
-        "subnets": [
+        subnets: [
           {
-            "name": "web",
-            "addressPrefix": "10.0.1.0/24"
+            //name: "web",
+            addressPrefix: "10.0.1.0/24"
           },
           {
-            "name": "biz"//,
-            //"addressPrefix": "10.0.2.0/24"
+            name: "biz"//,
+            //addressPrefix: "10.0.2.0/24"
+          },
+          {
+            name: "data",
+            addressPrefix: "10.0.2./24"
           }
         ],
-        "dnsServers": [ "www.microsoft.com" ]
-  });
+        dnsServers: [ "www.microsoft.com" ]
+  }, vnetSettings.virtualNetworkSettingsDefaults, vnetSettings.virtualNetworkValidations2);
 
-  settings = vnetSettings.transform(settings);
-  res.send(settings);
+  //settings = vnetSettings.transform(settings);
+  if (settings.settings) {
+    //res.send(routeSettings.transform(settings.settings));
+    res.send(vnetSettings.transform(settings.settings));
+  } else if (settings.missingFields) {
+    res.send(400, settings.missingFields);
+  }
   next();
 }
 
 function routeTableTests(req, res, next) {
   // Bad settings!
-  // let settings = routeSettings.validateRequiredSettings({
-  //   name: "route-rt",
-  //   routes: [
-  //     {
-  //       name: "route1",
-  //       addressPrefix: "10.0.1.0/24",
-  //       nextHopType: "VnetLoca"
-  //     },
-  //     {
-  //       name: "route2",
-  //       addressPrefix: "10.0.2.0/24",
-  //       nextHopType: "VirtualNetworkGateway"
-  //     },
-  //     {
-  //       name: "route3",
-  //       addressPrefix: "10.0.3.0/24",
-  //       nextHopType: "VirtualAppliance",
-  //       nextHopIpAddress: "192.168.1.1"
-  //     },
-  //     {
-  //       name: "route4",
-  //       addressPrefix: "10.0.4.0/24",
-  //       nextHopType: "VirtualAppliance"
-  //     },
-  //     {
-  //       name: "route5",
-  //       addressPrefix: "10.0.4.0/24"
-  //     },
-  //     {
-  //       name: "route6",
-  //       addressPrefix: "10.0.5.0/24",
-  //       nextHopType: "VnetLocal",
-  //       nextHopIpAddress: "192.168.1.1"
-  //     },
-  //     {
-  //       name: "route7",
-  //       addressPrefix: "10.0.4.0/24",
-  //       nextHopType: "VirtualAppliance",
-  //       nextHopIpAddress: "192.168.1."
-  //     }
-  //   ]
-  // });
-
-let settings = routeSettings.validateRequiredSettings({
+  //let settings = routeSettings.validateRequiredSettings2({
+    let settings = validation.mergeAndValidate({
     name: "route-rt",
     routes: [
       {
         name: "route1",
         addressPrefix: "10.0.1.0/24",
-        nextHopType: "VnetLocal"
+        nextHopType: "VnetLoca"
       },
       {
         name: "route2",
@@ -550,9 +519,52 @@ let settings = routeSettings.validateRequiredSettings({
         addressPrefix: "10.0.3.0/24",
         nextHopType: "VirtualAppliance",
         nextHopIpAddress: "192.168.1.1"
+      },
+      {
+        name: "route4",
+        addressPrefix: "10.0.4.0/24",
+        nextHopType: "VirtualAppliance"
+      },
+      {
+        name: "route5",
+        addressPrefix: "10.0.4.0/24"
+      },
+      {
+        name: "route6",
+        addressPrefix: "10.0.5.0/24",
+        nextHopType: "VnetLocal",
+        nextHopIpAddress: "192.168.1.1"
+      },
+      {
+        name: "route7",
+        addressPrefix: "10.0.4.0/24",
+        nextHopType: "VirtualAppliance",
+        nextHopIpAddress: "192.168.1."
       }
     ]
-  });
+  }, routeSettings.routeTableSettingsDefaults, routeSettings.routeTableValidations);
+
+// let settings = routeSettings.validateRequiredSettings({
+//     name: "route-rt",
+//     routes: [
+//       {
+//         name: "route1",
+//         addressPrefix: "10.0.1.0/24",
+//         nextHopType: "VnetLocal"
+//       },
+//       {
+//         name: "route2",
+//         addressPrefix: "10.0.2.0/24",
+//         nextHopType: "VirtualNetworkGateway"
+//       },
+//       {
+//         name: "route3",
+//         addressPrefix: "10.0.3.0/24",
+//         nextHopType: "VirtualAppliance",
+//         nextHopIpAddress: "192.168.1.1"
+//       }
+//     ]
+//   });
 
   if (settings.settings) {
     res.send(routeSettings.transform(settings.settings));
