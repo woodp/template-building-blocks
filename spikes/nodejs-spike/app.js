@@ -214,6 +214,121 @@ function routeTableTests(req, res, next) {
 
 let blah = validation.utilities.resourceId("big-long-guid-here", "resource-group-name-here", "Microsoft.Network/virtualNetworks", "my-virtual-network", "my-subnet-name");
 let blah2 = validation.utilities.resourceId("big-long-guid-here", "resource-group-name-here", "Microsoft.Network/virtualNetworks/subnets", "my-virtual-network", "my-subnet-name");
+let bbs = {
+  subscriptionId: "49741165-F4AF-456E-B47C-637AEAB82D50",
+  resourceGroup: "my-resource-group"
+};
+
+let stuff = {
+  name: "blah",
+  randomStuff: {
+    random: "hello",
+    moreRandom: "world"
+  },
+  substuff: {
+    virtualNetworks: [
+      {
+        name: "my-first-vnet",
+        subnets: [
+          {
+            name: "my-first-subnet",
+            addressPrefix: "10.0.1.0/24"
+          },
+          {
+            name: "my-second-subnet",
+            addressPrefix: "10.0.2.0/24"
+          }
+        ]
+      },
+      {
+        name: "my-second-vnet",
+        resourceGroup: "my-other-resource-group",
+        subnets: [
+          {
+            name: "my-first-subnet",
+            addressPrefix: "10.0.1.0/24"
+          },
+          {
+            name: "my-second-subnet",
+            addressPrefix: "10.0.2.0/24"
+          }
+        ]
+      }
+    ]
+  }
+};
+
+let innerStuffReference = stuff.substuff.virtualNetworks[1];
+console.log(stuff);
+console.log();
+console.log(innerStuffReference);
+
+let _ = require('./lodashMixins.js');
+
+function getObject(container, object, parentKey, stack, callback) {
+  if (_.isPlainObject(container)) {
+    if ((parentKey === null) || (parentKey === "virtualNetworks") || (parentKey === "subnets")) {
+      container.subscriptionId = stack[stack.length - 1].subscriptionId;
+      container.resourceGroup = stack[stack.length - 1].resourceGroup;
+    }
+  }
+  _.each(container, (item, keyOrIndex) => {
+    //stack.push(keyOrIndex);
+    // if (item === object) {
+    //   callback(stack);
+    // } else if (_.isPlainObject(item) || _.isArray(item)) {
+    //   getObject(item, object, stack, callback);
+    // }
+    //stack.pop(keyOrIndex);
+    let hasPushed = false;
+    if (_.isPlainObject(item)) {
+      if ((item.hasOwnProperty('resourceGroup')) || (item.hasOwnProperty('subscriptionId'))) {
+        stack.push(_.merge({}, stack[stack.length - 1], {subscriptionId: item.subscriptionId, resourceGroup: item.resourceGroup}));
+        hasPushed = true;
+      }
+
+      // Now we should update, if needed
+      // if ((parentKey === "virtualNetworks") || (parentKey === null)) {
+      //   item.subscriptionId = stack[stack.length - 1].subscriptionId;
+      //   item.resourceGroup = stack[stack.length - 1].resourceGroup;
+      // }
+
+      getObject(item, object, _.isNumber(keyOrIndex) ? parentKey : keyOrIndex, stack, callback);
+
+      if (hasPushed) {
+        stack.pop();
+      }
+      // if (item === object) {
+      //   callback(stack);
+      // } else {
+      //   getObject(item, object, stack, callback);
+      // }
+    } else if (_.isArray(item)) {
+      getObject(item, object, keyOrIndex, stack, callback);
+    }
+  });
+}
+
+let stack = [bbs];
+getObject(stuff, innerStuffReference, null, stack, (item) => {
+  console.log(item);
+});
+
+function customizer(objValue, srcValue, key, object, source, stack) {
+  // //console.log(JSON.stringify(stack));
+  // console.log(key);
+  // console.log(source);
+  // //console.log(key);
+  // console.log();
+  // if (_.isPlainObject(srcValue)) {
+  //   //return _.mergeWith({}, bbs, srcValue, customizer);
+  // }
+
+
+}
+
+let moreStuff = _.mergeWith({}, bbs, stuff, customizer);
+
 var server = restify.createServer();
 server.get('/virtualNetwork', vnetTests);
 server.get('/routeTable', routeTableTests);
