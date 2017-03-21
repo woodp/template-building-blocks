@@ -1,12 +1,9 @@
 let _ = require('../lodashMixins.js');
 let validationMessages = require('./ValidationMessages.js');
 
-exports.mergeAndValidate = function (settings, defaultSettings, validations) {
-    settings = _.merge({}, defaultSettings, settings);
-    // let missingFields = _.reduce(validations, function(result, validation, key) {
-    //     validation(result, '', key, settings[key], settings);
-    //     return result;
-    // }, []);
+function mergeAndValidate(settings, defaultSettings, validations, mergeCustomizer) {
+
+    settings = (mergeCustomizer ? _.mergeWith({}, defaultSettings, settings, mergeCustomizer) : _.merge({}, defaultSettings, settings));
     let missingFields = reduce(validations, settings, '', null, []);
 
     if (missingFields.length > 0) {
@@ -14,13 +11,12 @@ exports.mergeAndValidate = function (settings, defaultSettings, validations) {
             missingFields: missingFields
         };
     } else {
-        return {
-            settings: settings
-        };
+        // return {
+        //     settings: settings
+        // };
+        return settings;
     }
 }
-
-exports.reduce = reduce;
 
 function reduce(validations, value, parentKey, parentValue, accumulator) {
     if (_.isNil(value)) {
@@ -56,61 +52,47 @@ function reduce(validations, value, parentKey, parentValue, accumulator) {
             validations(accumulator, `${parentKey}`, '', value, parentValue);
         }
     }
-    // else if ((_.isArray(value)) && (value.length > 0)) {
-    //     // This has to handle both individual values, as well as objects, so we'll do that here.
-    //     if (_.isPlainObject(value[0])) {
-    //         // This is a plain object, so we need to do two reduces
-    //         _.reduce(value, (accumulator, item, index) => {
-    //             _.reduce(validations, (accumulator, validation, key) => {
-    //                 validation(accumulator, `${parentKey}[${index}]`, key, item[key], item);
-    //                 return accumulator;
-    //             }, accumulator);
-    //             return accumulator;
-    //         }, accumulator);
-    //     } else {
-    //         _.reduce(validations, (accumulator, validation, index) => {
-    //                 validation(accumulator, `${parentKey}[${index}]`, '', value[index], value);
-    //                 return accumulator;
-    //             }, accumulator);
-    //     }
-    // } else {
-    //     _.reduce(validations, (accumulator, validation, key) => {
-    //             validation(accumulator, `${parentKey}`, key, value[key], value);
-    //             return accumulator;
-    //         }, accumulator);
-    // }
 
     return accumulator;
 }
-// function reduce(validations, value, parentKey, accumulator) {
-//     if (_.isNil(value)) {
-//         accumulator.push({
-//             name: parentKey,
-//             message: validationMessages.ValueCannotBeNull
-//         });
-//     } else if ((_.isArray(value)) && (value.length > 0)) {
-//         // This has to handle both individual values, as well as objects, so we'll do that here.
-//         if (_.isPlainObject(value[0])) {
-//             // This is a plain object, so we need to do two reduces
-//             _.reduce(value, (accumulator, item, index) => {
-//                 _.reduce(validations, (accumulator, validation, key) => {
-//                     validation(accumulator, `${parentKey}[${index}]`, key, item[key], item);
-//                     return accumulator;
-//                 }, accumulator);
-//                 return accumulator;
-//             }, accumulator);
-//         } else {
-//             _.reduce(validations, (accumulator, validation, index) => {
-//                     validation(accumulator, `${parentKey}[${index}]`, '', value[index], value);
-//                     return accumulator;
-//                 }, accumulator);
-//         }
-//     } else {
-//         _.reduce(validations, (accumulator, validation, key) => {
-//                 validation(accumulator, `${parentKey}`, key, value[key], value);
-//                 return accumulator;
-//             }, accumulator);
-//     }
 
-//     return accumulator;
-// }
+let cidrRegex = /^(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(?:\/([0-9]|[1-2][0-9]|3[0-2]))$/;
+let ipAddressRegex = /^(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/;
+
+
+let utilities = {
+    networking: {
+        isValidIpAddress: function (value) {
+            return ipAddressRegex.test(value);
+        },
+        isValidCidr: function (value) {
+            return cidrRegex.test(value);
+        }
+    }
+};
+
+let validationUtilities = {
+    isNullOrWhitespace: function (result, parentKey, key, value, parent) {
+        let retVal = !_.isNullOrWhitespace(value);
+        if (!retVal) {
+            result.push(_.join((parentKey ? [parentKey, key] : [key]), '.'));
+        }
+
+        return retVal;
+    },
+    networking: {
+        isValidCidr: function (result, parentKey, key, value, parent) {
+            if (!utilities.networking.isValidCidr(value)) {
+                result.push({
+                    name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
+                    message: validationMessages.InvalidCidr
+                })
+            }
+        }
+    }
+};
+
+exports.utilities = utilities;
+exports.validationUtilities = validationUtilities;
+exports.mergeAndValidate = mergeAndValidate;
+exports.reduce = reduce;

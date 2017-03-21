@@ -3,34 +3,15 @@ let v = require('./validation.js');
 let validationMessages = require('./ValidationMessages.js');
 
 let defaults = {
-    addressPrefixes: ["11.0.0.0/24"],
-    subnets: [{"default": "10.0.3.0/16"}],
-    dnsServers: [ "default.mysite.com" ]
+    addressPrefixes: ["10.0.0.0/24"],
+    subnets: [
+        {
+            name: "default",
+            addressPrefix: "10.0.1.0/16"
+        }
+    ],
+    dnsServers: []
 };
-
-function isNullOrWhitespace(result, parentKey, key, value, parent) {
-    let retVal = !_.isNullOrWhitespace(value);
-    if (!retVal) {
-        //result.concat(_.join([parentKey, key], '.'));
-        result.push(_.join((parentKey ? [parentKey, key] : [key]), '.'));
-    }
-
-    return retVal;
-};
-
-let cidrRegex = /^(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(?:\/([0-9]|[1-2][0-9]|3[0-2]))$/;
-function isValidCidr(value) {
-    return cidrRegex.test(value);
-}
-
-function validateCidr(result, parentKey, key, value, parent) {
-    if (!isValidCidr(value)) {
-        result.push({
-            name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-            message: validationMessages.InvalidCidr
-        })
-    }
-}
 
 exports.transform = function (settings) {
     return {
@@ -53,120 +34,24 @@ exports.transform = function (settings) {
 }
 
 exports.virtualNetworkSettingsDefaults = defaults;
+exports.mergeCustomizer = function (objValue, srcValue, key, object, source, stack) {
+    if (key === "subnets") {
+        if ((srcValue) && (_.isArray(srcValue)) && (srcValue.length > 0)) {
+            return srcValue;
+        }
+    }
+};
 
-exports.virtualNetworkValidations2 = {
-    name: isNullOrWhitespace,
-    addressPrefixes: validateCidr,
-    subnets: (result, parentKey, key, value) => {
+exports.virtualNetworkValidations = {
+    name: v.validationUtilities.isNullOrWhitespace,
+    addressPrefixes: v.validationUtilities.networking.isValidCidr,
+    subnets: (result, parentKey, key, value, parent) => {
         let validations = {
-            name: isNullOrWhitespace,
-            addressPrefix: validateCidr
+            name: v.validationUtilities.isNullOrWhitespace,
+            addressPrefix: v.validationUtilities.networking.isValidCidr
         };
 
-        v.reduce(validations, value, parentKey, result);
+        v.reduce(validations, value, parentKey, parent, result);
     },
-    dnsServers: isNullOrWhitespace
+    dnsServers: v.validationUtilities.isNullOrWhitespace
 }
-exports.virtualNetworkValidations = {
-        name: isNullOrWhitespace,
-        addressPrefixes: (result, parentKey, key, value) => {
-            if (_.isNil(value)) {
-                result.push(key);
-                return;
-            } else {
-                return _.reduce(value, (result, value, index) => {
-                    isNullOrWhitespace(result, key, key + '[' + index + ']', value);
-                    return result;
-                });
-            }
-        },
-        subnets: (result, parentKey, key, value) => {
-            let validations = {
-                name: isNullOrWhitespace,
-                addressPrefix: validateCidr
-            };
-
-            if (_.isNil(value)) {
-                result.push(key);
-            } else {
-                _.reduce(value, (result, subnet, index) => {
-                    _.reduce(validations, (result, validation, key) => {
-                        validation(result, 'subnets[' + index + ']', key, subnet[key]);
-                        return result;
-                    }, result);
-                    return result;
-                }, result);
-            }
-        },
-        dnsServers: (result, parentKey, key, value) => {
-            if (_.isNil(value)) {
-                result.push(key);
-            } else {
-                return _.reduce(value, (result, value, index) => {
-                    isNullOrWhitespace(result, key, key + '[' + index + ']', value);
-                    return result;
-                });
-            }
-        }
-    };
-
-exports.validateRequiredSettings = function (settings) {
-    let validations = {
-        name: isNullOrWhitespace,
-        addressPrefixes: (result, parentKey, key, value) => {
-            if (_.isNil(value)) {
-                result.push(key);
-                return;
-            } else {
-                return _.reduce(value, (result, value, index) => {
-                    isNullOrWhitespace(result, key, key + '[' + index + ']', value);
-                    return result;
-                });
-            }
-        },
-        subnets: (result, parentKey, key, value) => {
-            let validations = {
-                name: isNullOrWhitespace,
-                addressPrefix: validateCidr
-            };
-
-            if (_.isNil(value)) {
-                result.push(key);
-            } else {
-                _.reduce(value, (result, subnet, index) => {
-                    _.reduce(validations, (result, validation, key) => {
-                        validation(result, 'subnets[' + index + ']', key, subnet[key]);
-                        return result;
-                    }, result);
-                    return result;
-                }, result);
-            }
-        },
-        dnsServers: (result, parentKey, key, value) => {
-            if (_.isNil(value)) {
-                result.push(key);
-            } else {
-                return _.reduce(value, (result, value, index) => {
-                    isNullOrWhitespace(result, key, key + '[' + index + ']', value);
-                    return result;
-                });
-            }
-        }
-    };
-
-    settings = _.merge({}, defaults, settings);
-    // if (_.isNil(settings)) {
-    //     throw new Error('settings cannot be null or undefined');
-    // }
-
-    let missingFields = _.reduce(validations, function(result, validation, key) {
-        validation(result, '', key, settings[key]);
-        return result;
-    }, []);
-
-    if (missingFields.length > 0) {
-        throw new Error('Missing fields: ' + _.join(missingFields, ','));
-    }
-
-    return settings;
-};
