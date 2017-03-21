@@ -1,66 +1,12 @@
 let _ = require('../lodashMixins.js');
-//import * as validationMessages from '../ValidationMessages';
 let v = require('./validation.js');
 let validationMessages = require('./ValidationMessages.js');
 
-exports.routeTableSettingsDefaults = {
+let routeTableSettingsDefaults = {
     routes: []
 };
 
-// function isNullOrWhitespace(result, parentKey, key, value, parent) {
-//     let retVal = !_.isNullOrWhitespace(value);
-//     if (!retVal) {
-//         //result.concat(_.join([parentKey, key], '.'));
-//         result.push(_.join((parentKey ? [parentKey, key] : [key]), '.'));
-//     }
-
-//     return retVal;
-// };
-
-// let cidrRegex = /^(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(?:\/([0-9]|[1-2][0-9]|3[0-2]))$/;
-// function isValidCidr(value) {
-//     return cidrRegex.test(value);
-// }
-
-// function validateCidr(result, parentKey, key, value, parent) {
-//     if (!isValidCidr(value)) {
-//         result.push({
-//             name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-//             message: validationMessages.InvalidCidr
-//         })
-//     }
-// }
-
-// let ipAddressRegex = /^(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/;
-
-// function isValidIpAddress(value) {
-//     return ipAddressRegex.test(value);
-// }
-
-exports.transform = function (settings) {
-    return {
-        name: settings.name,
-        properties: {
-            routes: _.map(settings.routes, (value, index) => {
-                let result = {
-                    name: value.name,
-                    properties: {
-                        addressPrefix: value.addressPrefix,
-                        nextHopType: value.nextHopType
-                    }
-                };
-
-                if (value.nextHopIpAddress) {
-                    result.properties.nextHopIpAddress = value.nextHopIpAddress;
-                }
-                
-                return result;
-            })
-        }
-    };
-}
-
-exports.routeTableValidations = {
+let routeTableSettingsValidations = {
     name: v.validationUtilities.isNullOrWhitespace,
     routes: (result, parentKey, key, value, parent) => {
         let validations = {
@@ -114,4 +60,36 @@ exports.routeTableValidations = {
 
         v.reduce(validations, value, parentKey, parent, result);
     }
+};
+
+function transform(settings) {
+    return {
+        name: settings.name,
+        properties: {
+            routes: _.map(settings.routes, (value, index) => {
+                let result = {
+                    name: value.name,
+                    properties: {
+                        addressPrefix: value.addressPrefix,
+                        nextHopType: value.nextHopType
+                    }
+                };
+
+                if (value.nextHopIpAddress) {
+                    result.properties.nextHopIpAddress = value.nextHopIpAddress;
+                }
+                
+                return result;
+            })
+        }
+    };
+}
+
+exports.transform = function (settings) {
+    let result = v.mergeAndValidate(settings, routeTableSettingsDefaults, routeTableSettingsValidations);
+    if (!result.validationErrors) {
+        result = transform(result);
+    }
+
+    return result;
 };

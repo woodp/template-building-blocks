@@ -2,7 +2,7 @@ let _ = require('../lodashMixins.js');
 let v = require('./validation.js');
 let validationMessages = require('./ValidationMessages.js');
 
-let defaults = {
+let virtualNetworkSettingsDefaults = {
     addressPrefixes: ["10.0.0.0/24"],
     subnets: [
         {
@@ -13,7 +13,21 @@ let defaults = {
     dnsServers: []
 };
 
-exports.transform = function (settings) {
+let virtualNetworkSettingsValidations = {
+    name: v.validationUtilities.isNullOrWhitespace,
+    addressPrefixes: v.validationUtilities.networking.isValidCidr,
+    subnets: (result, parentKey, key, value, parent) => {
+        let validations = {
+            name: v.validationUtilities.isNullOrWhitespace,
+            addressPrefix: v.validationUtilities.networking.isValidCidr
+        };
+
+        v.reduce(validations, value, parentKey, parent, result);
+    },
+    dnsServers: v.validationUtilities.isNullOrWhitespace
+};
+
+function transform(settings) {
     return {
         name: settings.name,
         properties: {
@@ -33,8 +47,7 @@ exports.transform = function (settings) {
     };
 }
 
-exports.virtualNetworkSettingsDefaults = defaults;
-exports.mergeCustomizer = function (objValue, srcValue, key, object, source, stack) {
+let mergeCustomizer = function (objValue, srcValue, key, object, source, stack) {
     if (key === "subnets") {
         if ((srcValue) && (_.isArray(srcValue)) && (srcValue.length > 0)) {
             return srcValue;
@@ -42,16 +55,11 @@ exports.mergeCustomizer = function (objValue, srcValue, key, object, source, sta
     }
 };
 
-exports.virtualNetworkValidations = {
-    name: v.validationUtilities.isNullOrWhitespace,
-    addressPrefixes: v.validationUtilities.networking.isValidCidr,
-    subnets: (result, parentKey, key, value, parent) => {
-        let validations = {
-            name: v.validationUtilities.isNullOrWhitespace,
-            addressPrefix: v.validationUtilities.networking.isValidCidr
-        };
+exports.transform = function (settings) {
+    let result = v.mergeAndValidate(settings, virtualNetworkSettingsDefaults, virtualNetworkSettingsValidations, mergeCustomizer);
+    if (!result.validationErrors) {
+        result = transform(result);
+    }
 
-        v.reduce(validations, value, parentKey, parent, result);
-    },
-    dnsServers: v.validationUtilities.isNullOrWhitespace
-}
+    return result;
+};
