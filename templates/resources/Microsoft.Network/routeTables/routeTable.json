@@ -3,9 +3,6 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "deploymentContext": { "type": "object" },
-    "virtualNetworkSettings": {
-      "type": "object"
-    },
     "routeTableSetting": {
       "type": "object"
     }
