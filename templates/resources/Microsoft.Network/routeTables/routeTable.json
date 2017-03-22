@@ -39,7 +39,7 @@
             "reference": {
               "type": "object",
               "value": {
-                "name": "[parameters('routeTableSetting').subnets[copyIndex()].name]",
+                "name": "[split(parameters('routeTableSetting').subnets[copyIndex()], '/')[10]]",
                 "properties": "[reference(parameters('routeTableSetting').subnets[copyIndex()], '2015-06-15')]"
               }
             }
