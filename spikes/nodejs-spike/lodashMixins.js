@@ -1,12 +1,12 @@
-var _ = require('lodash');
+var _ = require('lodash').runInContext();
 
 // Add some utility functions to lodash
 _.mixin({
-  'isNullOrWhitespace' : function(string) {
+  isNullOrWhitespace: function(string) {
     string = _.toString(string);
     return !string || !string.trim();
   },
-  'paths': function(obj, parentKey) {
+  paths: function(obj, parentKey) {
     var result;
     if (_.isArray(obj)) {
       var idx = 0;

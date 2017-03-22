@@ -1,5 +1,6 @@
 let _ = require('../lodashMixins.js');
 let v = require('./validation.js');
+let r = require('./resources.js');
 let validationMessages = require('./ValidationMessages.js');
 
 let virtualNetworkSettingsDefaults = {
@@ -30,6 +31,8 @@ let virtualNetworkSettingsValidations = {
 function transform(settings) {
     return {
         name: settings.name,
+        resourceGroupName: settings.resourceGroupName,
+        subscriptionId: settings.subscriptionId,
         properties: {
             addressSpace: {
                 addressPrefixes: settings.addressPrefixes
@@ -55,9 +58,21 @@ let mergeCustomizer = function (objValue, srcValue, key, object, source, stack) 
     }
 };
 
-exports.transform = function (settings) {
+exports.transform = function (settings, buildingBlockSettings) {
     let result = v.mergeAndValidate(settings, virtualNetworkSettingsDefaults, virtualNetworkSettingsValidations, mergeCustomizer);
-    if (!result.validationErrors) {
+    buildingBlockSettings = v.mergeAndValidate(buildingBlockSettings, {}, {
+        subscriptionId: v.validationUtilities.isNullOrWhitespace,
+        resourceGroupName: v.validationUtilities.isNullOrWhitespace,
+    });
+
+    // If we have validation errors anywhere, merge them for now?
+    // NOTE: We need to generalize this!
+    if ((result.validationErrors) || (buildingBlockSettings.validationErrors)) {
+        result.validationErrors = _.concat(result.validationErrors, buildingBlockSettings.validationErrors);
+    } else {
+        result = r.setupResources(result, buildingBlockSettings, (parentKey) => {
+            return (parentKey === null);
+        });
         result = transform(result);
     }
 

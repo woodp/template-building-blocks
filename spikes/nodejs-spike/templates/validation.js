@@ -27,13 +27,13 @@ function reduce(validations, value, parentKey, parentValue, accumulator) {
     } else if (_.isPlainObject(validations)) {
         // We are working with a validation OBJECT, so we need to iterate the keys
         if (_.isArray(value)) {
-            // We need to iterate and recurse
+            // The value is an array, so we need to iterate it and then reduce
             _.reduce(value, (accumulator, item, index) => {
                 reduce(validations, item, `${parentKey}[${index}]`, parentValue, accumulator);
                 return accumulator;
             }, accumulator);
         } else {
-            // Iterate the validations
+            // The value is a plain object, so iterate the validations and run them against value[key]
             _.reduce(validations, (accumulator, validation, key) => {
                 reduce(validation, value[key], `${parentKey}.${key}`, value, accumulator);
                 return accumulator;
@@ -61,75 +61,6 @@ let ipAddressRegex = /^(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:
 
 
 let utilities = {
-    resourceId: function(subscriptionId, resourceGroupName, resourceType, resourceName, subresourceName) {
-        if (_.isNullOrWhitespace(subscriptionId)) {
-            throw `subscriptionId: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`;
-        }
-
-        if (_.isNullOrWhitespace(resourceGroupName)) {
-            throw `resourceGroupName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`;
-        }
-
-        if (_.isNullOrWhitespace(resourceType)) {
-            throw `resourceType: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`;
-        }
-
-        let resourceTypeParts = _.split(_.trimEnd(resourceType, '/'), '/');
-        if ((resourceTypeParts.length < 2) || (resourceTypeParts.length > 3)) {
-            throw `resourceType: Invalid length ${resourceTypeParts.length}`;
-        }
-
-        if ((resourceTypeParts.length === 2) && (_.isNullOrWhitespace(resourceName))) {
-            throw `resourceName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`;
-        }
-
-        if ((resourceTypeParts.length === 3) && (_.isNullOrWhitespace(subresourceName))) {
-            throw `subresourceName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`;
-        }
-
-        let resourceId = `/subscriptions/${subscriptionId}/resourceGroups/${resourceGroupName}/providers/${resourceTypeParts[0]}/${resourceTypeParts[1]}/${resourceName}`;
-        if (resourceTypeParts.length === 3) {
-            resourceId = `${resourceId}/${resourceTypeParts[2]}/${subresourceName}`;
-        }
-
-        return resourceId;
-    },
-    // resourceId: function () {
-    //     // This is using arguments because we want this to behave like the template function
-    //     let count = _.reduce(arguments, (accumulator, item, index) => {
-    //         if (item.indexOf('/') >= 0) {
-    //             accumulator++;
-    //         }
-
-    //         return accumulator;
-    //     }, 0);
-
-    //     if (count > 1) {
-    //         throw "Too many /";
-    //     }
-
-    //     let resourceTypeParameterIndex = _.findIndex(arguments, (value) => {
-    //         return value.indexOf('/') >= 0;
-    //     });
-
-    //     if (resourceTypeParameterIndex > 2) {
-    //         throw "InvalidTemplateResourceIdFunctionResourceTypeIndexPosition";
-    //     }
-
-    //     let resourceTypeParameterValue = _.trimEnd(arguments[resourceTypeParameterIndex], '/');
-    //     let resourceNameParameterValue = _.join(_.takeRight(arguments, arguments.length - (resourceTypeParameterIndex + 1)), '/');
-    //     if (arguments.length !== resourceTypeParameterIndex + _.split(resourceNameParameterValue, '/').length) {
-    //         throw `InvalidTemplateResourceIdFunctionResourceNameSegmentsCount: ${resourceTypeParameterValue}: ${_.split(resourceTypeParameterValue, '/').length - 1}`;
-    //     }
-
-    //     let resourceGroupId = utilities.getResourceGroupId(arguments, resourceTypeParameterIndex);
-    // },
-    // getResourceGroupId: function (parameterValues, resourceTypeParameterIndex) {
-    //     if (resourceTypeParameterIndex < 2) {
-    //         return resourceTypeParameterIndex === 0 ?
-
-    //     }
-    // },
     networking: {
         isValidIpAddress: function (value) {
             return ipAddressRegex.test(value);

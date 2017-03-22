@@ -1,5 +1,7 @@
 let _ = require('../lodashMixins.js');
 let v = require('./validation.js');
+let r = require('./resources.js');
+
 let validationMessages = require('./ValidationMessages.js');
 
 let routeTableSettingsDefaults = {
@@ -65,6 +67,9 @@ let routeTableSettingsValidations = {
 function transform(settings) {
     return {
         name: settings.name,
+        id: r.resourceId(settings.subscriptionId, settings.resourceGroupName, 'Microsoft.Network/routeTables', settings.name),
+        resourceGroupName: settings.resourceGroupName,
+        subscriptionId: settings.subscriptionId,
         properties: {
             routes: _.map(settings.routes, (value, index) => {
                 let result = {
@@ -85,9 +90,23 @@ function transform(settings) {
     };
 }
 
-exports.transform = function (settings) {
+exports.transform = function (settings, buildingBlockSettings) {
+    // Merge with our defaults
     let result = v.mergeAndValidate(settings, routeTableSettingsDefaults, routeTableSettingsValidations);
-    if (!result.validationErrors) {
+    // Process the subscription id and resource group from the building block settings
+    buildingBlockSettings = v.mergeAndValidate(buildingBlockSettings, {}, {
+        subscriptionId: v.validationUtilities.isNullOrWhitespace,
+        resourceGroupName: v.validationUtilities.isNullOrWhitespace,
+    });
+
+    // If we have validation errors anywhere, merge them for now?
+    // NOTE: We need to generalize this!
+    if ((result.validationErrors) || (buildingBlockSettings.validationErrors)) {
+        result.validationErrors = _.concat(result.validationErrors, buildingBlockSettings.validationErrors);
+    } else {
+        result = r.setupResources(result, buildingBlockSettings, (parentKey) => {
+            return ((parentKey === null) || (parentKey === "virtualNetworks"));
+        });
         result = transform(result);
     }
 
