@@ -1,4 +1,5 @@
 let _ = require('../lodashMixins.js');
+let validationMessages = require('./ValidationMessages.js');
 
 function getObject(collection, parentKey, stack, callback) {
   if (_.isPlainObject(collection)) {

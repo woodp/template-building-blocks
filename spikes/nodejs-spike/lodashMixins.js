@@ -1,4 +1,4 @@
-var _ = require('lodash').runInContext();
+let _ = require('lodash').runInContext();
 
 // Add some utility functions to lodash
 _.mixin({

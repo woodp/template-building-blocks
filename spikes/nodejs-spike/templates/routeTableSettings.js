@@ -70,6 +70,12 @@ function transform(settings) {
         id: r.resourceId(settings.subscriptionId, settings.resourceGroupName, 'Microsoft.Network/routeTables', settings.name),
         resourceGroupName: settings.resourceGroupName,
         subscriptionId: settings.subscriptionId,
+        subnets: _.transform(settings.virtualNetworks, (result, virtualNetwork) => {
+            _.each(virtualNetwork.subnets, (subnet) => {
+                result.push(r.resourceId(virtualNetwork.subscriptionId, virtualNetwork.resourceGroupName, 'Microsoft.Network/virtualNetworks/subnets',
+                    virtualNetwork.name, subnet.name));
+            })
+        }, []),
         properties: {
             routes: _.map(settings.routes, (value, index) => {
                 let result = {
@@ -91,24 +97,47 @@ function transform(settings) {
 }
 
 exports.transform = function (settings, buildingBlockSettings) {
+    // Settings is an array, so we need to loop through and validate all of them, and collect
+    let results = _.transform(settings, (result, setting, index) => {
+        let merged = v.mergeAndValidate(setting, routeTableSettingsDefaults, routeTableSettingsValidations);
+        if (merged.validationErrors) {
+            _.each(merged.validationErrors, (error) => {
+                error.name = `settings[${index}]${error.name}`;
+            });
+        }
+
+        result.push(merged);
+    }, []);
+
     // Merge with our defaults
-    let result = v.mergeAndValidate(settings, routeTableSettingsDefaults, routeTableSettingsValidations);
     // Process the subscription id and resource group from the building block settings
     buildingBlockSettings = v.mergeAndValidate(buildingBlockSettings, {}, {
         subscriptionId: v.validationUtilities.isNullOrWhitespace,
         resourceGroupName: v.validationUtilities.isNullOrWhitespace,
     });
 
-    // If we have validation errors anywhere, merge them for now?
-    // NOTE: We need to generalize this!
-    if ((result.validationErrors) || (buildingBlockSettings.validationErrors)) {
-        result.validationErrors = _.concat(result.validationErrors, buildingBlockSettings.validationErrors);
-    } else {
-        result = r.setupResources(result, buildingBlockSettings, (parentKey) => {
-            return ((parentKey === null) || (parentKey === "virtualNetworks"));
+    if (buildingBlockSettings.validationErrors) {
+        _.each(buildingBlockSettings.validationErrors, (error) => {
+            error.name = `buildingBlockSettings${error.name}`;
         });
-        result = transform(result);
     }
 
-    return result;
+    if (_.some(results, 'validationErrors') || (buildingBlockSettings.validationErrors)) {
+        results.push(buildingBlockSettings);
+        return _.transform(_.compact(results), (result, value) => {
+            if (value.validationErrors) {
+                result.validationErrors.push(value.validationErrors);
+            }
+        }, { validationErrors: [] });
+    }
+
+    results = _.transform(results, (result, setting) => {
+        setting = r.setupResources(setting, buildingBlockSettings, (parentKey) => {
+            return ((parentKey === null) || (parentKey === "virtualNetworks"));
+        });
+        setting = transform(setting);
+        result.push(setting);
+    }, []);
+
+    return results;
 };
