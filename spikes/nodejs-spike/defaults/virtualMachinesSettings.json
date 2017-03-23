@@ -1,0 +1,64 @@
+{
+  "vmCount": 1,
+  "namePrefix": "bb-dev",
+  "computerNamePrefix": "bb-dev",
+  "size": "Standard_DS4_v2",
+  "osType": "linux",
+  "adminUsername": "testuser",
+  "adminPassword": "AweS0me@PW",
+  "osAuthenticationType": "ssh",
+  "sshPublicKey": "sssssssssssssssssssssssssssssssssssssssssssssss",
+
+  "storageAccounts": {
+    "count": 3,
+    "skuType": "Premium_LRS"
+  },
+  "nics": [
+    {
+      "isPublic": "true",
+      "subnetName": "web",
+      "privateIPAllocationMethod": "Static",
+      "publicIPAllocationMethod": "Dynamic",
+      "startingIPAddress": "10.0.1.240",
+      "enableIPForwarding": true,
+      "domainNameLabelPrefix": "bb-dev-dns",
+      "dnsServers": [],
+      "isPrimary": "true"
+    }
+  ],
+  "imageReference": {
+    "publisher": "MicrosoftWindowsServer",
+    "offer": "WindowsServer",
+    "sku": "2012-R2-Datacenter",
+    "version": "latest"
+  },
+  "dataDisks": {
+    "count": 2,
+    "properties": {
+      "diskSizeGB": 127,
+      "caching": "None",
+      "createOption": "Empty"
+    }
+  },
+  "osDisk": {
+    "caching": "ReadWrite"
+  },
+  "extensions": [
+    {
+      "name": "malware",
+      "publisher": "Symantec",
+      "type": "SymantecEndpointProtection",
+      "typeHandlerVersion": "12.1",
+      "autoUpgradeMinorVersion": true,
+      "settingsConfigMapperUri": "https://raw.githubusercontent.com/mspnp/template-building-blocks/master/templates/resources/Microsoft.Compute/virtualMachines/extensions/vm-extension-passthrough-settings-mapper.json",
+      "settingsConfig": {},
+      "protectedSettingsConfig": {}
+    }
+  ],
+  "availabilitySet": {
+    "useExistingAvailabilitySet": "No",
+    "platformFaultDomainCount": 5,
+    "platformUpdateDomainCount": 3,
+    "name": "bb-dev-as"
+  }
+}

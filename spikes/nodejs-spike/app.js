@@ -1,13 +1,15 @@
 //import _ from 'lodash';
 
-var restify = require('restify');
+//var restify = require('restify');
 //var merge = require('lodash.merge');
 
 //var _ = require('lodash');
+
 var _ = require('./lodashMixins.js');
 var vmSettings = require('./templates/virtualMachineSettings.js');
 let vnetSettings = require('./templates/virtualNetworkSettings.js');
 let routeSettings = require('./templates/routeTableSettings.js');
+let storageSettings = require('./templates/storageSettings.js');
 
 // Add some utility functions to lodash
 // _.mixin({
@@ -179,11 +181,7 @@ var virtualMachinesSettingsDefaults = {
 };
 
 var virtualMachinesSettings = {
-  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
-  "contentVersion": "1.0.0.0",
-  "parameters": {
-    "virtualMachinesSettings": {
-      "value": {
+        "vmCount": 3,
         "namePrefix": "ra-single",
         "size": "Standard_DS10_v2",
         "imageReference": {
@@ -191,7 +189,7 @@ var virtualMachinesSettings = {
         },
         "adminUsername": "testuser",
         "adminPassword": "AweS0me@PW",
-        "osAuthenticationType": "password",
+        "osAuthenticationType": "ssh",
         "nics": [
           {
             "isPublic": "true",
@@ -206,34 +204,22 @@ var virtualMachinesSettings = {
           }
         ],
         "dataDisks": {
-          "count": 2,
+          "subscriptionId": "13321",
+          "resourceGroup": "abc",
+          "count": 3,
           "properties": {
-            "diskSizeGB": 128,
+            "diskSizeGB": 512,
             "caching": "None",
             "createOption": "Empty"
           }
         },
         "availabilitySet": {
+          "subscriptionId": "13321",
+          "resourceGroup": "abc",
           "useExistingAvailabilitySet": "No",
-          "name": ""
+          "name": "test-as"
         }
       }
-    },
-    "virtualNetworkSettings": {
-      "value": {
-        "name": "ra-single-vm-vnet",
-        "resourceGroup": "ra-single-vm-rg"
-      }
-    },
-    "buildingBlockSettings": {
-      "value": {
-        "storageAccountsCount": 1,
-        "vmCount": 1,
-        "vmStartIndex": 0
-      }
-    }
-  }
-}
 
 var routeTableSettings = {
     "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
@@ -531,8 +517,9 @@ function routeTableTests(req, res, next) {
   //     }
   //   ]
   // });
+}
 
-let settings = routeSettings.validateRequiredSettings({
+/*let settings = routeSettings.validateRequiredSettings({
     name: "route-rt",
     routes: [
       {
@@ -560,16 +547,24 @@ let settings = routeSettings.validateRequiredSettings({
     res.send(400, settings.missingFields);
   }
   next();
-}
-var server = restify.createServer();
-server.get('/hello/:name', respond);
-server.head('/hello/:name', respond);
-server.get('/parameters/:number', parameters);
-server.get('/routeTables', mapRouteTableSettings);
-server.get('/merge', objectMerge);
-server.get('/vnet', vnetTests);
-server.get('/routeTable', routeTableTests);
+}*/
 
-server.listen(8080, function() {
-  console.log('%s listening at %s', server.name, server.url);
-});
+
+//let storageParams = storageSettings.processStorageSettings("testname", "test", 3);
+
+
+let vmParams = vmSettings.processVirtualMachineSettings(virtualMachinesSettings);
+
+
+// var server = restify.createServer();
+// server.get('/hello/:name', respond);
+// server.head('/hello/:name', respond);
+// server.get('/parameters/:number', parameters);
+// server.get('/routeTables', mapRouteTableSettings);
+// server.get('/merge', objectMerge);
+// server.get('/vnet', vnetTests);
+// server.get('/routeTable', routeTableTests);
+
+// server.listen(8080, function() {
+//   console.log('%s listening at %s', server.name, server.url);
+// })
