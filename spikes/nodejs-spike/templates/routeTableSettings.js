@@ -96,8 +96,11 @@ function transform(settings) {
     };
 }
 
-exports.transform = function (settings, buildingBlockSettings) {
-    // Settings is an array, so we need to loop through and validate all of them, and collect
+exports.transform = function ({settings, buildingBlockSettings}) {
+    if (_.isPlainObject(settings)) {
+        settings = [settings];
+    }
+
     let results = _.transform(settings, (result, setting, index) => {
         let merged = v.mergeAndValidate(setting, routeTableSettingsDefaults, routeTableSettingsValidations);
         if (merged.validationErrors) {
@@ -109,8 +112,6 @@ exports.transform = function (settings, buildingBlockSettings) {
         result.push(merged);
     }, []);
 
-    // Merge with our defaults
-    // Process the subscription id and resource group from the building block settings
     buildingBlockSettings = v.mergeAndValidate(buildingBlockSettings, {}, {
         subscriptionId: v.validationUtilities.isNullOrWhitespace,
         resourceGroupName: v.validationUtilities.isNullOrWhitespace,
@@ -124,11 +125,13 @@ exports.transform = function (settings, buildingBlockSettings) {
 
     if (_.some(results, 'validationErrors') || (buildingBlockSettings.validationErrors)) {
         results.push(buildingBlockSettings);
-        return _.transform(_.compact(results), (result, value) => {
-            if (value.validationErrors) {
-                result.validationErrors.push(value.validationErrors);
-            }
-        }, { validationErrors: [] });
+        return {
+            validationErrors: _.transform(_.compact(results), (result, value) => {
+                if (value.validationErrors) {
+                    result.validationErrors.push(value.validationErrors);
+                }
+            }, { validationErrors: [] })
+        };
     }
 
     results = _.transform(results, (result, setting) => {
@@ -139,5 +142,5 @@ exports.transform = function (settings, buildingBlockSettings) {
         result.push(setting);
     }, []);
 
-    return results;
+    return { settings: results };
 };

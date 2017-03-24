@@ -58,39 +58,46 @@ let mergeCustomizer = function (objValue, srcValue, key, object, source, stack) 
     }
 };
 
-exports.transform = function (settings, buildingBlockSettings) {
-    // Settings is an array, so we need to loop through and validate all of them, and collect
+//const nameOf = varObj => Object.keys(varObj)[0];
+
+exports.transform = function ({ settings, buildingBlockSettings }) {
+    if (_.isPlainObject(settings)) {
+        settings = [settings];
+    }
+
     let results = _.transform(settings, (result, setting, index) => {
         let merged = v.mergeAndValidate(setting, virtualNetworkSettingsDefaults, virtualNetworkSettingsValidations, mergeCustomizer);
         if (merged.validationErrors) {
+            let name = v.utilities.nameOf({settings});
             _.each(merged.validationErrors, (error) => {
-                error.name = `settings[${index}]${error.name}`;
+                error.name = `${name}[${index}]${error.name}`;
             });
         }
 
         result.push(merged);
     }, []);
 
-    // Merge with our defaults
-    // Process the subscription id and resource group from the building block settings
     buildingBlockSettings = v.mergeAndValidate(buildingBlockSettings, {}, {
         subscriptionId: v.validationUtilities.isNullOrWhitespace,
         resourceGroupName: v.validationUtilities.isNullOrWhitespace,
     });
 
     if (buildingBlockSettings.validationErrors) {
+        let name = v.utilities.nameOf({buildingBlockSettings});
         _.each(buildingBlockSettings.validationErrors, (error) => {
-            error.name = `buildingBlockSettings${error.name}`;
+            error.name = `${name}${error.name}`;
         });
     }
 
     if (_.some(results, 'validationErrors') || (buildingBlockSettings.validationErrors)) {
         results.push(buildingBlockSettings);
-        return _.transform(_.compact(results), (result, value) => {
-            if (value.validationErrors) {
-                result.validationErrors.push(value.validationErrors);
-            }
-        }, { validationErrors: [] });
+        return {
+            validationErrors: _.transform(_.compact(results), (result, value) => {
+                if (value.validationErrors) {
+                    result.validationErrors.push(value.validationErrors);
+                }
+            }, { validationErrors: [] })
+        };
     }
 
     results = _.transform(results, (result, setting) => {
@@ -101,23 +108,5 @@ exports.transform = function (settings, buildingBlockSettings) {
         result.push(setting);
     }, []);
 
-    return results;
-    // let result = v.mergeAndValidate(settings, virtualNetworkSettingsDefaults, virtualNetworkSettingsValidations, mergeCustomizer);
-    // buildingBlockSettings = v.mergeAndValidate(buildingBlockSettings, {}, {
-    //     subscriptionId: v.validationUtilities.isNullOrWhitespace,
-    //     resourceGroupName: v.validationUtilities.isNullOrWhitespace,
-    // });
-
-    // // If we have validation errors anywhere, merge them for now?
-    // // NOTE: We need to generalize this!
-    // if ((result.validationErrors) || (buildingBlockSettings.validationErrors)) {
-    //     result.validationErrors = _.concat(result.validationErrors, buildingBlockSettings.validationErrors);
-    // } else {
-    //     result = r.setupResources(result, buildingBlockSettings, (parentKey) => {
-    //         return (parentKey === null);
-    //     });
-    //     result = transform(result);
-    // }
-
-    // return result;
+    return { settings: results };
 };
