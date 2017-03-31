@@ -1,4 +1,5 @@
 {
+  "vNet": "testvnet",
   "vmCount": 1,
   "namePrefix": "bb-dev",
   "computerNamePrefix": "bb-dev",
@@ -8,9 +9,9 @@
   "adminPassword": "AweS0me@PW",
   "osAuthenticationType": "ssh",
   "sshPublicKey": "sssssssssssssssssssssssssssssssssssssssssssssss",
-
   "storageAccounts": {
     "count": 3,
+    "accounts": ["abc","xyz"],
     "skuType": "Premium_LRS"
   },
   "nics": [
@@ -20,6 +21,16 @@
       "privateIPAllocationMethod": "Static",
       "publicIPAllocationMethod": "Dynamic",
       "startingIPAddress": "10.0.1.240",
+      "enableIPForwarding": true,
+      "domainNameLabelPrefix": "bb-dev-dns",
+      "dnsServers": [],
+      "isPrimary": "true"
+    },
+    {
+      "subnetName": "web",
+      "privateIPAllocationMethod": "Static",
+      "publicIPAllocationMethod": "Dynamic",
+      "startingIPAddress": "10.0.2.240",
       "enableIPForwarding": true,
       "domainNameLabelPrefix": "bb-dev-dns",
       "dnsServers": [],
@@ -45,14 +56,19 @@
   },
   "extensions": [
     {
-      "name": "malware",
-      "publisher": "Symantec",
-      "type": "SymantecEndpointProtection",
-      "typeHandlerVersion": "12.1",
+      "publisher": "Microsoft.Azure.Diagnostics",
+      "type": "IaaSDiagnostics",
+      "typeHandlerVersion": "1.5",
       "autoUpgradeMinorVersion": true,
-      "settingsConfigMapperUri": "https://raw.githubusercontent.com/mspnp/template-building-blocks/master/templates/resources/Microsoft.Compute/virtualMachines/extensions/vm-extension-passthrough-settings-mapper.json",
-      "settingsConfig": {},
-      "protectedSettingsConfig": {}
+      "settings": {
+        "xmlCfg": "[base64(variables('wadcfgx'))]",
+        "StorageAccount": "[parameters('source').diagnosticsStorageAccountName]"
+      },
+      "protectedSettings": {
+        "storageAccountName": "[parameters('source').diagnosticsStorageAccountName]",
+        "storageAccountKey": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('source').diagnosticsStorageAccountName),'2015-06-15').key1]",
+        "storageAccountEndPoint": "https://core.windows.net/"
+      }
     }
   ],
   "availabilitySet": {
