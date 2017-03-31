@@ -1,34 +1,51 @@
 let _ = require('../lodashMixins.js');
+let v = require('./validation.js');
+let r = require('./resources.js');
+let validationMessages = require('./validationMessages.js');
 
-let defaults = {
-    addressPrefixes: ["11.0.0.0/24"],
-    subnets: [{"default": "10.0.3.0/16"}],
-    dnsServers: [ "default.mysite.com" ]
+let virtualNetworkSettingsDefaults = {
+    addressPrefixes: ["10.0.0.0/24"],
+    subnets: [
+        {
+            name: "default",
+            addressPrefix: "10.0.1.0/16"
+        }
+    ],
+    dnsServers: []
 };
 
-function isNullOrWhitespace(result, parentKey, key, value) {
-    let retVal = !_.isNullOrWhitespace(value);
-    if (!retVal) {
-        result.push(_.join((parentKey ? [parentKey, key] : [key]), '.'));
-    }
+let virtualNetworkPeeringsSettingsDefaults = {
+    allowForwardedTraffic: false,
+    allowGatewayTransit: false,
+    useRemoteGateways: false
+}
 
-    return retVal;
+let virtualNetworkSettingsValidations = {
+    name: v.validationUtilities.isNullOrWhitespace,
+    addressPrefixes: v.validationUtilities.networking.isValidCidr,
+    subnets: (result, parentKey, key, value, parent) => {
+        let validations = {
+            name: v.validationUtilities.isNullOrWhitespace,
+            addressPrefix: v.validationUtilities.networking.isValidCidr
+        };
+
+        v.reduce(validations, value, parentKey, parent, result);
+    },
+    dnsServers: v.validationUtilities.isNullOrWhitespace,
+    virtualNetworkPeerings: (result, parentKey, key, value, parent) => {
+        let validations = {
+            remoteVirtualNetwork: (result, parentKey, key, value, parent) => {
+                name: v.validationUtilities.isNullOrWhitespace
+            }
+        }
+    }
 };
 
-let cidrRegex = /^(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(?:\/([0-9]|[1-2][0-9]|3[0-2]))$/;
-function isValidCidr(value) {
-    return cidrRegex.test(value);
-}
-
-function validateCidr(result, parentKey, key, value) {
-    if (!isValidCidr(value)) {
-        result.push(_.join((parentKey ? [parentKey, key] : [key]), '.'));
-    }
-}
-
-exports.transform = function (settings) {
+function transform(settings) {
     return {
         name: settings.name,
+        resourceGroupName: settings.resourceGroupName,
+        subscriptionId: settings.subscriptionId,
         properties: {
             addressSpace: {
                 addressPrefixes: settings.addressPrefixes
@@ -46,63 +63,63 @@ exports.transform = function (settings) {
     };
 }
 
-exports.validateRequiredSettings = function (settings) {
-    let validations = {
-        name: isNullOrWhitespace,
-        addressPrefixes: (result, parentKey, key, value) => {
-            if (_.isNil(value)) {
-                result.push(key);
-                return;
-            } else {
-                return _.reduce(value, (result, value, index) => {
-                    isNullOrWhitespace(result, key, key + '[' + index + ']', value);
-                    return result;
-                });
-            }
-        },
-        subnets: (result, parentKey, key, value) => {
-            let validations = {
-                name: isNullOrWhitespace,
-                addressPrefix: validateCidr
-            };
-
-            if (_.isNil(value)) {
-                result.push(key);
-            } else {
-                _.reduce(value, (result, subnet, index) => {
-                    _.reduce(validations, (result, validation, key) => {
-                        validation(result, 'subnets[' + index + ']', key, subnet[key]);
-                        return result;
-                    }, result);
-                    return result;
-                }, result);
-            }
-        },
-        dnsServers: (result, parentKey, key, value) => {
-            if (_.isNil(value)) {
-                result.push(key);
-            } else {
-                return _.reduce(value, (result, value, index) => {
-                    isNullOrWhitespace(result, key, key + '[' + index + ']', value);
-                    return result;
-                });
-            }
+let mergeCustomizer = function (objValue, srcValue, key, object, source, stack) {
+    if (key === "subnets") {
+        if ((srcValue) && (_.isArray(srcValue)) && (srcValue.length > 0)) {
+            return srcValue;
         }
-    };
+    }
+};
 
-    settings = _.merge({}, defaults, settings);
-    // if (_.isNil(settings)) {
-    //     throw new Error('settings cannot be null or undefined');
-    // }
+//const nameOf = varObj => Object.keys(varObj)[0];
 
-    let missingFields = _.reduce(validations, function(result, validation, key) {
-        validation(result, '', key, settings[key]);
-        return result;
-    }, []);
-
-    if (missingFields.length > 0) {
-        throw new Error('Missing fields: ' + _.join(missingFields, ','));
+exports.transform = function ({ settings, buildingBlockSettings }) {
+    if (_.isPlainObject(settings)) {
+        settings = [settings];
     }
 
-    return settings;
+    let results = _.transform(settings, (result, setting, index) => {
+        let merged = v.mergeAndValidate(setting, virtualNetworkSettingsDefaults, virtualNetworkSettingsValidations, mergeCustomizer);
+        if (merged.validationErrors) {
+            let name = v.utilities.nameOf({settings});
+            _.each(merged.validationErrors, (error) => {
+                error.name = `${name}[${index}]${error.name}`;
+            });
+        }
+
+        result.push(merged);
+    }, []);
+
+    buildingBlockSettings = v.mergeAndValidate(buildingBlockSettings, {}, {
+        subscriptionId: v.validationUtilities.isNullOrWhitespace,
+        resourceGroupName: v.validationUtilities.isNullOrWhitespace,
+    });
+
+    if (buildingBlockSettings.validationErrors) {
+        let name = v.utilities.nameOf({buildingBlockSettings});
+        _.each(buildingBlockSettings.validationErrors, (error) => {
+            error.name = `${name}${error.name}`;
+        });
+    }
+
+    if (_.some(results, 'validationErrors') || (buildingBlockSettings.validationErrors)) {
+        results.push(buildingBlockSettings);
+        return {
+            validationErrors: _.transform(_.compact(results), (result, value) => {
+                if (value.validationErrors) {
+                    result.validationErrors.push(value.validationErrors);
+                }
+            }, { validationErrors: [] })
+        };
+    }
+
+    results = _.transform(results, (result, setting) => {
+        setting = r.setupResources(setting, buildingBlockSettings, (parentKey) => {
+            return ((parentKey === null) || (parentKey === "remoteVirtualNetwork"));
+        });
+        setting = transform(setting);
+        result.push(setting);
+    }, []);
+
+    return { settings: results };
 };

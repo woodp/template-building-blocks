@@ -1,53 +1,82 @@
 let _ = require('../lodashMixins.js');
-//import * as validationMessages from '../ValidationMessages';
-let validationMessages = require('./ValidationMessages.js');
+let v = require('./validation.js');
+let r = require('./resources.js');
 
-let defaults = {
+let validationMessages = require('./validationMessages.js');
+
+let routeTableSettingsDefaults = {
     routes: []
 };
 
-function isNullOrWhitespace(result, parentKey, key, value) {
-    let retVal = !_.isNullOrWhitespace(value);
-    if (!retVal) {
-        //result.concat(_.join([parentKey, key], '.'));
-        result.push(_.join((parentKey ? [parentKey, key] : [key]), '.'));
-    }
+let routeTableSettingsValidations = {
+    name: v.validationUtilities.isNullOrWhitespace,
+    routes: (result, parentKey, key, value, parent) => {
+        let validations = {
+            name: v.validationUtilities.isNullOrWhitespace,
+            addressPrefix: v.validationUtilities.networking.validateCidr,
+            nextHopType: (result, parentKey, key, value, parent) => {
+                if (_.isNullOrWhitespace(value)) {
+                    result.push({
+                        name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
+                        message: validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace
+                    });
+                } else {
+                    // Go ahead and calculate this so we don't have to put it everywhere
+                    parentKey = _.join(_.initial(_.split(parentKey, '.')), '.');
+                    switch (value) {
+                        case 'VirtualNetworkGateway':
+                        case 'VnetLocal':
+                        case 'Internet':
+                        case 'HyperNetGateway':
+                        case 'None':
+                            if (parent.hasOwnProperty('nextHopIpAddress')) {
+                                result.push({
+                                    name: _.join((parentKey ? [parentKey, 'nextHopIpAddress'] : ['nextHopIpAddress']), '.'),
+                                    message: validationMessages.routeTable.routes.NextHopIpAddressCannotBePresent
+                                });
+                            }
+                            break;
+                        case 'VirtualAppliance':
+                            if (_.isNullOrWhitespace(parent.nextHopIpAddress)) {
+                                result.push({
+                                    name: _.join((parentKey ? [parentKey, 'nextHopIpAddress'] : ['nextHopIpAddress']), '.'),
+                                    message: validationMessages.routeTable.routes.NextHopIpAddressMustBePresent
+                                });
+                            } else if (!v.utilities.networking.isValidIpAddress(parent.nextHopIpAddress)) {
+                                result.push({
+                                    name: _.join((parentKey ? [parentKey, 'nextHopIpAddress'] : ['nextHopIpAddress']), '.'),
+                                    message: validationMessages.InvalidIpAddress
+                                });
+                            }
+                            break;
+                        default:
+                            result.push({
+                                name: _.join((parentKey ? [parentKey, 'nextHopType'] : ['nextHopType']), '.'),
+                                message: validationMessages.routeTable.routes.InvalidNextHopType
+                            })
+                            break;
+                    }
+                }
+            }
+        }
 
-    return retVal;
+        v.reduce(validations, value, parentKey, parent, result);
+    }
 };
 
-let cidrRegex = /^(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(?:\/([0-9]|[1-2][0-9]|3[0-2]))$/;
-function isValidCidr(value) {
-    return cidrRegex.test(value);
-}
-
-function validateCidr(result, parentKey, key, value) {
-    if (!isValidCidr(value)) {
-        result.push({
-            name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-            message: validationMessages.InvalidCidr
-        })
-    }
-}
-
-let ipAddressRegex = /^(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/;
-
-function isValidIpAddress(value) {
-    return ipAddressRegex.test(value);
-}
-
-// function validateIpAddress(result, parentKey, key, value) {
-//     if (!isValidCidr(value)) {
-//         result.push({
-//             name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-//             message: validationMessages.InvalidIpAddress
-//         })
-//     }
-// }
-
-exports.transform = function (settings) {
+function transform(settings) {
     return {
         name: settings.name,
+        id: r.resourceId(settings.subscriptionId, settings.resourceGroupName, 'Microsoft.Network/routeTables', settings.name),
+        resourceGroupName: settings.resourceGroupName,
+        subscriptionId: settings.subscriptionId,
+        subnets: _.transform(settings.virtualNetworks, (result, virtualNetwork) => {
+            _.each(virtualNetwork.subnets, (subnet) => {
+                result.push(r.resourceId(virtualNetwork.subscriptionId, virtualNetwork.resourceGroupName, 'Microsoft.Network/virtualNetworks/subnets',
+                    virtualNetwork.name, subnet));
+                    //virtualNetwork.name, subnet.name));
+            })
+        }, []),
         properties: {
             routes: _.map(settings.routes, (value, index) => {
                 let result = {
@@ -68,113 +97,51 @@ exports.transform = function (settings) {
     };
 }
 
-function reduceArray(array, validations, parentKey, accumulator) {
-    if (_.isNil(array)) {
-        accumulator.push({
-            name: parentKey,
-            message: validationMessages.ArrayCannotBeNull
-        });
-    } else {
-        _.reduce(array, (accumulator, item, index, array) => {
-            _.reduce(validations, (accumulator, validation, key) => {
-                validation(accumulator, `${parentKey}[${index}]`, key, item[key], item);
-                return accumulator;
-            }, accumulator);
-            return accumulator;
-        }, accumulator);
+exports.transform = function ({settings, buildingBlockSettings}) {
+    if (_.isPlainObject(settings)) {
+        settings = [settings];
     }
-}
 
-exports.validateRequiredSettings = function (settings) {
-    let validations = {
-        name: isNullOrWhitespace,
-        routes: (result, parentKey, key, value, parent) => {
-            let validations = {
-                name: isNullOrWhitespace,
-                addressPrefix: validateCidr,
-                nextHopType: (result, parentKey, key, value, route) => {
-                    if (_.isNullOrWhitespace(value)) {
-                        result.push({
-                            name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-                            message: validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace
-                        });
-                    } else {
-                        switch (value) {
-                            case 'VirtualNetworkGateway':
-                            case 'VnetLocal':
-                            case 'Internet':
-                            case 'HyperNetGateway':
-                            case 'None':
-                                if (route.hasOwnProperty('nextHopIpAddress')) {
-                                    //result.push(_.join((parentKey ? [parentKey, 'nextHopIpAddress'] : ['nextHopIpAddress']), '.'));
-                                    result.push({
-                                        name: _.join((parentKey ? [parentKey, 'nextHopIpAddress'] : ['nextHopIpAddress']), '.'),
-                                        message: validationMessages.routeTable.routes.NextHopIpAddressCannotBePresent
-                                    });
-                                }
-                                break;
-                            case 'VirtualAppliance':
-                                if (_.isNullOrWhitespace(route.nextHopIpAddress)) {
-                                    result.push({
-                                        name: _.join((parentKey ? [parentKey, 'nextHopIpAddress'] : ['nextHopIpAddress']), '.'),
-                                        message: validationMessages.routeTable.routes.NextHopIpAddressMustBePresent
-                                    });
-                                } else if (!isValidIpAddress(route.nextHopIpAddress)) {
-                                    result.push({
-                                        name: _.join((parentKey ? [parentKey, 'nextHopIpAddress'] : ['nextHopIpAddress']), '.'),
-                                        message: validationMessages.InvalidIpAddress
-                                    });
-                                }
-                                break;
-                            default:
-                                //result.push(_.join((parentKey ? [parentKey, key] : [key]), '.'));
-                                result.push({
-                                    name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-                                    message: validationMessages.routeTable.routes.InvalidNextHopType
-                                })
-                                break;
-                        }
-                    }
-                }
-            }
-
-            reduceArray(value, validations, 'routes', result);
-            // if (_.isNil(value)) {
-            //     result.push(key);
-            // } else {
-            //     _.reduce(value, (result, route, index) => {
-            //         _.reduce(validations, (result, validation, key) => {
-            //             validation(result, `routes[${index}]`, key, route[key], route);
-            //             return result;
-            //         }, result);
-            //         return result;
-            //     }, result);
-            // }
+    let results = _.transform(settings, (result, setting, index) => {
+        let merged = v.mergeAndValidate(setting, routeTableSettingsDefaults, routeTableSettingsValidations);
+        if (merged.validationErrors) {
+            _.each(merged.validationErrors, (error) => {
+                error.name = `settings[${index}]${error.name}`;
+            });
         }
-    };
 
-    settings = _.merge({}, defaults, settings);
-    // if (_.isNil(settings)) {
-    //     throw new Error('settings cannot be null or undefined');
-    // }
-
-    let missingFields = _.reduce(validations, function(result, validation, key) {
-        validation(result, '', key, settings[key], settings);
-        return result;
+        result.push(merged);
     }, []);
 
-    // if (missingFields.length > 0) {
-    //     throw new Error('Missing fields: ' + _.join(missingFields, ','));
-    // }
+    buildingBlockSettings = v.mergeAndValidate(buildingBlockSettings, {}, {
+        subscriptionId: v.validationUtilities.isNullOrWhitespace,
+        resourceGroupName: v.validationUtilities.isNullOrWhitespace,
+    });
 
-    //return settings;
-    if (missingFields.length > 0) {
+    if (buildingBlockSettings.validationErrors) {
+        _.each(buildingBlockSettings.validationErrors, (error) => {
+            error.name = `buildingBlockSettings${error.name}`;
+        });
+    }
+
+    if (_.some(results, 'validationErrors') || (buildingBlockSettings.validationErrors)) {
+        results.push(buildingBlockSettings);
         return {
-            missingFields: missingFields
-        };
-    } else {
-        return {
-            settings: settings
+            validationErrors: _.transform(_.compact(results), (result, value) => {
+                if (value.validationErrors) {
+                    result.validationErrors.push(value.validationErrors);
+                }
+            }, { validationErrors: [] })
         };
     }
+
+    results = _.transform(results, (result, setting) => {
+        setting = r.setupResources(setting, buildingBlockSettings, (parentKey) => {
+            return ((parentKey === null) || (parentKey === "virtualNetworks"));
+        });
+        setting = transform(setting);
+        result.push(setting);
+    }, []);
+
+    return { settings: results };
 };
