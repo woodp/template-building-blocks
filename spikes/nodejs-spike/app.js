@@ -208,39 +208,56 @@ server.get('/routeTable', routeTableTests);
 let vmSettings = require('./templates/virtualMachineSettings.js');
 
 var virtualMachinesSettings = {
-  "vmCount": 4,
-  "namePrefix": "ra-single",
-  "size": "Standard_DS10_v2",
-  "imageReference": {
-    "version": "NOT LATEST"
+  "vmCount": 2,
+  "namePrefix": "test",
+  "computerNamePrefix": "test",
+  "osType": "linux",
+  "adminUsername": "adminUser",
+  "adminPassword": "",
+  "osAuthenticationType": "password",
+  "storageAccounts": {
+    "count": 3,
   },
-  "adminUsername": "testuser",
-  "adminPassword": "AweS0me@PW",
-  "osAuthenticationType": "ssh",
   "nics": [
-
+    {
+      "isPublic": "true",
+      "subnetName": "web",
+      "privateIPAllocationMethod": "Static",
+      "publicIPAllocationMethod": "Dynamic",
+      "startingIPAddress": "10.0.1.240",
+      "enableIPForwarding": true,
+      "domainNameLabelPrefix": "bb-dev-dns",
+      "dnsServers": [],
+      "isPrimary": "true"
+    },
+    {
+      "subnetName": "biz",
+      "privateIPAllocationMethod": "Static",
+      "publicIPAllocationMethod": "Dynamic",
+      "startingIPAddress": "10.0.2.240",
+      "enableIPForwarding": true,
+      "domainNameLabelPrefix": "bb-dev-dns",
+      "dnsServers": [],
+      "isPrimary": "true"
+    }
   ],
   "dataDisks": {
-    "subscriptionId": "13321",
-    "resourceGroup": "abc",
-    "count": 3,
+    "count": 2,
     "properties": {
-      "diskSizeGB": 512,
-      "caching": "None",
-      "createOption": "Empty"
+      "diskSizeGB": 127,
     }
   },
   "availabilitySet": {
-    "subscriptionId": "13321",
-    "resourceGroup": "abc",
     "useExistingAvailabilitySet": "No",
     "name": "test-as"
   }
-}
+};
 
 let buildingBlockSettings = {
   "resourceGroup": "rg1",
   "subscription": "testsub"
 }
+
+
 
 let vmParams = vmSettings.processVirtualMachineSettings(virtualMachinesSettings, buildingBlockSettings);

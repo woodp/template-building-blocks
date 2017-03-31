@@ -10,6 +10,7 @@
   "storageAccounts": {
     "count": 1,
     "skuType": "Premium_LRS",
+    "accounts": [],
     "managed": "true"
   },
   "nics": [
@@ -40,7 +41,7 @@
   },
   "osDisk": {
     "caching": "ReadWrite",
-    "createOption": "FromImage"   
+    "createOption": "FromImage"
   },
   "extensions": [
     {

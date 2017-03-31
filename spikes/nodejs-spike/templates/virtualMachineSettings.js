@@ -4,12 +4,13 @@ var storageSettings = require('./storageSettings.js');
 var nicSettings = require('./networkInterfaceSettings.js');
 var avSetSettings = require('./availabilitySetSettings.js');
 
-const defaultsFile = './nodejs-spike/defaults/virtualMachinesSettings.json';
+const defaultsPath = './nodejs-spike/defaults/virtualMachinesSettings.';
 
 let output = {};
 
 // merge with the defaults
 function mergeWithDefaults(settings) {
+    let defaultsFile = defaultsPath.concat(settings.osType, '.json');
     let defaults = JSON.parse(fs.readFileSync(defaultsFile, 'UTF-8'));
 
     // Merge with an empty object so we don't mutate our parameters.
