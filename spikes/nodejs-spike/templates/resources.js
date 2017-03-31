@@ -1,5 +1,6 @@
 let _ = require('../lodashMixins.js');
-let validationMessages = require('./ValidationMessages.js');
+let validation = require('./validation.js');
+let validationMessages = require('./validationMessages.js');
 
 function getObject(collection, parentKey, stack, callback) {
   if (_.isPlainObject(collection)) {
@@ -37,6 +38,10 @@ exports.resourceId = function(subscriptionId, resourceGroupName, resourceType, r
         throw `subscriptionId: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`;
     }
 
+    if (!validation.utilities.isGuid(subscriptionId)) {
+        throw `subscriptionId: ${validationMessages.StringIsNotAValidGuid}`;
+    }
+
     if (_.isNullOrWhitespace(resourceGroupName)) {
         throw `resourceGroupName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`;
     }
@@ -52,6 +57,11 @@ exports.resourceId = function(subscriptionId, resourceGroupName, resourceType, r
 
     if ((resourceTypeParts.length === 2) && (_.isNullOrWhitespace(resourceName))) {
         throw `resourceName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`;
+    }
+
+    // This is not strictly necessary, but could save from some misuse
+    if ((resourceTypeParts.length === 2) && (!_.isNullOrWhitespace(subresourceName))) {
+        throw `subresourceName: ${validationMessages.resources.SubresourceNameShouldNotBeSpecifiedForTopLevelResourceType}`;
     }
 
     if ((resourceTypeParts.length === 3) && (_.isNullOrWhitespace(subresourceName))) {

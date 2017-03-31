@@ -1,5 +1,5 @@
 let _ = require('../lodashMixins.js');
-let validationMessages = require('./ValidationMessages.js');
+let validationMessages = require('./validationMessages.js');
 
 function mergeAndValidate(settings, defaultSettings, validations, mergeCustomizer) {
 
@@ -59,9 +59,11 @@ function reduce(validations, value, parentKey, parentValue, accumulator) {
 let cidrRegex = /^(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(?:\/([0-9]|[1-2][0-9]|3[0-2]))$/;
 let ipAddressRegex = /^(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/;
 
+let guidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 let utilities = {
     nameOf: varObj => Object.keys(varObj)[0],
+    isGuid: (guid) => guidRegex.test(guid),
     networking: {
         isValidIpAddress: function (value) {
             return ipAddressRegex.test(value);

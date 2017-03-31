@@ -5,6 +5,62 @@ let virtualNetwork = require('./templates/virtualNetworkSettings.js');
 let routeTables = require('./templates/routeTableSettings.js');
 let r = require('./templates/resources.js');
 
+let virtualNetworkSettingsWithPeering = [
+  {
+    name: "my-virtual-network",
+    addressPrefixes: [
+      "10.0.0.0/16"
+    ],
+    subnets: [
+      {
+        name: "web",
+        addressPrefix: "10.0.1.0/24"
+      },
+      {
+        name: "biz",
+        addressPrefix: "10.0.2.0/24"
+      }
+    ],
+    dnsServers: [],
+    virtualNetworkPeerings: [
+      {
+        remoteVirtualNetwork: {
+          //name: "my-other-virtual-network"
+        },
+        allowForwardedTraffic: true,
+        allowGatewayTransit: true,
+        useRemoteGateways: false
+      },
+      {
+        remoteVirtualNetwork: {
+          name: "my-other-virtual-network"
+        },
+        allowForwardedTraffic: true,
+        allowGatewayTransit: true,
+        useRemoteGateways: false
+      }
+    ]
+  },
+  {
+    name: "my-other-virtual-network",
+    addressPrefixes: [
+      "10.0.0.0/16"
+    ],
+    subnets: [
+      {
+        name: "web",
+        addressPrefix: "10.0.1.0/24"
+      },
+      {
+        name: "biz",
+        addressPrefix: "10.0.2.0/24"
+      }
+    ],
+    dnsServers: [],
+    virtualNetworkPeerings: []
+  }
+];
+
 let virtualNetworkSettings = [
   {
     name: "my-virtual-network",
@@ -44,7 +100,8 @@ let virtualNetworkSettings = [
 
 function vnetTests(req, res, next) {
   let { settings, validationErrors } = virtualNetwork.transform({
-    settings: virtualNetworkSettings,
+    //settings: virtualNetworkSettings,
+    settings: virtualNetworkSettingsWithPeering,
     buildingBlockSettings: {
       subscriptionId: "49741165-F4AF-456E-B47C-637AEAB82D50",
       resourceGroupName: "my-resource-group"
@@ -65,22 +122,11 @@ let routeTableSettings = [
       virtualNetworks: [
         {
           name: "my-virtual-network",
-          subnets: [
-            {
-              name: "web"
-            },
-            {
-              name: "biz"
-            }
-          ]
+          subnets: ["web", "biz"]
         },
         {
           name: "my-other-virtual-network",
-          subnets: [
-            {
-              name: "web"
-            }
-          ]
+          subnets: ["web"]
         }
       ],
       routes: [
@@ -109,22 +155,11 @@ let routeTableSettings2 = {
   virtualNetworks: [
     {
       name: "my-virtual-network",
-      subnets: [
-        {
-          name: "web"
-        },
-        {
-          name: "biz"
-        }
-      ]
+      subnets: ["web", "biz"]
     },
     {
       name: "my-other-virtual-network",
-      subnets: [
-        {
-          name: "web"
-        }
-      ]
+      subnets: ["web"]
     }
   ],
   routes: [
@@ -148,8 +183,10 @@ let routeTableSettings2 = {
 };
 
 function routeTableTests(req, res, next) {
+  routeTableSettings.push(routeTableSettings2);
   let { settings, validationErrors } = routeTables.transform({
-    settings: routeTableSettings2,
+    //settings: routeTableSettings2,
+    settings: routeTableSettings,
     buildingBlockSettings: {
       subscriptionId: "3b518fac-e5c8-4f59-8ed5-d70b626f8e10",
       resourceGroupName: "template-v2-rg"

@@ -1,7 +1,7 @@
 let _ = require('../lodashMixins.js');
 let v = require('./validation.js');
 let r = require('./resources.js');
-let validationMessages = require('./ValidationMessages.js');
+let validationMessages = require('./validationMessages.js');
 
 let virtualNetworkSettingsDefaults = {
     addressPrefixes: ["10.0.0.0/24"],
@@ -14,6 +14,12 @@ let virtualNetworkSettingsDefaults = {
     dnsServers: []
 };
 
+let virtualNetworkPeeringsSettingsDefaults = {
+    allowForwardedTraffic: false,
+    allowGatewayTransit: false,
+    useRemoteGateways: false
+}
+
 let virtualNetworkSettingsValidations = {
     name: v.validationUtilities.isNullOrWhitespace,
     addressPrefixes: v.validationUtilities.networking.isValidCidr,
@@ -25,7 +31,14 @@ let virtualNetworkSettingsValidations = {
 
         v.reduce(validations, value, parentKey, parent, result);
     },
-    dnsServers: v.validationUtilities.isNullOrWhitespace
+    dnsServers: v.validationUtilities.isNullOrWhitespace,
+    virtualNetworkPeerings: (result, parentKey, key, value, parent) => {
+        let validations = {
+            remoteVirtualNetwork: (result, parentKey, key, value, parent) => {
+                name: v.validationUtilities.isNullOrWhitespace
+            }
+        }
+    }
 };
 
 function transform(settings) {
@@ -102,7 +115,7 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
 
     results = _.transform(results, (result, setting) => {
         setting = r.setupResources(setting, buildingBlockSettings, (parentKey) => {
-            return (parentKey === null);
+            return ((parentKey === null) || (parentKey === "remoteVirtualNetwork"));
         });
         setting = transform(setting);
         result.push(setting);

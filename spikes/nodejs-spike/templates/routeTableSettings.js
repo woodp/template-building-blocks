@@ -2,7 +2,7 @@ let _ = require('../lodashMixins.js');
 let v = require('./validation.js');
 let r = require('./resources.js');
 
-let validationMessages = require('./ValidationMessages.js');
+let validationMessages = require('./validationMessages.js');
 
 let routeTableSettingsDefaults = {
     routes: []
@@ -73,7 +73,8 @@ function transform(settings) {
         subnets: _.transform(settings.virtualNetworks, (result, virtualNetwork) => {
             _.each(virtualNetwork.subnets, (subnet) => {
                 result.push(r.resourceId(virtualNetwork.subscriptionId, virtualNetwork.resourceGroupName, 'Microsoft.Network/virtualNetworks/subnets',
-                    virtualNetwork.name, subnet.name));
+                    virtualNetwork.name, subnet));
+                    //virtualNetwork.name, subnet.name));
             })
         }, []),
         properties: {

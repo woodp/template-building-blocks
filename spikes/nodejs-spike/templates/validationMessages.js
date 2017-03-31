@@ -1,7 +1,3 @@
-//const StringCannotBeNullUndefinedEmptyOrOnlyWhitespace = 'Field cannot be null, undefined, empty, or only whitespace';
-
-//export { StringCannotBeNullUndefinedEmptyOrOnlyWhitespace };
-//exports.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace = StringCannotBeNullUndefinedEmptyOrOnlyWhitespace;
 exports.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace = 'Field cannot be null, undefined, empty, or only whitespace';
 exports.StringIsNotAValidGuid = 'Value is not a valid GUID';
 exports.ValueCannotBeNull = 'Value cannot be null or undefined';
