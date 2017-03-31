@@ -2,7 +2,8 @@
   "name": "nodejs-spike",
   "version": "1.0.0",
   "dependencies": {
-    "lodash": "^4.17.4"
+    "lodash": "^4.17.4",
+    "murmurhash-native": "^3.2.0"
   },
   "devDependencies": {
     "gulp": "^3.9.1",

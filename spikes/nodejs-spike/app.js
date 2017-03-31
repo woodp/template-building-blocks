@@ -1,6 +1,5 @@
 let restify = require('restify');
 let validation = require('./templates/validation.js');
-let vmSettings = require('./templates/virtualMachineSettings.js');
 let virtualNetwork = require('./templates/virtualNetworkSettings.js');
 let routeTables = require('./templates/routeTableSettings.js');
 let r = require('./templates/resources.js');
@@ -206,6 +205,42 @@ var server = restify.createServer();
 server.get('/virtualNetwork', vnetTests);
 server.get('/routeTable', routeTableTests);
 
-server.listen(8080, function() {
-  console.log('%s listening at %s', server.name, server.url);
-});
+let vmSettings = require('./templates/virtualMachineSettings.js');
+
+var virtualMachinesSettings = {
+  "vmCount": 4,
+  "namePrefix": "ra-single",
+  "size": "Standard_DS10_v2",
+  "imageReference": {
+    "version": "NOT LATEST"
+  },
+  "adminUsername": "testuser",
+  "adminPassword": "AweS0me@PW",
+  "osAuthenticationType": "ssh",
+  "nics": [
+
+  ],
+  "dataDisks": {
+    "subscriptionId": "13321",
+    "resourceGroup": "abc",
+    "count": 3,
+    "properties": {
+      "diskSizeGB": 512,
+      "caching": "None",
+      "createOption": "Empty"
+    }
+  },
+  "availabilitySet": {
+    "subscriptionId": "13321",
+    "resourceGroup": "abc",
+    "useExistingAvailabilitySet": "No",
+    "name": "test-as"
+  }
+}
+
+let buildingBlockSettings = {
+  "resourceGroup": "rg1",
+  "subscription": "testsub"
+}
+
+let vmParams = vmSettings.processVirtualMachineSettings(virtualMachinesSettings, buildingBlockSettings);

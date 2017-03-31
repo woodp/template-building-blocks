@@ -1,0 +1,80 @@
+{
+  "vNet": "testvnet",
+  "vmCount": 1,
+  "namePrefix": "bb-dev",
+  "computerNamePrefix": "bb-dev",
+  "size": "Standard_DS4_v2",
+  "osType": "linux",
+  "adminUsername": "testuser",
+  "adminPassword": "AweS0me@PW",
+  "osAuthenticationType": "ssh",
+  "sshPublicKey": "sssssssssssssssssssssssssssssssssssssssssssssss",
+  "storageAccounts": {
+    "count": 3,
+    "accounts": ["abc","xyz"],
+    "skuType": "Premium_LRS"
+  },
+  "nics": [
+    {
+      "isPublic": "true",
+      "subnetName": "web",
+      "privateIPAllocationMethod": "Static",
+      "publicIPAllocationMethod": "Dynamic",
+      "startingIPAddress": "10.0.1.240",
+      "enableIPForwarding": true,
+      "domainNameLabelPrefix": "bb-dev-dns",
+      "dnsServers": [],
+      "isPrimary": "true"
+    },
+    {
+      "subnetName": "web",
+      "privateIPAllocationMethod": "Static",
+      "publicIPAllocationMethod": "Dynamic",
+      "startingIPAddress": "10.0.2.240",
+      "enableIPForwarding": true,
+      "domainNameLabelPrefix": "bb-dev-dns",
+      "dnsServers": [],
+      "isPrimary": "true"
+    }
+  ],
+  "imageReference": {
+    "publisher": "MicrosoftWindowsServer",
+    "offer": "WindowsServer",
+    "sku": "2012-R2-Datacenter",
+    "version": "latest"
+  },
+  "dataDisks": {
+    "count": 2,
+    "properties": {
+      "diskSizeGB": 127,
+      "caching": "None",
+      "createOption": "Empty"
+    }
+  },
+  "osDisk": {
+    "caching": "ReadWrite"
+  },
+  "extensions": [
+    {
+      "publisher": "Microsoft.Azure.Diagnostics",
+      "type": "IaaSDiagnostics",
+      "typeHandlerVersion": "1.5",
+      "autoUpgradeMinorVersion": true,
+      "settings": {
+        "xmlCfg": "[base64(variables('wadcfgx'))]",
+        "StorageAccount": "[parameters('source').diagnosticsStorageAccountName]"
+      },
+      "protectedSettings": {
+        "storageAccountName": "[parameters('source').diagnosticsStorageAccountName]",
+        "storageAccountKey": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('source').diagnosticsStorageAccountName),'2015-06-15').key1]",
+        "storageAccountEndPoint": "https://core.windows.net/"
+      }
+    }
+  ],
+  "availabilitySet": {
+    "useExistingAvailabilitySet": "No",
+    "platformFaultDomainCount": 5,
+    "platformUpdateDomainCount": 3,
+    "name": "bb-dev-as"
+  }
+}

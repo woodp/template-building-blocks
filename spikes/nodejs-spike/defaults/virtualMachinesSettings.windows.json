@@ -1,0 +1,63 @@
+{
+  "vmCount": 1,
+  "namePrefix": "test",
+  "computerNamePrefix": "test",
+  "size": "Standard_DS1_v2",
+  "osType": "windows",
+  "adminUsername": "adminUser",
+  "adminPassword": "",
+  "osAuthenticationType": "password",
+  "storageAccounts": {
+    "count": 1,
+    "skuType": "Premium_LRS",
+    "managed": "true"
+  },
+  "nics": [
+    {
+      "isPrimary": "true",
+      "subnetName": "default",
+      "privateIPAllocationMethod": "Dynamic",
+      "publicIPAllocationMethod": "Dynamic",
+      "startingIPAddress": "",
+      "enableIPForwarding": false,
+      "domainNameLabelPrefix": "",
+      "dnsServers": []
+    }
+  ],
+  "imageReference": {
+    "publisher": "MicrosoftWindowsServer",
+    "offer": "WindowsServer",
+    "sku": "2012-R2-Datacenter",
+    "version": "latest"
+  },
+  "dataDisks": {
+    "count": 0,
+    "properties": {
+      "diskSizeGB": 127,
+      "caching": "None",
+      "createOption": "Empty"
+    }
+  },
+  "osDisk": {
+    "caching": "ReadWrite",
+    "createOption": "FromImage"   
+  },
+  "extensions": [
+    {
+      "name": "malware",
+      "publisher": "Symantec",
+      "type": "SymantecEndpointProtection",
+      "typeHandlerVersion": "12.1",
+      "autoUpgradeMinorVersion": true,
+      "settingsConfigMapperUri": "https://raw.githubusercontent.com/mspnp/template-building-blocks/master/templates/resources/Microsoft.Compute/virtualMachines/extensions/vm-extension-passthrough-settings-mapper.json",
+      "settingsConfig": {},
+      "protectedSettingsConfig": {}
+    }
+  ],
+  "availabilitySet": {
+    "useExistingAvailabilitySet": "No",
+    "platformFaultDomainCount": 5,
+    "platformUpdateDomainCount": 3,
+    "name": "test-as"
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "vmCount": 1,
+  "namePrefix": "test",
+  "computerNamePrefix": "test",
+  "size": "Standard_DS1_v2",
+  "osType": "linux",
+  "adminUsername": "adminUser",
+  "adminPassword": "",
+  "osAuthenticationType": "password",
+  "storageAccounts": {
+    "count": 1,
+    "skuType": "Premium_LRS",
+    "managed": "true"
+  },
+  "nics": [
+    {
+      "isPrimary": "true",
+      "subnetName": "default",
+      "privateIPAllocationMethod": "Dynamic",
+      "publicIPAllocationMethod": "Dynamic",
+      "startingIPAddress": "",
+      "enableIPForwarding": false,
+      "domainNameLabelPrefix": "",
+      "dnsServers": []
+    }
+  ],
+  "imageReference": {
+    "publisher": "Canonical",
+    "offer": "UbuntuServer",
+    "sku": "14.04.5-LTS",
+    "version": "latest"
+  },
+  "dataDisks": {
+    "count": 0,
+    "properties": {
+      "diskSizeGB": 127,
+      "caching": "None",
+      "createOption": "Empty"
+    }
+  },
+  "osDisk": {
+    "caching": "ReadWrite",
+    "createOption": "FromImage"
+  },
+  "extensions": [],
+  "availabilitySet": {
+    "useExistingAvailabilitySet": "No",
+    "platformFaultDomainCount": 5,
+    "platformUpdateDomainCount": 3,
+    "name": "test-as"
+  }
+}

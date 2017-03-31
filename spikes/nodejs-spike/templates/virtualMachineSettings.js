@@ -1,154 +1,200 @@
-
-
-
-//var _ = require('lodash');
 var _ = require('../lodashMixins.js');
+var fs = require('fs');
+var storageSettings = require('./storageSettings.js');
+var nicSettings = require('./networkInterfaceSettings.js');
+var avSetSettings = require('./availabilitySetSettings.js');
 
-// function validate(pathValidations, result, value, key) {
-//     // Should we strip down the settings object to only be the fields we are checking?
-//     let func = pathValidations[key];
-//     if (validation && !func(value)) {
-//         //result.push(key);
-//         result.concat(key);
-//     }
+const defaultsFile = './nodejs-spike/defaults/virtualMachinesSettings.json';
 
-//     return result;
-// }
-function isNullOrWhitespace(result, parentKey, key, value) {
-    let retVal = !_.isNullOrWhitespace(value);
-    if (!retVal) {
-        //result.concat(_.join([parentKey, key], '.'));
-        result.push(_.join((parentKey ? [parentKey, key] : [key]), '.'));
-    }
+let output = {};
 
-    return retVal;
+// merge with the defaults
+function mergeWithDefaults(settings) {
+    let defaults = JSON.parse(fs.readFileSync(defaultsFile, 'UTF-8'));
+
+    // Merge with an empty object so we don't mutate our parameters.
+    return _.mergeWith(defaults, settings, defaultsCustomizer);
 };
 
-exports.validateRequiredSettings = function (settings) {
-    let pathValidations = {
-        "namePrefix": isNullOrWhitespace,
-        "computerNamePrefix": isNullOrWhitespace,
-        "adminUsername": isNullOrWhitespace,
-        "adminPassword": isNullOrWhitespace,
-        "imageReference": function (result, parentKey, key, value) {
-            let pathValidations = {
-                "publisher": isNullOrWhitespace,
-                "offer": isNullOrWhitespace,
-                "sku": isNullOrWhitespace,
-                "version": isNullOrWhitespace
-            };
-
-            if (_.isNil(value)) {
-                // Return an array of the key and it's value names
-                result.push(key);
-                _.forEach(_.map(_.keys(pathValidations), k => { return key + '.' + k }), v => { result.push(v) });
-                return;
-            }
-
-            return _.reduce(pathValidations, function(result, validation, key) {
-                // Should we strip down the settings object to only be the fields we are checking?
-                //let validation = pathValidations[key];
-                // if (validation && !validation(value)) {
-                //     //result.push(key);
-                //     result = result.concat(key);
-                // }
-                // return result;
-                validation(result, 'imageReference', key, value[key]);
-                return result;
-            }, result);
-            // return _.reduce(value, function(result, value, key) {
-            //     // Should we strip down the settings object to only be the fields we are checking?
-            //     let validation = pathValidations[key];
-            //     // if (validation && !validation(value)) {
-            //     //     //result.push(key);
-            //     //     result = result.concat(key);
-            //     // }
-            //     // return result;
-            //     if (validation) {
-            //         validation(result, 'imageReference', key, value);
-            //     }
-            //     return result;
-            // }, result);
-        },
-        //"osDisk": _.isNil,
-        //"osDisk.caching": isNullOrWhitespace
-        "osDisk": function (result, parentKey, key, value) {
-            let pathValidations = {
-                "caching": isNullOrWhitespace
-            };
-
-            if (_.isNil(value)) {
-                // Return an array of the key and it's value names
-                result.push(key);
-                _.forEach(_.map(_.keys(pathValidations), k => { return key + '.' + k }), v => { result.push(v) });
-                return;
-            }
-
-            return _.reduce(pathValidations, function(result, validation, key) {
-                validation(result, 'osDisk', key, value[key]);
-                return result;
-            }, result);
+// if nics and extensions are not specified in the parameters, use from defaults, else remove defaults
+function defaultsCustomizer(objValue, srcValue, key) {
+    if (key === "nics" || key === "extensions") {
+        if (_.isArray(srcValue) && srcValue.length > 0) {
+            objValue.splice(0, 1);
         }
-    };
-
-    if (_.isNil(settings)) {
-        throw new Error('settings cannot be null or undefined');
     }
+};
 
-    // var missingFields = [];
-    // if (_.isNullOrWhitespace(settings.computerNamePrefix)) {
-    //     missingFields.push('computerNamePrefix');
-    // }
+// TODO
+function validateParameters() {
 
-    let missingFields = _.reduce(pathValidations, function(result, validation, key) {
-        validation(result, '', key, settings[key]);
+}
+
+let processor = {
+    computerNamePrefix: (value, key, index, parent) => {
+        let temp = {};
+        temp.computerName = value.concat("-vm", index + 1);
+        return temp;
+    },
+    osType: (value, key, index, parent) => {
+        let temp = {};
+        let propName = value.concat("Configuration");
+        if (value === "linux" && parent.osAuthenticationType === "ssh") {
+            temp[propName] = {
+                "adminPassword": null,
+                "configuration": {
+                    "disablePasswordAuthentication": "true",
+                    "ssh": {
+                        "publicKeys": [
+                            {
+                                "path": '/home/'.concat(parent.adminUsername, '/.ssh/authorized_keys'),
+                                "keyData": parent.sshPublicKey
+                            }
+                        ]
+                    }
+                }
+            };
+
+            delete parent.sshPublicKey;
+        } else {
+            temp[propName] = {
+                "adminPassword": parent.adminPassword,
+                "configuration": null
+            };
+            delete parent.adminPassword;
+        }
+
+        delete parent.adminPassword;
+        delete parent.osAuthenticationType;
+        return temp;
+    },
+    osDisk: (value, key, index, parent) => {
+        let temp = { "osDisk": {} };
+        let storageAccounts = parent.storageAccounts;
+        output.storageAccounts.forEach((account) => {
+            storageAccounts.push(account.name);
+        });
+        let stroageAccountToUse = index % storageAccounts.length;
+
+        temp.osDisk.name = parent.name.concat('-os.vhd');
+        temp.osDisk.vhd = 'http://'.concat(storageAccounts[stroageAccountToUse], '.blob.core.windows.net/vhds/', parent.name, '-os.vhd');
+        temp.osDisk.createOption = value.createOption;
+        temp.osDisk.caching = value.caching;
+        return temp;
+    },
+    dataDisks: (value, key, index, parent) => {
+        let temp = { "dataDisks": [] };
+        let storageAccounts = parent.storageAccounts;
+        output.storageAccounts.forEach((account) => {
+            storageAccounts.push(account.name);
+        });
+        let stroageAccountToUse = index % storageAccounts.length;
+
+        for (let i = 0; i < value.count; i++) {
+            let instance = {};
+            instance.name = 'dataDisk'.concat(i + 1);
+            instance.diskSizeGB = value.properties.diskSizeGB;
+            instance.lun = i;
+            instance.vhd = 'http://'.concat(storageAccounts[stroageAccountToUse], '.blob.core.windows.net/vhds/', parent.name, '-dataDisk', (i + 1), '.vhd');
+            instance.caching = value.properties.caching;
+            instance.createOption = value.properties.createOption;
+
+            temp.dataDisks.push(instance);
+        }
+        return temp;
+    },
+
+    passThrough: (value, key, index) => {
+        let temp = {};
+        temp[key] = value;
+        return temp;
+    }
+}
+
+let storageAccountsProcessed = false;
+let availabilitySetProcessed = false;
+let processChildResources = {
+    storageAccounts: (value, key, index, parent) => {
+        if (!storageAccountsProcessed) {
+            let mergedCol = (output["storageAccounts"] || (output["storageAccounts"] = [])).concat(storageSettings.processStorageSettings(value, parent));
+            output.storageAccounts = mergedCol;
+            storageAccountsProcessed = true;
+        }
+        return value.accounts;
+    },
+    nics: (value, key, index, parent) => {
+        let col = nicSettings.processNetworkInterfaceSettings(value, parent, index);
+
+        let mergedCol = (output["nics"] || (output["nics"] = [])).concat(col.nics);
+        output["nics"] = mergedCol;
+        mergedCol = (output["pips"] || (output["pips"] = [])).concat(col.pips);
+        output["pips"] = mergedCol;
+
+        return _.transform(col.nics, (result, n) => {
+            let ref = { "properties": {} }
+            ref.id = "[resourceId('Microsoft.Network/networkInterfaces/".concat(n.name, "']");
+            ref.properties.primary = n.primary;
+            result.push(ref);
+            return result;
+        }, []);
+    },
+    availabilitySet: (value, key, index, parent) => {
+        if (!availabilitySetProcessed) {
+            let col = avSetSettings.processAvSetSettings(value, parent);
+
+            if (col.length > 0) {
+                output["availabilitySet"] = col;
+            }
+        }
+        let result = { "id": "" }
+        result.id = "[resourceId('Microsoft.Compute/availabilitySets/".concat(value.name, "']");
+        return result;
+    }
+}
+
+function processVMStamps(param) {
+    // resource template do not use the vmCount property. Remove from the template
+    let vmCount = param.vmCount;
+    delete param.vmCount;
+
+    // deep clone settings for the number of VMs required (vmCount)  
+    return _.transform(_.castArray(param), (result, n) => {
+        for (let i = 0; i < vmCount; i++) {
+            let stamp = _.cloneDeep(n);
+            stamp.name = n.namePrefix.concat("-vm", i + 1)
+
+            // delete namePrefix property since we wont need it anymore
+            delete stamp.namePrefix;
+            result.push(stamp);
+        }
         return result;
     }, []);
-    // let picked = _.pick(settings, _.keys(pathValidations));
-    // let missingFields = _.reduce(picked, function(result, value, key) {
-    //     // Should we strip down the settings object to only be the fields we are checking?
-    //     let validation = pathValidations[key];
-    //     // if (validation && !validation(value)) {
-    //     //     //result.push(key);
-    //     //     result = result.concat(key);
-    //     // }
-    //     if (validation) {
-    //         validation(result, '', key, value);
-    //     }
-    //     return result;
-    // }, []);
+}
 
-    if (missingFields.length > 0) {
-        throw new Error('Missing fields: ' + _.join(missingFields, ','));
-    }
+function processParameter(param, buildingBlockSettings) {
+    // Use resourceGroup and subscription from buildingblockSettings if not not provided in VM settings
+    param.resourceGroup = param.resourceGroup || buildingBlockSettings.resourceGroup;
+    param.subscription = param.subscription || buildingBlockSettings.subscription;
+
+    output.virtualMachines = _.transform(processVMStamps(param), (result, n, index, parent) => {
+        for (let prop in n) {
+            if (typeof processChildResources[prop] === 'function') {
+                n[prop] = processChildResources[prop](n[prop], prop, index, n);
+            }
+        }
+        result.push(_.transform(n, (inner, value, key, obj) => {
+            _.merge(inner, (typeof processor[key] === 'function') ? processor[key](value, key, index, obj) : processor["passThrough"](value, key, index, obj));
+            return inner;
+        }, {}));
+        return result;
+    }, [])
 };
 
-exports.mergeWithDefaults = function (settings) {
-    var defaults = {
-        "computerNamePrefix": "cn",
-        "size": "Standard_DS2_v2",
-        "osType": "windows",
-        "imageReference": {
-            "publisher": "MicrosoftWindowsServer",
-            "offer": "WindowsServer",
-            "sku": "2012-R2-Datacenter",
-            "version": "latest"
-        },
-        "osDisk": {
-            "caching": "ReadWrite"
-        },
-        "extensions": [ ]
-    };
+exports.processVirtualMachineSettings = function (vmSettings, buildingBlockSettings) {
+    let result = mergeWithDefaults(vmSettings);
 
-  // If defaults is nullish, there must not be defaults, so return the object.
-//   if (_.isNil(defaults)) {
-//     return object;
-//   }
+    validateParameters();
 
-  // Get the paths for all of the default values.
-  var keyPaths = _.paths(defaults);
-  // Pick only the values that have defaults, so we remove extra stuff
-  var picked = _.pick(settings, keyPaths);
-  // Merge with an empty object so we don't mutate our parameters.
-  return _.merge({}, defaults, picked);
-};
+    processParameter(result, buildingBlockSettings);
+    console.log(JSON.stringify(output));
+}
