@@ -1,0 +1,6 @@
+{
+    "useExistingAvailabilitySet": "No",
+    "platformFaultDomainCount": 5,
+    "platformUpdateDomainCount": 3,
+    "name": "default-as"
+}

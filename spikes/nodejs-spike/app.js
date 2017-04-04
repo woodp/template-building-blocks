@@ -3,6 +3,8 @@ let validation = require('./templates/validation.js');
 let virtualNetwork = require('./templates/virtualNetworkSettings.js');
 let routeTables = require('./templates/routeTableSettings.js');
 let r = require('./templates/resources.js');
+let avSet = require('./templates/availabilitySetSettings.js');
+
 
 let virtualNetworkSettingsWithPeering = [
   {
@@ -117,36 +119,36 @@ function vnetTests(req, res, next) {
 
 let routeTableSettings = [
   {
-      name: "route-rt",
-      virtualNetworks: [
-        {
-          name: "my-virtual-network",
-          subnets: ["web", "biz"]
-        },
-        {
-          name: "my-other-virtual-network",
-          subnets: ["web"]
-        }
-      ],
-      routes: [
-        {
-          name: "route1",
-          addressPrefix: "10.0.1.0/24",
-          nextHopType: "VnetLocal"
-        },
-        {
-          name: "route2",
-          addressPrefix: "10.0.2.0/24",
-          nextHopType: "VirtualNetworkGateway"
-        },
-        {
-          name: "route3",
-          addressPrefix: "10.0.3.0/24",
-          nextHopType: "VirtualAppliance",
-          nextHopIpAddress: "192.168.1.1"
-        }
-      ]
-    }
+    name: "route-rt",
+    virtualNetworks: [
+      {
+        name: "my-virtual-network",
+        subnets: ["web", "biz"]
+      },
+      {
+        name: "my-other-virtual-network",
+        subnets: ["web"]
+      }
+    ],
+    routes: [
+      {
+        name: "route1",
+        addressPrefix: "10.0.1.0/24",
+        nextHopType: "VnetLocal"
+      },
+      {
+        name: "route2",
+        addressPrefix: "10.0.2.0/24",
+        nextHopType: "VirtualNetworkGateway"
+      },
+      {
+        name: "route3",
+        addressPrefix: "10.0.3.0/24",
+        nextHopType: "VirtualAppliance",
+        nextHopIpAddress: "192.168.1.1"
+      }
+    ]
+  }
 ];
 
 let routeTableSettings2 = {
@@ -201,22 +203,23 @@ function routeTableTests(req, res, next) {
   next();
 }
 
-var server = restify.createServer();
-server.get('/virtualNetwork', vnetTests);
-server.get('/routeTable', routeTableTests);
+//var server = restify.createServer();
+// server.get('/virtualNetwork', vnetTests);
+// server.get('/routeTable', routeTableTests);
 
 let vmSettings = require('./templates/virtualMachineSettings.js');
 
 var virtualMachinesSettings = {
+  "vNetName": "testvnet",
   "vmCount": 2,
   "namePrefix": "test",
   "computerNamePrefix": "test",
   "osType": "linux",
   "adminUsername": "adminUser",
-  "adminPassword": "",
+  "adminPassword": "uuuuuuuu",
   "osAuthenticationType": "password",
   "storageAccounts": {
-    "count": 3,
+
   },
   "nics": [
     {
@@ -228,7 +231,7 @@ var virtualMachinesSettings = {
       "enableIPForwarding": true,
       "domainNameLabelPrefix": "bb-dev-dns",
       "dnsServers": [],
-      "isPrimary": "true"
+      "isPrimary": true
     },
     {
       "subnetName": "biz",
@@ -238,7 +241,7 @@ var virtualMachinesSettings = {
       "enableIPForwarding": true,
       "domainNameLabelPrefix": "bb-dev-dns",
       "dnsServers": [],
-      "isPrimary": "true"
+      "isPrimary": false
     }
   ],
   "dataDisks": {
@@ -255,9 +258,12 @@ var virtualMachinesSettings = {
 
 let buildingBlockSettings = {
   "resourceGroup": "rg1",
-  "subscription": "testsub"
+  "subscription": "76D54A21-DB2D-4BE5-AA87-806BD9AD08DD"
 }
 
-
+let { settings, validationErrors } = vmSettings.mergeAndValidate(virtualMachinesSettings);
+if(validationErrors) console.log(validationErrors);
+else console.log(settings);
 
 let vmParams = vmSettings.processVirtualMachineSettings(virtualMachinesSettings, buildingBlockSettings);
+console.log(vmParams);

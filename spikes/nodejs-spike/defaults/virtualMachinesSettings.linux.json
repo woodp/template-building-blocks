@@ -8,7 +8,7 @@
   "adminPassword": "",
   "osAuthenticationType": "password",
   "storageAccounts": {
-    "count": 2,
+
     "skuType": "Premium_LRS",
     "accounts": [],
     "managed": "true"

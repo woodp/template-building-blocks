@@ -1,10 +1,14 @@
 let _ = require('../lodashMixins.js');
 let validationMessages = require('./validationMessages.js');
 
-function mergeAndValidate(settings, defaultSettings, validations, mergeCustomizer) {
+function mergeAndValidate(settings, defaultSettings, validations, baseObjectSettings, mergeCustomizer) {
 
     settings = (mergeCustomizer ? _.mergeWith({}, defaultSettings, settings, mergeCustomizer) : _.merge({}, defaultSettings, settings));
-    let validationErrors = reduce(validations, settings, '', null, []);
+    
+    // if baseObjectSettings is null then merged setting is our root.
+    if(_.isNullOrWhitespace(baseObjectSettings)) baseObjectSettings = _.cloneDeep(settings);
+
+    let validationErrors = reduce(validations, settings, '', null, baseObjectSettings, []);
 
     if (validationErrors.length > 0) {
         return {
@@ -14,11 +18,11 @@ function mergeAndValidate(settings, defaultSettings, validations, mergeCustomize
         // return {
         //     settings: settings
         // };
-        return settings;
+        return {settings: settings};
     }
 }
 
-function reduce(validations, value, parentKey, parentValue, accumulator) {
+function reduce(validations, value, parentKey, parentValue, baseObjectSettings, accumulator) {
     if (_.isNil(value)) {
         accumulator.push({
             name: parentKey,
@@ -29,13 +33,13 @@ function reduce(validations, value, parentKey, parentValue, accumulator) {
         if (_.isArray(value)) {
             // The value is an array, so we need to iterate it and then reduce
             _.reduce(value, (accumulator, item, index) => {
-                reduce(validations, item, `${parentKey}[${index}]`, parentValue, accumulator);
+                reduce(validations, item, `${parentKey}[${index}]`, parentValue, baseObjectSettings, accumulator);
                 return accumulator;
             }, accumulator);
         } else {
             // The value is a plain object, so iterate the validations and run them against value[key]
             _.reduce(validations, (accumulator, validation, key) => {
-                reduce(validation, value[key], `${parentKey}.${key}`, value, accumulator);
+                reduce(validation, value[key], `${parentKey}.${key}`, value, baseObjectSettings, accumulator);
                 return accumulator;
             }, accumulator);
         }
@@ -44,12 +48,12 @@ function reduce(validations, value, parentKey, parentValue, accumulator) {
         // Otherwise, just call the validation
         if (_.isArray(value)) {
             _.reduce(value, (accumulator, item, index) => {
-                validations(accumulator, `${parentKey}[${index}]`, '', item, parentValue);
+                validations(accumulator, `${parentKey}[${index}]`, index, item, parentValue, baseObjectSettings);
                 return accumulator;
             }, accumulator);
         } else {
             // We're just a value
-            validations(accumulator, `${parentKey}`, '', value, parentValue);
+            validations(accumulator, `${parentKey}`, '', value, parentValue, baseObjectSettings);
         }
     }
 
@@ -92,6 +96,22 @@ let validationUtilities = {
                 })
             }
         }
+    },
+    isNumber: function (result, parentKey, key, value, parent) {
+        let retVal = _.isNumber(value);
+        if (!retVal) {
+            result.push(_.join((parentKey ? [parentKey, key] : [key]), '.'));
+        }
+
+        return retVal;
+    },
+    isBoolean: function (result, parentKey, key, value, parent) {
+        let retVal = _.isBoolean(value);
+        if (!retVal) {
+            result.push(_.join((parentKey ? [parentKey, key] : [key]), '.'));
+        }
+
+        return retVal;
     }
 };
 

@@ -3,33 +3,109 @@ var fs = require('fs');
 var storageSettings = require('./storageSettings.js');
 var nicSettings = require('./networkInterfaceSettings.js');
 var avSetSettings = require('./availabilitySetSettings.js');
+var resources = require('./resources.js');
+let v = require('./validation.js');
 
 const defaultsPath = './nodejs-spike/defaults/virtualMachinesSettings.';
 
 let output = {};
 
-// merge with the defaults
-function mergeWithDefaults(settings) {
+function mergeAndValidate(settings) {
     let defaultsFile = defaultsPath.concat(settings.osType, '.json');
     let defaults = JSON.parse(fs.readFileSync(defaultsFile, 'UTF-8'));
 
-    // Merge with an empty object so we don't mutate our parameters.
-    return _.mergeWith(defaults, settings, defaultsCustomizer);
-};
+    return v.mergeAndValidate(settings, defaults, virtualMachineValidations, "", defaultsCustomizer)
+}
 
 // if nics and extensions are not specified in the parameters, use from defaults, else remove defaults
 function defaultsCustomizer(objValue, srcValue, key) {
-    if (key === "nics" || key === "extensions") {
+    if (objValue && (key === "nics" || key === "extensions")) {
         if (_.isArray(srcValue) && srcValue.length > 0) {
             objValue.splice(0, 1);
         }
     }
-};
-
-// TODO
-function validateParameters() {
-
 }
+
+let virtualMachineValidations = {
+    vNetName: v.validationUtilities.isNullOrWhitespace,
+    vmCount: (result, parentKey, key, value, parent, baseObjectSettings) => {
+        if (!_.isNumber(value) || value < 1) {
+            result.push({
+                name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
+                message: "Value should be greater than 1."
+            })
+        }
+    },
+    namePrefix: v.validationUtilities.isNullOrWhitespace,
+    computerNamePrefix: (result, parentKey, key, value, parent, baseObjectSettings) => {
+        if (_.isNullOrWhitespace(value) || value.length >= 6) {
+            result.push({
+                name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
+                message: "Valid should not be more than 6 char long."
+            })
+        }
+    },
+    size: v.validationUtilities.isNullOrWhitespace,
+    osType: (result, parentKey, key, value, parent, baseObjectSettings) => {
+        if (_.isNullOrWhitespace(value) || (_.toLower(value) !== 'linux' && _.toLower(value) !== 'windows')) {
+            result.push({
+                name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
+                message: "Valid values are: 'linux', 'windows'."
+            })
+        }
+    },
+    adminUsername: v.validationUtilities.isNullOrWhitespace,
+    osAuthenticationType: (result, parentKey, key, value, parent, baseObjectSettings) => {
+        if (_.isNullOrWhitespace(value) || (_.toLower(value) !== 'ssh' && _.toLower(value) !== 'password')) {
+            result.push({
+                name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
+                message: "Valid values are: 'ssh', 'password'."
+            })
+        }
+        if (_.toLower(value) === 'ssh' && (!parent.hasOwnProperty('sshPublicKey') || _.isNullOrWhitespace(parent.sshPublicKey))) {
+            result.push({
+                name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
+                message: "'sshPublicKey' cannot be null, if osAuthenticationType is 'ssh'"
+            })
+        }
+        if (_.toLower(value) === 'password' && (!parent.hasOwnProperty('adminPassword') || _.isNullOrWhitespace(parent.adminPassword))) {
+            result.push({
+                name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
+                message: "'adminPassword' cannot be null, if osAuthenticationType is 'password'"
+            })
+        }
+    },
+    storageAccounts: (result, parentKey, key, value, parent, baseObjectSettings) => {
+        let { settings, validationErrors } = storageSettings.mergeAndValidate(value, baseObjectSettings);
+        if (validationErrors) {
+            validationErrors.forEach((error) => {
+                result.push(error);
+            });
+        } else {
+            baseObjectSettings.storageAccounts = settings;
+        }
+    },
+    nics: (result, parentKey, key, value, parent, baseObjectSettings) => {
+        let { settings, validationErrors } = nicSettings.mergeAndValidate(value, baseObjectSettings);
+        if (validationErrors) {
+            validationErrors.forEach((error) => {
+                result.push(error);
+            });
+        } else {
+            baseObjectSettings.nics[key] = settings;
+        }
+    },
+    availabilitySet: (result, parentKey, key, value, parent, baseObjectSettings) => {
+        let { settings, validationErrors } = avSetSettings.mergeAndValidate(value, baseObjectSettings);
+        if (validationErrors) {
+            validationErrors.forEach((error) => {
+                result.push(error);
+            });
+        } else {
+            baseObjectSettings.avSetSettings = settings;
+        }
+    }
+};
 
 let processor = {
     computerNamePrefix: (value, key, index, parent) => {
@@ -133,7 +209,8 @@ let processChildResources = {
 
         return _.transform(col.nics, (result, n) => {
             let ref = { "properties": {} }
-            ref.id = "[resourceId('Microsoft.Network/networkInterfaces/".concat(n.name, "']");
+
+            ref.id = resources.resourceId(n.subscription, n.resourceGroup, 'Microsoft.Network/networkInterfaces', n.name);
             ref.properties.primary = n.primary;
             result.push(ref);
             return result;
@@ -148,7 +225,8 @@ let processChildResources = {
             }
         }
         let result = { "id": "" }
-        result.id = "[resourceId('Microsoft.Compute/availabilitySets/".concat(value.name, "']");
+
+        result.id = resources.resourceId(value.subscription || parent.subscription, value.resourceGroup || parent.resourceGroup, 'Microsoft.Network/availabilitySets', value.name);
         return result;
     }
 }
@@ -191,11 +269,5 @@ function processParameter(param, buildingBlockSettings) {
     }, [])
 };
 
-exports.processVirtualMachineSettings = function (vmSettings, buildingBlockSettings) {
-    let result = mergeWithDefaults(vmSettings);
-
-    validateParameters();
-
-    processParameter(result, buildingBlockSettings);
-    console.log(JSON.stringify(output));
-}
+exports.processVirtualMachineSettings = processParameter;
+exports.mergeAndValidate = mergeAndValidate;

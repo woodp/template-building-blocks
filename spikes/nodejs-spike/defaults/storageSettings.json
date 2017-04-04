@@ -1,4 +1,4 @@
 {
-    "sku": "Premium_LRS",
+    "skuType": "Premium_LRS",
     "managed": "true"
 }

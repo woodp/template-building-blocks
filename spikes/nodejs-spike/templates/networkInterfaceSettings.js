@@ -2,6 +2,58 @@
 var fs = require('fs');
 var _ = require('../lodashMixins.js');
 var pipSettings = require('./pipSettings.js');
+var resources = require('./resources.js');
+let v = require('./validation.js');
+
+function mergeAndValidate(settings, baseObjectSettings) {
+    return v.mergeAndValidate(settings, {}, networkInterfaceValidations, baseObjectSettings)
+}
+
+let networkInterfaceValidations = {
+    enableIPForwarding: v.validationUtilities.isBoolean,
+    subnetName: v.validationUtilities.isNullOrWhitespace,
+    privateIPAllocationMethod: (result, parentKey, key, value, parent, baseObjectSettings) => {
+        if (_.isNullOrWhitespace(value) || (_.toLower(value) !== 'static' && _.toLower(value) !== 'dynamic')) {
+            result.push({
+                name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
+                message: "Valid values are: 'static', 'dymanic'."
+            })
+        };
+        if (_.toLower(value) === 'static' && !parent.hasOwnProperty('startingIPAddress')) {
+            result.push({
+                name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
+                message: "If privateIPAllocationMethod is static, the startingIPAddress cannot be null/empty"
+            })
+        }
+    },
+    publicIPAllocationMethod: (result, parentKey, key, value, parent, baseObjectSettings) => {
+        if (_.isNullOrWhitespace(value) || (_.toLower(value) !== 'static' && _.toLower(value) !== 'dynamic')) {
+            result.push({
+                name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
+                message: "Valid values are: 'static', 'dymanic'."
+            })
+        }
+    },
+    isPrimary: (result, parentKey, key, value, parent, baseObjectSettings) => {
+        if (_.isNullOrWhitespace(value) || !_.isBoolean(value)) {
+            result.push({
+                name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
+                message: "Valid values are: true, false."
+            })
+        };
+        let primaryNicCount = 0;
+        baseObjectSettings.nics.forEach((nic) => {
+            if (nic.isPrimary) primaryNicCount++;
+        })
+        if (primaryNicCount !== 1) {
+            result.push({
+                name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
+                message: "Virtual machine can have only 1 primary NetworkInterface."
+            })
+        }
+    }
+
+};
 
 function intToIP(int) {
     var part1 = int & 255;
@@ -52,13 +104,13 @@ function buildNetworkInterfaceParameters(settings, parent, vmIndex) {
             }
         };
 
-        instance.ipConfigurations[0].properties.subnet = n.subnetName;
+        instance.ipConfigurations[0].properties.subnet = resources.resourceId(n.subscription, n.resourceGroup, 'Microsoft.Network/virtualNetworks/subnets', parent.vNetName, n.subnetName);
 
         if (n.hasOwnProperty("publicIPAllocationMethod")) {
             let pip = createPipParameters(n);
             result.pips = result.pips.concat(pip);
 
-            instance.ipConfigurations[0].properties.publicIPAddress = { "id": "[resourceId('Microsoft.Network/publicIPAddresses','".concat(pip[0].name, "']") };
+            instance.ipConfigurations[0].properties.publicIPAddress = { "id": resources.resourceId(n.subscription, n.resourceGroup, 'Microsoft.Network/publicIPAddresses', pip[0].name) };
         };
         if (_.toLower(n.privateIPAllocationMethod) === 'static') {
             let updatedIp = intToIP(ipToInt(n.startingIPAddress) + vmIndex);
@@ -71,10 +123,5 @@ function buildNetworkInterfaceParameters(settings, parent, vmIndex) {
 
 function validate(namePrefix, skuType) { }
 
-exports.processNetworkInterfaceSettings = function (settings, parent, vmIndex) {
-    // TODO
-    validate(settings);
-
-    return buildNetworkInterfaceParameters(settings, parent, vmIndex);
-    // console.log(JSON.stringify(finalResult));
-}
+exports.processNetworkInterfaceSettings = buildNetworkInterfaceParameters;
+exports.mergeAndValidate = mergeAndValidate;
