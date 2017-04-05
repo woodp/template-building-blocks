@@ -4,10 +4,17 @@ var _ = require('../lodashMixins.js');
 let v = require('./validation.js');
 var murmurHash = require('murmurhash-native').murmurHash64
 
-const defaultsFile = './nodejs-spike/defaults/storageSettings.json';
+const storageDefaultsFile = './nodejs-spike/defaults/storageSettings.json';
+const diagDefaultsFile = './nodejs-spike/defaults/diagonisticStorageSettings.json';
 
-function mergeAndValidate(settings, baseObjectSettings) {
-    let defaults = JSON.parse(fs.readFileSync(defaultsFile, 'UTF-8'));
+function mergeAndValidate(settings, baseObjectSettings, key) {
+    let defaults;
+    if (key === 'storage') {
+        defaults = JSON.parse(fs.readFileSync(storageDefaultsFile, 'UTF-8'));
+    } else {
+        defaults = JSON.parse(fs.readFileSync(diagDefaultsFile, 'UTF-8'));
+    }
+
     return v.mergeAndValidate(settings, defaults, storageValidations, baseObjectSettings)
 }
 
@@ -61,18 +68,15 @@ function mergeWithDefaults(settings) {
 
 
 function createStamps(settings, parent) {
-    // Use resourceGroup and subscription from parent if not not specified
-    let stamp = {
-        "resourceGroup": settings.resourceGroup || parent.resourceGroup,
-        "subscription": settings.subscription || parent.subscription,
-        "kind": "Storage",
-        "sku": {
-            "name": settings.skuType
-        }
-    };
+    if (!settings.hasOwnProperty('resourceGroup')) {
+        settings.resourceGroup = parent.resourceGroup;
+    }
+    if (!settings.hasOwnProperty('subscription')) {
+        settings.subscription = parent.subscription;
+    }
 
     // deep clone settings for the number of VMs required (vmCount)  
-    return _.transform(_.castArray(stamp), (result, n) => {
+    return _.transform(_.castArray(settings), (result, n) => {
         for (let i = 0; i < settings.count - settings.accounts.length; i++) {
             result.push(_.cloneDeep(n));
         }
@@ -82,9 +86,16 @@ function createStamps(settings, parent) {
 
 function buildStorageParameters(settings, parent) {
     return _.transform(createStamps(settings, parent), (result, n, index) => {
-        let storageName = 'vm'.concat(getUniqueString(parent), 'st', (index + 1));
-        n.name = storageName;
-        result.push(n);
+        let temp = { "sku": {} };
+        let storageName = 'vm'.concat(getUniqueString(parent), n.nameSuffix, (index + 1));
+
+        temp.resourceGroup = n.resourceGroup;
+        temp.subscription = n.subscription;
+        temp.kind = 'Storage';
+        temp.sku.name = n.skuType;
+        temp.name = storageName;
+        result.push(temp);
+        
         return result;
     }, [])
 }

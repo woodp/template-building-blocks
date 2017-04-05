@@ -19,9 +19,21 @@ function mergeAndValidate(settings) {
 
 // if nics and extensions are not specified in the parameters, use from defaults, else remove defaults
 function defaultsCustomizer(objValue, srcValue, key) {
-    if (objValue && (key === "nics" || key === "extensions")) {
-        if (_.isArray(srcValue) && srcValue.length > 0) {
+    if (objValue && key === "nics") {
+        if (srcValue && _.isArray(srcValue) && srcValue.length > 0) {
             objValue.splice(0, 1);
+        }
+    }
+    if (objValue && key === "extensions") {
+        if (srcValue) {
+            srcValue.forEach((extension) => {
+                if (_.toLower(extension.type) === 'iaasdiagnostics') {
+                    objValue.splice(0, 1);
+                }
+                objValue.push(extension);
+            });
+            // we have processed all extensions from source. remove all. 
+            srcValue.splice(0, srcValue.length);
         }
     }
 }
@@ -76,13 +88,23 @@ let virtualMachineValidations = {
         }
     },
     storageAccounts: (result, parentKey, key, value, parent, baseObjectSettings) => {
-        let { settings, validationErrors } = storageSettings.mergeAndValidate(value, baseObjectSettings);
+        let { settings, validationErrors } = storageSettings.mergeAndValidate(value, baseObjectSettings, 'storage');
         if (validationErrors) {
             validationErrors.forEach((error) => {
                 result.push(error);
             });
         } else {
             baseObjectSettings.storageAccounts = settings;
+        }
+    },
+    diagonisticStorageAccounts: (result, parentKey, key, value, parent, baseObjectSettings) => {
+        let { settings, validationErrors } = storageSettings.mergeAndValidate(value, baseObjectSettings, 'diagonistic');
+        if (validationErrors) {
+            validationErrors.forEach((error) => {
+                result.push(error);
+            });
+        } else {
+            baseObjectSettings.diagonisticStorageAccounts = settings;
         }
     },
     nics: (result, parentKey, key, value, parent, baseObjectSettings) => {
@@ -102,12 +124,55 @@ let virtualMachineValidations = {
                 result.push(error);
             });
         } else {
-            baseObjectSettings.avSetSettings = settings;
+            baseObjectSettings.availabilitySet = settings;
         }
     }
 };
 
-let processor = {
+let processorProperties = {
+    extensions: (value, key, index, parent) => {
+        let processedExtensions = { "extensions": [] };
+        value.forEach((extension) => {
+            let temp = {};
+            temp.name = parent.name.concat('/', extension.name);
+            temp.publisher = extension.publisher;
+            temp.type = extension.type;
+            temp.typeHandlerVersion = extension.typeHandlerVersion;
+            temp.autoUpgradeMinorVersion = extension.autoUpgradeMinorVersion;
+
+            if ((_.toLower(extension.type) === 'iaasdiagnostics' || _.toLower(extension.type) === 'linuxdiagnostic') && extension.settingsConfig.hasOwnProperty('metricsclosing1')) {
+                temp.settings = {};
+                temp.protectedSettings = {};
+                let vmId = resources.resourceId(parent.subscription, parent.resourceGroup, 'Microsoft.Compute/virtualMachines', parent.name);
+
+                // get the diagonstic account name for the VM
+                let diagonisticAccounts = parent.diagonisticStorageAccounts;
+                output.diagonisticStorageAccounts.forEach((account) => {
+                    diagonisticAccounts.push(account.name);
+                });
+                let diagonisticAccountToUse = index % diagonisticAccounts.length;
+                let diagnosticAccountName = diagonisticAccounts[diagonisticAccountToUse];
+                let accountResourceId = resources.resourceId(parent.subscription, parent.resourceGroup, 'Microsoft.Storage/storageAccounts', diagnosticAccountName);
+                let xmlCfg = extension.settingsConfig.metricsstart.concat(extension.settingsConfig.metricscounters, extension.settingsConfig.metricsclosing1, vmId, extension.settingsConfig.metricsclosing2);
+                let base64XmlCfg = new Buffer(xmlCfg).toString('base64');
+
+                // build settings property for diagonistic extension
+                temp.settings.StorageAccount = diagnosticAccountName;
+                temp.settings.xmlCfg = base64XmlCfg.toString();
+
+                // build protectedSettings property for diagonistic extension
+                temp.protectedSettings.storageAccountName = diagnosticAccountName;
+                temp.protectedSettings.storageAccountEndPoint = "https://core.windows.net/";
+                temp.protectedSettings.storageAccountKey = "[listKeys('".concat(accountResourceId, "', '2015-06-15').key1]");
+            } else {
+                temp.settings = extension.settingsConfig;
+                temp.protectedSettings = extension.protectedSettingsConfig;
+            }
+
+            processedExtensions.extensions.push(temp);
+        })
+        return processedExtensions;
+    },
     computerNamePrefix: (value, key, index, parent) => {
         let temp = {};
         temp.computerName = value.concat("-vm", index + 1);
@@ -180,6 +245,20 @@ let processor = {
         }
         return temp;
     },
+    diagonisticStorageAccounts: (value, key, index, parent) => {
+        let temp = { "diagnosticsProfile": { "bootDiagnostics": {} } };
+        // get the diagonstic account name for the VM
+        let diagonisticAccounts = parent.diagonisticStorageAccounts;
+        output.diagonisticStorageAccounts.forEach((account) => {
+            diagonisticAccounts.push(account.name);
+        });
+        let diagonisticAccountToUse = index % diagonisticAccounts.length;
+        let diagnosticAccountName = diagonisticAccounts[diagonisticAccountToUse];
+
+        temp.diagnosticsProfile.bootDiagnostics.enabled = true;
+        temp.diagnosticsProfile.bootDiagnostics.storageUri = 'http://'.concat(diagnosticAccountName, '.blob.core.windows.net');
+        return temp;
+    },
 
     passThrough: (value, key, index) => {
         let temp = {};
@@ -190,6 +269,7 @@ let processor = {
 
 let storageAccountsProcessed = false;
 let availabilitySetProcessed = false;
+let diagonisticStorageAccountsProcessed = false;
 let processChildResources = {
     storageAccounts: (value, key, index, parent) => {
         if (!storageAccountsProcessed) {
@@ -197,6 +277,16 @@ let processChildResources = {
             output.storageAccounts = mergedCol;
             storageAccountsProcessed = true;
         }
+        // return account. VMs will need to use existing accounts and the new accounts. Outputs only has the list of new accounts.
+        return value.accounts;
+    },
+    diagonisticStorageAccounts: (value, key, index, parent) => {
+        if (!diagonisticStorageAccountsProcessed) {
+            let mergedCol = (output["diagonisticStorageAccounts"] || (output["diagonisticStorageAccounts"] = [])).concat(storageSettings.processStorageSettings(value, parent));
+            output.diagonisticStorageAccounts = mergedCol;
+            diagonisticStorageAccountsProcessed = true;
+        }
+        // return account. VMs will need to use existing accounts and the new accounts. Outputs only has the list of new accounts.
         return value.accounts;
     },
     nics: (value, key, index, parent) => {
@@ -262,11 +352,13 @@ function processParameter(param, buildingBlockSettings) {
             }
         }
         result.push(_.transform(n, (inner, value, key, obj) => {
-            _.merge(inner, (typeof processor[key] === 'function') ? processor[key](value, key, index, obj) : processor["passThrough"](value, key, index, obj));
+            _.merge(inner, (typeof processorProperties[key] === 'function') ? processorProperties[key](value, key, index, obj) : processorProperties["passThrough"](value, key, index, obj));
             return inner;
         }, {}));
         return result;
     }, [])
+
+    return output;
 };
 
 exports.processVirtualMachineSettings = processParameter;

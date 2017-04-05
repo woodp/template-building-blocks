@@ -6,6 +6,9 @@ let r = require('./templates/resources.js');
 let avSet = require('./templates/availabilitySetSettings.js');
 
 
+let s = "<WadCfg><DiagnosticMonitorConfiguration overallQuotaInMB=\"4096\"><DiagnosticInfrastructureLogs scheduledTransferPeriod=\"PT1M\" scheduledTransferLogLevelFilter=\"Warning\"/>";
+
+
 let virtualNetworkSettingsWithPeering = [
   {
     name: "my-virtual-network",
@@ -219,7 +222,6 @@ var virtualMachinesSettings = {
   "adminPassword": "uuuuuuuu",
   "osAuthenticationType": "password",
   "storageAccounts": {
-
   },
   "nics": [
     {
@@ -244,6 +246,18 @@ var virtualMachinesSettings = {
       "isPrimary": false
     }
   ],
+  "extensions": [
+    {
+      "name": "malware",
+      "publisher": "Symantec",
+      "type": "SymantecEndpointProtection",
+      "typeHandlerVersion": "12.1",
+      "autoUpgradeMinorVersion": true,
+      "settingsConfigMapperUri": "https://raw.githubusercontent.com/mspnp/template-building-blocks/master/templates/resources/Microsoft.Compute/virtualMachines/extensions/vm-extension-passthrough-settings-mapper.json",
+      "settingsConfig": {},
+      "protectedSettingsConfig": {}
+    }
+  ],
   "dataDisks": {
     "count": 2,
     "properties": {
@@ -262,8 +276,8 @@ let buildingBlockSettings = {
 }
 
 let { settings, validationErrors } = vmSettings.mergeAndValidate(virtualMachinesSettings);
-if(validationErrors) console.log(validationErrors);
-else console.log(settings);
+if (validationErrors) console.log(validationErrors);
 
-let vmParams = vmSettings.processVirtualMachineSettings(virtualMachinesSettings, buildingBlockSettings);
-console.log(vmParams);
+
+let vmParams = vmSettings.processVirtualMachineSettings(settings, buildingBlockSettings);
+console.log(JSON.stringify(vmParams));

@@ -6,7 +6,7 @@ function mergeAndValidate(settings, defaultSettings, validations, baseObjectSett
     settings = (mergeCustomizer ? _.mergeWith({}, defaultSettings, settings, mergeCustomizer) : _.merge({}, defaultSettings, settings));
     
     // if baseObjectSettings is null then merged setting is our root.
-    if(_.isNullOrWhitespace(baseObjectSettings)) baseObjectSettings = _.cloneDeep(settings);
+    if(_.isNullOrWhitespace(baseObjectSettings)) baseObjectSettings = settings;
 
     let validationErrors = reduce(validations, settings, '', null, baseObjectSettings, []);
 
