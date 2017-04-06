@@ -5,8 +5,12 @@ var pipSettings = require('./pipSettings.js');
 var resources = require('./resources.js');
 let v = require('./validation.js');
 
-function mergeAndValidate(settings, baseObjectSettings) {
-    return v.mergeAndValidate(settings, {}, networkInterfaceValidations, baseObjectSettings)
+function merge(settings) {
+    return settings;
+}
+
+function validate(settings, baseObjectSettings) {
+    return v.validate(settings, networkInterfaceValidations, baseObjectSettings)
 }
 
 let networkInterfaceValidations = {
@@ -77,7 +81,7 @@ function createPipParameters(parent) {
     return pipSettings.processPipSettings(parent);
 }
 
-function buildNetworkInterfaceParameters(settings, parent, vmIndex) {
+function process(settings, parent, vmIndex) {
     return _.transform(settings, (result, n, index) => {
         // add the name, resourceGroup & subscription to the input nic parameter, since we might need that for creating pip
         n.name = parent.name.concat('-nic', (index + 1));
@@ -121,7 +125,6 @@ function buildNetworkInterfaceParameters(settings, parent, vmIndex) {
     }, { "pips": [], "nics": [] })
 }
 
-function validate(namePrefix, skuType) { }
-
-exports.processNetworkInterfaceSettings = buildNetworkInterfaceParameters;
-exports.mergeAndValidate = mergeAndValidate;
+exports.processNetworkInterfaceSettings = process;
+exports.mergeWithDefaults = merge;
+exports.validateSettings = validate;

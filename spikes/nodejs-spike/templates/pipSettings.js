@@ -2,7 +2,11 @@
 var fs = require('fs');
 var _ = require('../lodashMixins.js');
 
-function buildPipParameters(parent) {
+function merge(settings) {
+    return settings;
+}
+
+function process(parent) {
     let instance = {
         "resourceGroup": parent.resourceGroup,
         "subscription": parent.subscription,
@@ -25,7 +29,5 @@ function buildPipParameters(parent) {
     }, []);
 }
 
-exports.processPipSettings = function (parent) {
-    return buildPipParameters(parent);
-    // console.log(JSON.stringify(finalResult));
-}
+exports.processPipSettings = process;
+exports.mergeWithDefaults = merge;

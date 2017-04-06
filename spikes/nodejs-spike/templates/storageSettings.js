@@ -7,15 +7,19 @@ var murmurHash = require('murmurhash-native').murmurHash64
 const storageDefaultsFile = './nodejs-spike/defaults/storageSettings.json';
 const diagDefaultsFile = './nodejs-spike/defaults/diagonisticStorageSettings.json';
 
-function mergeAndValidate(settings, baseObjectSettings, key) {
+function merge(settings, key) {
     let defaults;
-    if (key === 'storage') {
+    if (key === 'storageAccounts') {
         defaults = JSON.parse(fs.readFileSync(storageDefaultsFile, 'UTF-8'));
     } else {
         defaults = JSON.parse(fs.readFileSync(diagDefaultsFile, 'UTF-8'));
     }
 
-    return v.mergeAndValidate(settings, defaults, storageValidations, baseObjectSettings)
+    return v.merge(settings, defaults)
+}
+
+function validate(settings, baseObjectSettings) {
+    return v.validate(settings, storageValidations, baseObjectSettings)
 }
 
 let storageValidations = {
@@ -58,15 +62,6 @@ function getUniqueString(input) {
     return convertToBase32(0, 0, buffer);
 }
 
-function mergeWithDefaults(settings) {
-    if (!settings.hasOwnProperty("skuType") || _.isNullOrWhitespace(settings.skuType)) {
-
-        settings.skuType = defaults.sku;
-    }
-    return settings;
-};
-
-
 function createStamps(settings, parent) {
     if (!settings.hasOwnProperty('resourceGroup')) {
         settings.resourceGroup = parent.resourceGroup;
@@ -84,7 +79,7 @@ function createStamps(settings, parent) {
     }, []);
 }
 
-function buildStorageParameters(settings, parent) {
+function process(settings, parent) {
     return _.transform(createStamps(settings, parent), (result, n, index) => {
         let temp = { "sku": {} };
         let storageName = 'vm'.concat(getUniqueString(parent), n.nameSuffix, (index + 1));
@@ -95,12 +90,11 @@ function buildStorageParameters(settings, parent) {
         temp.sku.name = n.skuType;
         temp.name = storageName;
         result.push(temp);
-        
+
         return result;
     }, [])
 }
 
-function validate(settings) { }
-
-exports.processStorageSettings = buildStorageParameters;
-exports.mergeAndValidate = mergeAndValidate;
+exports.processStorageSettings = process;
+exports.mergeWithDefaults = merge;
+exports.validateSettings = validate;

@@ -1,25 +1,19 @@
 let _ = require('../lodashMixins.js');
 let validationMessages = require('./validationMessages.js');
 
-function mergeAndValidate(settings, defaultSettings, validations, baseObjectSettings, mergeCustomizer) {
+function merge(settings, defaultSettings, mergeCustomizer, childResources) {
 
-    settings = (mergeCustomizer ? _.mergeWith({}, defaultSettings, settings, mergeCustomizer) : _.merge({}, defaultSettings, settings));
-    
-    // if baseObjectSettings is null then merged setting is our root.
-    if(_.isNullOrWhitespace(baseObjectSettings)) baseObjectSettings = settings;
+    let mergedSettings = (mergeCustomizer ? _.mergeWith({}, defaultSettings, settings, mergeCustomizer) : _.merge({}, defaultSettings, settings));
+    if(_.isNil(childResources)) return mergedSettings;
 
-    let validationErrors = reduce(validations, settings, '', null, baseObjectSettings, []);
-
-    if (validationErrors.length > 0) {
-        return {
-            validationErrors: validationErrors
-        };
-    } else {
-        // return {
-        //     settings: settings
-        // };
-        return {settings: settings};
+    for(let key in childResources){
+        mergedSettings[key] = childResources[key](mergedSettings[key], key);
     }
+    return mergedSettings;
+}
+
+function validate(settings, validations, baseObjectSettings) { 
+    return reduce(validations, settings, '', null, baseObjectSettings, []);
 }
 
 function reduce(validations, value, parentKey, parentValue, baseObjectSettings, accumulator) {
@@ -117,5 +111,6 @@ let validationUtilities = {
 
 exports.utilities = utilities;
 exports.validationUtilities = validationUtilities;
-exports.mergeAndValidate = mergeAndValidate;
+exports.merge = merge;
+exports.validate = validate;
 exports.reduce = reduce;

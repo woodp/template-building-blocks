@@ -222,6 +222,7 @@ var virtualMachinesSettings = {
   "adminPassword": "uuuuuuuu",
   "osAuthenticationType": "password",
   "storageAccounts": {
+
   },
   "nics": [
     {
@@ -275,9 +276,12 @@ let buildingBlockSettings = {
   "subscription": "76D54A21-DB2D-4BE5-AA87-806BD9AD08DD"
 }
 
-let { settings, validationErrors } = vmSettings.mergeAndValidate(virtualMachinesSettings);
-if (validationErrors) console.log(validationErrors);
+let settings = vmSettings.mergeWithDefaults(virtualMachinesSettings);
+//if (validationErrors) console.log(validationErrors);
+console.log(JSON.stringify(settings));
 
+let validationErrors = vmSettings.validateSettings(settings);
+console.log(validationErrors);
 
 let vmParams = vmSettings.processVirtualMachineSettings(settings, buildingBlockSettings);
 console.log(JSON.stringify(vmParams));

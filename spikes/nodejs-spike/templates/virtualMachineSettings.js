@@ -10,11 +10,15 @@ const defaultsPath = './nodejs-spike/defaults/virtualMachinesSettings.';
 
 let output = {};
 
-function mergeAndValidate(settings) {
+function merge(settings) {
     let defaultsFile = defaultsPath.concat(settings.osType, '.json');
     let defaults = JSON.parse(fs.readFileSync(defaultsFile, 'UTF-8'));
 
-    return v.mergeAndValidate(settings, defaults, virtualMachineValidations, "", defaultsCustomizer)
+    return v.merge(settings, defaults, defaultsCustomizer, childResourceToMerge);
+}
+
+function validate(settings) {
+    return v.validate(settings, virtualMachineValidations, settings)
 }
 
 // if nics and extensions are not specified in the parameters, use from defaults, else remove defaults
@@ -27,12 +31,12 @@ function defaultsCustomizer(objValue, srcValue, key) {
     if (objValue && key === "extensions") {
         if (srcValue) {
             srcValue.forEach((extension) => {
-                if (_.toLower(extension.type) === 'iaasdiagnostics') {
+                if (_.toLower(extension.type) === 'iaasdiagnostics' || _.toLower(extension.type) === 'linuxdiagnostic') {
                     objValue.splice(0, 1);
                 }
                 objValue.push(extension);
             });
-            // we have processed all extensions from source. remove all. 
+            // we have processed all extensions from parameters file. 
             srcValue.splice(0, srcValue.length);
         }
     }
@@ -88,46 +92,41 @@ let virtualMachineValidations = {
         }
     },
     storageAccounts: (result, parentKey, key, value, parent, baseObjectSettings) => {
-        let { settings, validationErrors } = storageSettings.mergeAndValidate(value, baseObjectSettings, 'storage');
-        if (validationErrors) {
-            validationErrors.forEach((error) => {
-                result.push(error);
-            });
-        } else {
-            baseObjectSettings.storageAccounts = settings;
-        }
+        let validationErrors = storageSettings.validateSettings(value, baseObjectSettings);
+        validationErrors.forEach((error) => {
+            error.name = 'storageAccounts' + error.name;
+            result.push(error);
+        });
     },
     diagonisticStorageAccounts: (result, parentKey, key, value, parent, baseObjectSettings) => {
-        let { settings, validationErrors } = storageSettings.mergeAndValidate(value, baseObjectSettings, 'diagonistic');
-        if (validationErrors) {
-            validationErrors.forEach((error) => {
-                result.push(error);
-            });
-        } else {
-            baseObjectSettings.diagonisticStorageAccounts = settings;
-        }
+        let validationErrors = storageSettings.validateSettings(value, baseObjectSettings);
+        validationErrors.forEach((error) => {
+            error.name = 'diagonisticStorageAccounts' + error.name;
+            result.push(error);
+        });
     },
     nics: (result, parentKey, key, value, parent, baseObjectSettings) => {
-        let { settings, validationErrors } = nicSettings.mergeAndValidate(value, baseObjectSettings);
-        if (validationErrors) {
-            validationErrors.forEach((error) => {
-                result.push(error);
-            });
-        } else {
-            baseObjectSettings.nics[key] = settings;
-        }
+        let validationErrors = nicSettings.validateSettings(value, baseObjectSettings);
+        validationErrors.forEach((error) => {
+            error.name = 'nics' + error.name;
+            result.push(error);
+        });
     },
     availabilitySet: (result, parentKey, key, value, parent, baseObjectSettings) => {
-        let { settings, validationErrors } = avSetSettings.mergeAndValidate(value, baseObjectSettings);
-        if (validationErrors) {
-            validationErrors.forEach((error) => {
-                result.push(error);
-            });
-        } else {
-            baseObjectSettings.availabilitySet = settings;
-        }
+        let validationErrors = avSetSettings.validateSettings(value, baseObjectSettings);
+        validationErrors.forEach((error) => {
+            error.name = 'availabilitySet' + error.name;
+            result.push(error);
+        });
     }
 };
+
+let childResourceToMerge = {
+    storageAccounts: storageSettings.mergeWithDefaults,
+    diagonisticStorageAccounts: storageSettings.mergeWithDefaults,
+    nics: nicSettings.mergeWithDefaults,
+    availabilitySet: avSetSettings.mergeWithDefaults
+}
 
 let processorProperties = {
     extensions: (value, key, index, parent) => {
@@ -340,7 +339,7 @@ function processVMStamps(param) {
     }, []);
 }
 
-function processParameter(param, buildingBlockSettings) {
+function process(param, buildingBlockSettings) {
     // Use resourceGroup and subscription from buildingblockSettings if not not provided in VM settings
     param.resourceGroup = param.resourceGroup || buildingBlockSettings.resourceGroup;
     param.subscription = param.subscription || buildingBlockSettings.subscription;
@@ -361,5 +360,6 @@ function processParameter(param, buildingBlockSettings) {
     return output;
 };
 
-exports.processVirtualMachineSettings = processParameter;
-exports.mergeAndValidate = mergeAndValidate;
+exports.processVirtualMachineSettings = process;
+exports.mergeWithDefaults = merge;
+exports.validateSettings = validate;

@@ -5,10 +5,14 @@ let v = require('./validation.js');
 
 const defaultsPath = './nodejs-spike/defaults/availabilitySetSettings.json';
 
-function mergeAndValidate(settings, baseObjectSettings) {
+function merge(settings) {
   let defaults = JSON.parse(fs.readFileSync(defaultsPath, 'UTF-8'));
 
-  return v.mergeAndValidate(settings, defaults, availabilitySetValidations, baseObjectSettings)
+  return v.merge(settings, defaults)
+}
+
+function validate(settings, baseObjectSettings) {
+  return v.validate(settings, availabilitySetValidations, baseObjectSettings)
 }
 
 let availabilitySetValidations = {
@@ -25,7 +29,7 @@ let availabilitySetValidations = {
   name: v.validationUtilities.isNullOrWhitespace,
 };
 
-function buildAvSetParameters(settings, parent) {
+function process(settings, parent) {
   if (_.toLower(settings.useExistingAvailabilitySet) === "yes") {
     return [];
   }
@@ -43,5 +47,6 @@ function buildAvSetParameters(settings, parent) {
   return _.castArray(instance)
 }
 
-exports.processAvSetSettings = buildAvSetParameters;
-exports.mergeAndValidate = mergeAndValidate;
+exports.processAvSetSettings = process;
+exports.mergeWithDefaults = merge;
+exports.validateSettings = validate;
