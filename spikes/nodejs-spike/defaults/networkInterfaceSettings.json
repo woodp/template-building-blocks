@@ -1,0 +1,8 @@
+{
+    "isPublic": "false",
+    "privateIPAllocationMethod": "Dynamic",
+    "publicIPAllocationMethod": "Dynamic",
+    "enableIPForwarding": false,
+    "domainNameLabelPrefix": "",
+    "dnsServers": []
+}

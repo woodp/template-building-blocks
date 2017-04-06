@@ -229,21 +229,21 @@ var virtualMachinesSettings = {
       "isPublic": "true",
       "subnetName": "web",
       "privateIPAllocationMethod": "Static",
-      "publicIPAllocationMethod": "Dynamic",
+
       "startingIPAddress": "10.0.1.240",
-      "enableIPForwarding": true,
+
       "domainNameLabelPrefix": "bb-dev-dns",
-      "dnsServers": [],
+
       "isPrimary": true
     },
     {
       "subnetName": "biz",
       "privateIPAllocationMethod": "Static",
-      "publicIPAllocationMethod": "Dynamic",
+
       "startingIPAddress": "10.0.2.240",
       "enableIPForwarding": true,
-      "domainNameLabelPrefix": "bb-dev-dns",
-      "dnsServers": [],
+
+
       "isPrimary": false
     }
   ],
@@ -278,7 +278,7 @@ let buildingBlockSettings = {
 
 let settings = vmSettings.mergeWithDefaults(virtualMachinesSettings);
 //if (validationErrors) console.log(validationErrors);
-console.log(JSON.stringify(settings));
+//console.log(JSON.stringify(settings));
 
 let validationErrors = vmSettings.validateSettings(settings);
 console.log(validationErrors);

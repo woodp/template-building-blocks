@@ -5,8 +5,15 @@ var pipSettings = require('./pipSettings.js');
 var resources = require('./resources.js');
 let v = require('./validation.js');
 
+const defaultsPath = './nodejs-spike/defaults/networkInterfaceSettings.json';
+
 function merge(settings) {
-    return settings;
+  let defaultsStamp = JSON.parse(fs.readFileSync(defaultsPath, 'UTF-8'));
+  let defaults = [];
+  for(let i=0; i < settings.length; i++){
+      defaults.push(v.merge(settings[i], defaultsStamp));
+  }
+  return defaults;
 }
 
 function validate(settings, baseObjectSettings) {
