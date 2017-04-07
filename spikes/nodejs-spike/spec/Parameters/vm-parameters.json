@@ -1,0 +1,64 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "virtualMachinesSettings": {
+            "value": {
+                "vNetName": "testvnet",
+                "vmCount": 2,
+                "namePrefix": "test",
+                "computerNamePrefix": "test",
+                "osType": "linux",
+                "adminUsername": "adminUser",
+                "adminPassword": "uuuuuuuu",
+                "osAuthenticationType": "password",
+                "storageAccounts": {},
+                "nics": [
+                    {
+                        "isPublic": "true",
+                        "subnetName": "web",
+                        "privateIPAllocationMethod": "Static",
+                        "startingIPAddress": "10.0.1.240",
+                        "domainNameLabelPrefix": "bb-dev-dns",
+                        "isPrimary": true
+                    },
+                    {
+                        "subnetName": "biz",
+                        "privateIPAllocationMethod": "Static",
+                        "startingIPAddress": "10.0.2.240",
+                        "enableIPForwarding": true,
+                        "isPrimary": false
+                    }
+                ],
+                "extensions": [
+                    {
+                        "name": "malware",
+                        "publisher": "Symantec",
+                        "type": "SymantecEndpointProtection",
+                        "typeHandlerVersion": "12.1",
+                        "autoUpgradeMinorVersion": true,
+                        "settingsConfigMapperUri": "https://raw.githubusercontent.com/mspnp/template-building-blocks/master/templates/resources/Microsoft.Compute/virtualMachines/extensions/vm-extension-passthrough-settings-mapper.json",
+                        "settingsConfig": {},
+                        "protectedSettingsConfig": {}
+                    }
+                ],
+                "dataDisks": {
+                    "count": 2,
+                    "properties": {
+                        "diskSizeGB": 127
+                    }
+                },
+                "availabilitySet": {
+                    "useExistingAvailabilitySet": "No",
+                    "name": "test-as"
+                }
+            }
+        },
+        "buildingBlockSettings": {
+            "value": {
+                "resourceGroup": "rg1",
+                "subscription": "76D54A21-DB2D-4BE5-AA87-806BD9AD08DD"
+            }
+        }
+    }
+}

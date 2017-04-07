@@ -23,7 +23,7 @@
   },
   "nics": [
     {
-      "isPrimary": "true",
+      "isPrimary": true,
       "subnetName": "default",
       "privateIPAllocationMethod": "Dynamic",
       "publicIPAllocationMethod": "Dynamic",
