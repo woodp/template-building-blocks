@@ -357,7 +357,22 @@ function process(param, buildingBlockSettings) {
         return result;
     }, [])
 
-    return output;
+    return createTemplateParameters(output);
+};
+
+function createTemplateParameters(resources) {
+    let parameters = {
+        "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+        "contentVersion": "1.0.0.0",
+        "parameters": {
+
+        }
+    };
+    return _.transform(resources, (result, value, key, obj) => {
+       parameters[key] = {"value": []};
+       parameters[key].value = value;
+       return parameters;
+    }, parameters);
 };
 
 exports.processVirtualMachineSettings = process;
