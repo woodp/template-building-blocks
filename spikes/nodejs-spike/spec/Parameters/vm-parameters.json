@@ -4,13 +4,13 @@
     "parameters": {
         "virtualMachinesSettings": {
             "value": {
-                "vNetName": "testvnet",
+                "vNetName": "ra-multi-vm-vnet",
                 "vmCount": 2,
                 "namePrefix": "test",
                 "computerNamePrefix": "test",
-                "osType": "linux",
-                "adminUsername": "adminUser",
-                "adminPassword": "uuuuuuuu",
+                "osType": "windows",
+                "adminUsername": "admin",
+                "adminPassword": "Pag$1Lab1111",
                 "osAuthenticationType": "password",
                 "storageAccounts": {},
                 "nics": [

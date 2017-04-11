@@ -50,7 +50,7 @@
     "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('storageAccounts')), string(parameters('diagonisticStorageAccounts')), string(parameters('nics')), string(parameters('pips')), string(parameters('availabilitySet')), string(parameters('virtualMachines'))))]",
     "avSetTemplate": "[uri(deployment().properties.templateLink.uri, '../resources/Microsoft.Compute/availabilitySets/availabilitySet.json')]",
     "storageTemplate": "[uri(deployment().properties.templateLink.uri, '../resources/Microsoft.Storage/storageAccounts/storageAccount.json')]",
-    "nicTemplate": "[uri(deployment().properties.templateLink.uri, '../resources/Microsoft.Network/networkInterfaces/networkInterface.json)]",
+    "nicTemplate": "[uri(deployment().properties.templateLink.uri, '../resources/Microsoft.Network/networkInterfaces/networkInterface.json')]",
     "pipTemplate": "[uri(deployment().properties.templateLink.uri, '../resources/Microsoft.Network/publicIPAddresses/publicIPAddress.json')]",
     "vmTemplate": "[uri(deployment().properties.templateLink.uri, '../resources/Microsoft.Compute/virtualMachines/virtualMachine.json')]",
     "iteratorTemplate": "[uri(deployment().properties.templateLink.uri, '../resources/common/resources.json')]",
