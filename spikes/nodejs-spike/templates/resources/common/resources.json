@@ -19,7 +19,7 @@
     ],
     "templates": [
       "[uri(deployment().properties.templateLink.uri, 'nop.json')]",
-      "[uri(deployment().properties.templateLink.uri, parameters('resourceTemplatePath')]"
+      "[parameters('resourceTemplatePath')]"
     ],
     "templateToInvoke": "[variables('templates')[mod(add(length(parameters('source')), 2), add(length(parameters('source')), 1))]]",
     "iteratorCount": "[variables('count')[mod(add(length(parameters('source')), 2), add(length(parameters('source')), 1))]]",
