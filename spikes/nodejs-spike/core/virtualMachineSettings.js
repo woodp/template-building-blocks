@@ -179,8 +179,10 @@ let processorProperties = {
     },
     osType: (value, key, index, parent) => {
         let temp = {};
+        temp.osType = value;
         let propName = value.concat("Configuration");
         if (value === "linux" && parent.osAuthenticationType === "ssh") {
+            temp.adminPassword = null;
             temp[propName] = {
                 "adminPassword": null,
                 "configuration": {
@@ -195,18 +197,12 @@ let processorProperties = {
                     }
                 }
             };
-
-            delete parent.sshPublicKey;
         } else {
             temp[propName] = {
                 "adminPassword": parent.adminPassword,
                 "configuration": null
             };
-            delete parent.adminPassword;
         }
-
-        delete parent.adminPassword;
-        delete parent.osAuthenticationType;
         return temp;
     },
     osDisk: (value, key, index, parent) => {

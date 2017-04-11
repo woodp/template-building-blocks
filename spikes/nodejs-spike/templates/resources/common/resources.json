@@ -3,31 +3,33 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "deploymentContext": { "type": "object" },
-    "source": { "type": "array" }
+    "source": { "type": "array" },
+    "name": { "type": "string" },
+    "resourceTemplatePath": {"type": "string"}
   },
   "variables": {
-    "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('source'))))]",
+    "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('source')), parameters('name'), parameters('resourceTemplatePath')))]",
     "count": [
       1,
       "[length(parameters('source'))]"
     ],
-    "pips": [
+    "resourcesCollection": [
       [ {} ],
       "[parameters('source')]"
     ],
     "templates": [
-      "[uri(deployment().properties.templateLink.uri, '../../common/nop.json')]",
-      "[uri(deployment().properties.templateLink.uri, 'publicIPAddress.json')]"
+      "[uri(deployment().properties.templateLink.uri, 'nop.json')]",
+      "[uri(deployment().properties.templateLink.uri, parameters('resourceTemplatePath')]"
     ],
     "templateToInvoke": "[variables('templates')[mod(add(length(parameters('source')), 2), add(length(parameters('source')), 1))]]",
     "iteratorCount": "[variables('count')[mod(add(length(parameters('source')), 2), add(length(parameters('source')), 1))]]",
-    "publicIPAddresses": "[variables('pips')[mod(add(length(parameters('source')), 2), add(length(parameters('source')), 1))]]"
+    "resources": "[variables('resourcesCollection')[mod(add(length(parameters('source')), 2), add(length(parameters('source')), 1))]]"
   },
   "resources": [
     {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2015-01-01",
-      "name": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-pip', copyIndex(), '-', variables('templateUniqueString'))]",
+      "name": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-', parameters('name'), copyIndex(), '-', variables('templateUniqueString'))]",
       "copy": {
         "name": "iterator",
         "count": "[variables('iteratorCount')]"
@@ -38,7 +40,7 @@
           "uri": "[variables('templateToInvoke')]"
         },
         "parameters": {
-          "source": { "value": "[variables('publicIPAddresses')[copyIndex()]]" }
+          "source": { "value": "[variables('resources')[copyIndex()]]" }
         }
       }
     }
