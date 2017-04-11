@@ -48,24 +48,18 @@
   "variables": {
     "location": "[resourceGroup().location]",
     "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('storageAccounts')), string(parameters('diagonisticStorageAccounts')), string(parameters('nics')), string(parameters('pips')), string(parameters('availabilitySet')), string(parameters('virtualMachines'))))]",
-
-
-    "storageAccount": {
-      "diagnostic": "[toLower(concat('vm', variables('templateUniqueString'), 'diag'))]",
-      "vhd": "[toLower(concat('vm', variables('templateUniqueString'), 'st'))]"
-    },
-    "availabilitySetTemplates": {
-      "yes": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Compute/virtualMachines/availabilitySet-existing.json')]",
-      "no": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Compute/virtualMachines/availabilitySet-neworempty.json')]"
-    },
-
-    "storageTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Storage/storageAccounts/storageAccounts.json')]",
-    "VMsInStorageTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Compute/virtualMachines/n-vm-m-storage.json')]",
-
+    "avSetTemplate": "[uri(deployment().properties.templateLink.uri, '../resources/Microsoft.Compute/availabilitySets/availabilitySet.json')]",
+    "storageTemplate": "[uri(deployment().properties.templateLink.uri, '../resources/Microsoft.Storage/storageAccounts/storageAccount.json')]",
+    "nicTemplate": "[uri(deployment().properties.templateLink.uri, '../resources/Microsoft.Network/networkInterfaces/networkInterface.json)]",
+    "pipTemplate": "[uri(deployment().properties.templateLink.uri, '../resources/Microsoft.Network/publicIPAddresses/publicIPAddress.json')]",
+    "vmTemplate": "[uri(deployment().properties.templateLink.uri, '../resources/Microsoft.Compute/virtualMachines/virtualMachine.json')]",
+    "iteratorTemplate": "[uri(deployment().properties.templateLink.uri, '../resources/common/resources.json')]",
     "avSetDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployAvSet-', variables('templateUniqueString'))]",
     "vmStorageDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployStorage-', variables('templateUniqueString'))]",
     "diagnosticStorageDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployDiagStorage-', variables('templateUniqueString'))]",
-    "vmsInStorageDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployVMsInSt-', variables('templateUniqueString'))]"
+    "nicDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployNics-', variables('templateUniqueString'))]",
+    "pipDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployPips-', variables('templateUniqueString'))]",
+    "vmDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployVMs-', variables('templateUniqueString'))]"
   },
   "resources": [
     {
@@ -75,7 +69,7 @@
       "properties": {
         "mode": "Incremental",
         "templateLink": {
-          "uri": "[variables('availabilitySetTemplates')[toLower(parameters('virtualMachinesSettings').availabilitySet.useExistingAvailabilitySet)]]"
+          "uri": "[variables('iteratorTemplate')]"
         },
         "parameters": {
           "deploymentContext": {
@@ -83,30 +77,15 @@
               "parentTemplateUniqueString": "[concat(variables('templateUniqueString'), '-deployAvSet')]"
             }
           },
-          "availabilitySetSettings": { "value": "[parameters('virtualMachinesSettings').availabilitySet]" },
-          "vmCount": { "value": "[parameters('buildingBlockSettings').vmCount]" }
-        }
-      }
-    },
-    {
-      "type": "Microsoft.Resources/deployments",
-      "apiVersion": "2015-01-01",
-      "name": "[variables('diagnosticStorageDeploymentName')]",
-      "properties": {
-        "mode": "Incremental",
-        "templateLink": {
-          "uri": "[variables('storageTemplate')]"
-        },
-        "parameters": {
-          "deploymentContext": {
-            "value": {
-              "parentTemplateUniqueString": "[concat(variables('templateUniqueString'), '-deployDiagStorage')]"
-            }
+          "source": {
+            "value": "[parameters('availabilitySet')]"
           },
-          "name": { "value": "[variables('storageAccount').diagnostic]" },
-          "location": { "value": "[variables('location')]" },
-          "storageAccountsCount": { "value": 1 },
-          "skuName": { "value": "Standard_LRS" }
+          "name": {
+            "value": "avSet"
+          },
+          "resourceTemplatePath": {
+            "value": "[variables('avSetTemplate')]"
+          }
         }
       }
     },
@@ -117,7 +96,7 @@
       "properties": {
         "mode": "Incremental",
         "templateLink": {
-          "uri": "[variables('storageTemplate')]"
+          "uri": "[variables('iteratorTemplate')]"
         },
         "parameters": {
           "deploymentContext": {
@@ -125,53 +104,132 @@
               "parentTemplateUniqueString": "[concat(variables('templateUniqueString'), '-deployStorage')]"
             }
           },
-          "name": { "value": "[variables('storageAccount').vhd]" },
-          "location": { "value": "[variables('location')]" },
-          "storageAccountsCount": { "value": "[parameters('buildingBlockSettings').storageAccountsCount]" },
-          "skuName": { "value": "Premium_LRS" }
+          "source": {
+            "value": "[parameters('storageAccounts')]"
+          },
+          "name": {
+            "value": "storage"
+          },
+          "resourceTemplatePath": {
+            "value": "[variables('storageTemplate')]"
+          }
         }
       }
     },
     {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2015-01-01",
-      "name": "[variables('vmsInStorageDeploymentName')]",
+      "name": "[variables('diagnosticStorageDeploymentName')]",
       "properties": {
         "mode": "Incremental",
         "templateLink": {
-          "uri": "[variables('VMsInStorageTemplate')]"
+          "uri": "[variables('iteratorTemplate')]"
         },
         "parameters": {
           "deploymentContext": {
             "value": {
-              "parentTemplateUniqueString": "[concat(variables('templateUniqueString'), '-deployVMsInSt')]"
+              "parentTemplateUniqueString": "[concat(variables('templateUniqueString'), '-deployDiagStorage')]"
             }
           },
-          "virtualMachinesSettings": { "value": "[parameters('virtualMachinesSettings')]" },
-          "virtualNetworkSettings": { "value": "[parameters('virtualNetworkSettings')]" },
-          "buildingBlockSettings": { "value": "[parameters('buildingBlockSettings')]" },
-          "context": {
-            "value": {
-              "storageAccounts": {
-                "diagnostic": "[variables('storageAccount').diagnostic]",
-                "vhd": "[variables('storageAccount').vhd]"
-              },
-              "availabilitySetName": "[reference(variables('avSetDeploymentName')).outputs.availabilitySetName.value]"
-            }
+          "source": {
+            "value": "[parameters('diagonisticStorageAccounts')]"
+          },
+          "name": {
+            "value": "diagSt"
+          },
+          "resourceTemplatePath": {
+            "value": "[variables('storageTemplate')]"
           }
         }
-      },
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "name": "[variables('nicDeploymentName')]",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('iteratorTemplate')]"
+        },
+        "parameters": {
+          "deploymentContext": {
+            "value": {
+              "parentTemplateUniqueString": "[concat(variables('templateUniqueString'), '-deployNics')]"
+            }
+          },
+          "source": {
+            "value": "[parameters('nics')]"
+          },
+          "name": {
+            "value": "nic"
+          },
+          "resourceTemplatePath": {
+            "value": "[variables('nicTemplate')]"
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "name": "[variables('pipDeploymentName')]",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('iteratorTemplate')]"
+        },
+        "parameters": {
+          "deploymentContext": {
+            "value": {
+              "parentTemplateUniqueString": "[concat(variables('templateUniqueString'), '-deployPips')]"
+            }
+          },
+          "source": {
+            "value": "[parameters('pips')]"
+          },
+          "name": {
+            "value": "pip"
+          },
+          "resourceTemplatePath": {
+            "value": "[variables('pipTemplate')]"
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "name": "[variables('vmDeploymentName')]",
       "dependsOn": [
-        "[variables('diagnosticStorageDeploymentName')]",
-        "[variables('vmStorageDeploymentName')]",
-        "[variables('avSetDeploymentName')]"
-      ]
+        "[variables('avSetDeploymentName')]", "[variables('vmStorageDeploymentName')]", "[variables('avSetDeploymentName')]", 
+        "[variables('diagnosticStorageDeploymentName')]", "[variables('nicDeploymentName')]", "[variables('pipDeploymentName')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('iteratorTemplate')]"
+        },
+        "parameters": {
+          "deploymentContext": {
+            "value": {
+              "parentTemplateUniqueString": "[concat(variables('templateUniqueString'), '-deployVMs')]"
+            }
+          },
+          "source": {
+            "value": "[parameters('virtualMachines')]"
+          },
+          "name": {
+            "value": "VMs"
+          },
+          "resourceTemplatePath": {
+            "value": "[variables('vmTemplate')]"
+          }
+        }
+      }
     }
   ],
   "outputs": {
-    "resources": {
-      "type": "array",
-      "value": "[concat(reference(variables('avSetDeploymentName')).outputResources, reference(variables('diagnosticStorageDeploymentName')).outputResources, reference(variables('vmStorageDeploymentName')).outputResources, reference(variables('vmsInStorageDeploymentName')).outputResources)]"
-    }
+
   }
 }
