@@ -45,9 +45,12 @@
     },
     {
       "type": "Microsoft.Compute/virtualMachines/extensions",
-      "name": "[parameters('source').extensions[0].name)]",
+      "name": "[parameters('source').extensions[0].name]",
       "apiVersion": "2015-06-15",
       "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[parameters('source').name]"
+      ],
       "properties": {
         "publisher": "[parameters('source').extensions[0].publisher]",
         "type": "[parameters('source').extensions[0].type]",
