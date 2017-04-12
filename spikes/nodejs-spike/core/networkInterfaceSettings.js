@@ -115,7 +115,7 @@ function process(settings, parent, vmIndex) {
             }
         };
 
-        instance.ipConfigurations[0].properties.subnet = resources.resourceId(n.subscription, n.resourceGroup, 'Microsoft.Network/virtualNetworks/subnets', parent.vNetName, n.subnetName);
+        instance.ipConfigurations[0].properties.subnet = { "id": resources.resourceId(n.subscription, n.resourceGroup, 'Microsoft.Network/virtualNetworks/subnets', parent.vNetName, n.subnetName)};
 
         if (n.hasOwnProperty("publicIPAllocationMethod")) {
             let pip = createPipParameters(n);
