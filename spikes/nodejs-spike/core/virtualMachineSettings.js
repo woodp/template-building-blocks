@@ -45,7 +45,14 @@ function defaultsCustomizer(objValue, srcValue, key) {
 }
 
 let virtualMachineValidations = {
-    vNetName: v.validationUtilities.isNullOrWhitespace,
+    virtualNetwork: (result, parentKey, key, value, parent, baseObjectSettings) => {
+        if (_.isNullOrWhitespace(value.name)) {
+            result.push({
+                name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
+                message: "VirtualNetwork name cannot be null"
+            })
+        }
+    },
     vmCount: (result, parentKey, key, value, parent, baseObjectSettings) => {
         if (!_.isNumber(value) || value < 1) {
             result.push({
@@ -216,7 +223,7 @@ let processorProperties = {
 
         temp.osDisk.name = parent.name.concat('-os.vhd');
         let vhdUri = 'http://'.concat(storageAccounts[stroageAccountToUse], '.blob.core.windows.net/vhds/', parent.name, '-os.vhd');
-        temp.osDisk.vhd = { "uri": vhdUri};
+        temp.osDisk.vhd = { "uri": vhdUri };
         temp.osDisk.createOption = value.createOption;
         temp.osDisk.caching = value.caching;
         return temp;
@@ -235,7 +242,7 @@ let processorProperties = {
             instance.diskSizeGB = value.properties.diskSizeGB;
             instance.lun = i;
             let vhdUri = 'http://'.concat(storageAccounts[stroageAccountToUse], '.blob.core.windows.net/vhds/', parent.name, '-dataDisk', (i + 1), '.vhd');
-            instance.vhd = { "uri": vhdUri};
+            instance.vhd = { "uri": vhdUri };
             instance.caching = value.properties.caching;
             instance.createOption = value.properties.createOption;
 
@@ -257,7 +264,6 @@ let processorProperties = {
         temp.diagnosticsProfile.bootDiagnostics.storageUri = 'http://'.concat(diagnosticAccountName, '.blob.core.windows.net');
         return temp;
     },
-
     passThrough: (value, key, index) => {
         let temp = {};
         temp[key] = value;
@@ -305,7 +311,7 @@ let processChildResources = {
         }, []);
     },
     availabilitySet: (value, key, index, parent) => {
-        if(_.toLower(value.useExistingAvailabilitySet) === "no" && parent.vmCount === 1){
+        if (_.toLower(value.useExistingAvailabilitySet) === "no" && parent.vmCount === 1) {
             output["availabilitySet"] = [];
             return { "id": "" };
         }
@@ -341,6 +347,8 @@ function process(param, buildingBlockSettings) {
     // Use resourceGroup and subscription from buildingblockSettings if not not provided in VM settings
     param.resourceGroup = param.resourceGroup || buildingBlockSettings.resourceGroup;
     param.subscription = param.subscription || buildingBlockSettings.subscription;
+    param.virtualNetwork.resourceGroup = param.virtualNetwork.resourceGroup || buildingBlockSettings.resourceGroup;
+    param.virtualNetwork.subscription = param.virtualNetwork.subscription || buildingBlockSettings.subscription;
 
     output.virtualMachines = _.transform(processVMStamps(param), (result, n, index, parent) => {
         for (let prop in n) {

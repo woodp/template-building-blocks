@@ -4,8 +4,12 @@
     "parameters": {
         "virtualMachinesSettings": {
             "value": {
-                "vNetName": "ra-ntier-sql-vnet",
-                "vmCount": 1,
+                "virtualNetwork": {
+                    "resourceGroup": "rs-rg",
+                    "subscription": "44455566-e5c8-4f59-8ed5-d70b626f8e10",
+                    "name": "ra-ntier-sql-vnet"
+                },
+                "vmCount": 2,
                 "namePrefix": "test",
                 "computerNamePrefix": "test",
                 "osType": "windows",
@@ -53,14 +57,14 @@
                     }
                 },
                 "availabilitySet": {
-                    "useExistingAvailabilitySet": "no",
-                    "name": "test-as"
+                    "useExistingAvailabilitySet": "yes",
+                    "name": "test111-as"
                 }
             }
         },
         "buildingBlockSettings": {
             "value": {
-                "resourceGroup": "rs-test5-rg",
+                "resourceGroup": "rs-test9-rg",
                 "subscription": "3b518fac-e5c8-4f59-8ed5-d70b626f8e10"
             }
         }

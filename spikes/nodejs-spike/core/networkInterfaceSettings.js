@@ -123,7 +123,7 @@ function process(settings, parent, vmIndex) {
             }
         };
 
-        instance.ipConfigurations[0].properties.subnet = { "id": resources.resourceId(n.subscription, n.resourceGroup, 'Microsoft.Network/virtualNetworks/subnets', parent.vNetName, n.subnetName) };
+        instance.ipConfigurations[0].properties.subnet = { "id": resources.resourceId(parent.virtualNetwork.subscription, parent.virtualNetwork.resourceGroup, 'Microsoft.Network/virtualNetworks/subnets', parent.virtualNetwork.name, n.subnetName) };
 
         if (n.isPublic) {
             let pip = createPipParameters(n);
