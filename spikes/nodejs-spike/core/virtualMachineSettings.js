@@ -215,7 +215,8 @@ let processorProperties = {
         let stroageAccountToUse = index % storageAccounts.length;
 
         temp.osDisk.name = parent.name.concat('-os.vhd');
-        temp.osDisk.vhd = 'http://'.concat(storageAccounts[stroageAccountToUse], '.blob.core.windows.net/vhds/', parent.name, '-os.vhd');
+        let vhdUri = 'http://'.concat(storageAccounts[stroageAccountToUse], '.blob.core.windows.net/vhds/', parent.name, '-os.vhd');
+        temp.osDisk.vhd = { "uri": vhdUri};
         temp.osDisk.createOption = value.createOption;
         temp.osDisk.caching = value.caching;
         return temp;

@@ -2,7 +2,7 @@
   "vmCount": 1,
   "namePrefix": "test",
   "computerNamePrefix": "test",
-  "size": "Standard_DS1_v2",
+  "size": "Standard_DS2_v2",
   "osType": "windows",
   "adminUsername": "adminUser",
   "adminPassword": "",
@@ -17,7 +17,7 @@
   "diagonisticStorageAccounts": {
     "nameSuffix": "diag",
     "count": 1,
-    "skuType": "Premium_LRS",
+    "skuType": "Standard_LRS",
     "accounts": [],
     "managed": "true"
   },

@@ -1,6 +1,6 @@
 {
   "vmCount": 1,
-  "size": "Standard_DS1_v2",
+  "size": "Standard_DS2_v2",
   "osType": "linux",
   "adminUsername": "adminUser",
   "osAuthenticationType": "password",
