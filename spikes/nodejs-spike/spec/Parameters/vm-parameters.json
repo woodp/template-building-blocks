@@ -60,7 +60,7 @@
         },
         "buildingBlockSettings": {
             "value": {
-                "resourceGroup": "rs-test4-rg",
+                "resourceGroup": "rs-test5-rg",
                 "subscription": "3b518fac-e5c8-4f59-8ed5-d70b626f8e10"
             }
         }
