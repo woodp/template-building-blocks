@@ -10,7 +10,7 @@
   "resources": [
     {
       "type": "Microsoft.Compute/virtualMachines",
-      "apiVersion": "2016-08-30",
+      "apiVersion": "2015-06-15",
       "name": "[parameters('source').name]",
       "location": "[resourceGroup().location]",
       "tags": {
@@ -24,8 +24,8 @@
         "osProfile": {
           "computerName": "[parameters('source').computerName]",
           "adminUsername": "[parameters('source').adminUsername]",
-          "adminPassword": "[parameters('source').adminPassword]",
-          "[concat(toLower(parameters('source').osType), 'Configuration')]": "[parameters('source')[concat(toLower(parameters('source').osType), 'Configuration')]]"
+          "adminPassword": "[parameters('source')[concat(toLower(parameters('source').osType), 'Configuration')].adminPassword]",
+          "[concat(toLower(parameters('source').osType), 'Configuration')]": "[parameters('source')[concat(toLower(parameters('source').osType), 'Configuration')].configuration]"
         },
         "storageProfile": {
           "imageReference": {

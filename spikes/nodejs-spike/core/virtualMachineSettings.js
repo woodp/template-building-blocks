@@ -184,7 +184,6 @@ let processorProperties = {
         temp.osType = value;
         let propName = value.concat("Configuration");
         if (value === "linux" && parent.osAuthenticationType === "ssh") {
-            temp.adminPassword = null;
             temp[propName] = {
                 "adminPassword": null,
                 "configuration": {
@@ -234,7 +233,8 @@ let processorProperties = {
             instance.name = 'dataDisk'.concat(i + 1);
             instance.diskSizeGB = value.properties.diskSizeGB;
             instance.lun = i;
-            instance.vhd = 'http://'.concat(storageAccounts[stroageAccountToUse], '.blob.core.windows.net/vhds/', parent.name, '-dataDisk', (i + 1), '.vhd');
+            let vhdUri = 'http://'.concat(storageAccounts[stroageAccountToUse], '.blob.core.windows.net/vhds/', parent.name, '-dataDisk', (i + 1), '.vhd');
+            instance.vhd = { "uri": vhdUri};
             instance.caching = value.properties.caching;
             instance.createOption = value.properties.createOption;
 
