@@ -57,7 +57,7 @@
       "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Compute/virtualMachines/virtualMachine-avSet.json')]"
     ],
     "vmTemplate": "[variables('vmTemplates')[mod(add(length(parameters('virtualMachines')[0].availabilitySet.id), 2), add(length(parameters('virtualMachines')[0].availabilitySet.id), 1))]]",
-    "iteratorTemplate": "[uri(deployment().properties.templateLink.uri, '../resources/common/resources.json')]",
+    "iteratorTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/common/resources.json')]",
     "avSetDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployAvSet-', variables('templateUniqueString'))]",
     "vmStorageDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployStorage-', variables('templateUniqueString'))]",
     "diagnosticStorageDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployDiagStorage-', variables('templateUniqueString'))]",
