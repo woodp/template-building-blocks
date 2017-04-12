@@ -305,12 +305,12 @@ let processChildResources = {
         }, []);
     },
     availabilitySet: (value, key, index, parent) => {
+        if(_.toLower(value.useExistingAvailabilitySet) === "no" && parent.vmCount === 1){
+            output["availabilitySet"] = [];
+            return { "id": "" };
+        }
         if (!availabilitySetProcessed) {
-            let col = avSetSettings.processAvSetSettings(value, parent);
-
-            if (col.length > 0) {
-                output["availabilitySet"] = col;
-            }
+            output["availabilitySet"] = avSetSettings.processAvSetSettings(value, parent);
         }
         let result = { "id": "" }
 
@@ -322,7 +322,6 @@ let processChildResources = {
 function processVMStamps(param) {
     // resource template do not use the vmCount property. Remove from the template
     let vmCount = param.vmCount;
-    delete param.vmCount;
 
     // deep clone settings for the number of VMs required (vmCount)  
     return _.transform(_.castArray(param), (result, n) => {

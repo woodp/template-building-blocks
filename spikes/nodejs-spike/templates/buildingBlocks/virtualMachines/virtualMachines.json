@@ -52,7 +52,11 @@
     "storageTemplate": "[uri(deployment().properties.templateLink.uri, '../resources/Microsoft.Storage/storageAccounts/storageAccount.json')]",
     "nicTemplate": "[uri(deployment().properties.templateLink.uri, '../resources/Microsoft.Network/networkInterfaces/networkInterface.json')]",
     "pipTemplate": "[uri(deployment().properties.templateLink.uri, '../resources/Microsoft.Network/publicIPAddresses/publicIPAddress.json')]",
-    "vmTemplate": "[uri(deployment().properties.templateLink.uri, '../resources/Microsoft.Compute/virtualMachines/virtualMachine.json')]",
+    "vmTemplates": [
+      "[uri(deployment().properties.templateLink.uri, '../resources/Microsoft.Compute/virtualMachines/virtualMachine-no-avSet.json')]",
+      "[uri(deployment().properties.templateLink.uri, '../resources/Microsoft.Compute/virtualMachines/virtualMachine-avSet.json')]"
+    ],
+    "vmTemplate": "[variables('vmTemplates')[mod(add(length(parameters('availabilitySet').id), 2), add(length(parameters('availabilitySet').id), 1))]]",
     "iteratorTemplate": "[uri(deployment().properties.templateLink.uri, '../resources/common/resources.json')]",
     "avSetDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployAvSet-', variables('templateUniqueString'))]",
     "vmStorageDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployStorage-', variables('templateUniqueString'))]",
