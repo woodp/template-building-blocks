@@ -12,7 +12,12 @@
                 "adminUsername": "testadminuser",
                 "adminPassword": "Pag$1Lab1111",
                 "osAuthenticationType": "password",
-                "storageAccounts": {},
+                "storageAccounts": {
+                    "count": 2
+                },
+                "diagonisticStorageAccounts": {
+                    "count": 2
+                },
                 "nics": [
                     {
                         "isPublic": "true",
@@ -55,7 +60,7 @@
         },
         "buildingBlockSettings": {
             "value": {
-                "resourceGroup": "rs-test9-rg",
+                "resourceGroup": "rs-test2-rg",
                 "subscription": "3b518fac-e5c8-4f59-8ed5-d70b626f8e10"
             }
         }
