@@ -10,7 +10,7 @@
   "resources": [
     {
       "type": "Microsoft.Compute/virtualMachines",
-      "apiVersion": "2017-03-01",
+      "apiVersion": "2016-08-30",
       "name": "[parameters('source').name]",
       "location": "[resourceGroup().location]",
       "tags": {
