@@ -147,6 +147,9 @@
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2015-01-01",
       "name": "[variables('nicDeploymentName')]",
+      "dependsOn": [
+        "[variables('pipDeploymentName')]"
+      ],
       "properties": {
         "mode": "Incremental",
         "templateLink": {
@@ -202,8 +205,12 @@
       "apiVersion": "2015-01-01",
       "name": "[variables('vmDeploymentName')]",
       "dependsOn": [
-        "[variables('avSetDeploymentName')]", "[variables('vmStorageDeploymentName')]", "[variables('avSetDeploymentName')]", 
-        "[variables('diagnosticStorageDeploymentName')]", "[variables('nicDeploymentName')]", "[variables('pipDeploymentName')]"
+        "[variables('avSetDeploymentName')]",
+        "[variables('vmStorageDeploymentName')]",
+        "[variables('avSetDeploymentName')]",
+        "[variables('diagnosticStorageDeploymentName')]",
+        "[variables('nicDeploymentName')]",
+        "[variables('pipDeploymentName')]"
       ],
       "properties": {
         "mode": "Incremental",
@@ -229,7 +236,5 @@
       }
     }
   ],
-  "outputs": {
-
-  }
+  "outputs": {}
 }

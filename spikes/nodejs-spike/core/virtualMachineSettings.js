@@ -21,7 +21,7 @@ function validate(settings) {
     return v.validate(settings, virtualMachineValidations, settings)
 }
 
-// if nics and extensions are not specified in the parameters, use from defaults, else remove defaults
+// if nics and extensions are not specified in the parameters, use from defaults, else ignore defaults
 function defaultsCustomizer(objValue, srcValue, key) {
     if (objValue && key === "nics") {
         if (srcValue && _.isArray(srcValue) && srcValue.length > 0) {
@@ -32,9 +32,11 @@ function defaultsCustomizer(objValue, srcValue, key) {
         if (srcValue) {
             srcValue.forEach((extension) => {
                 if (_.toLower(extension.type) === 'iaasdiagnostics' || _.toLower(extension.type) === 'linuxdiagnostic') {
+                    // if user provided the diagonistic extension, then use that instead of the default one
+                    // Through VM building block only the diagonistic extension can be specified. IGNORE the rest of the extensions. 
                     objValue.splice(0, 1);
+                    objValue.push(extension);
                 }
-                objValue.push(extension);
             });
             // we have processed all extensions from parameters file. 
             srcValue.splice(0, srcValue.length);
@@ -365,9 +367,9 @@ function createTemplateParameters(resources) {
         }
     };
     templateParameters.parameters = _.transform(resources, (result, value, key, obj) => {
-       result[key] = {"value": []};
-       result[key].value = value;
-       return result;
+        result[key] = { "value": [] };
+        result[key].value = value;
+        return result;
     }, {});
     return templateParameters;
 };
