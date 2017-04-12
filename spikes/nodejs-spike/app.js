@@ -37,7 +37,7 @@ function processParameters(parametersFilePath) {
       case 'virtualMachinesSettings':
         let mergedSettings = vm.mergeWithDefaults(parameters[key]);
         let errors = vm.validateSettings(mergedSettings);
-        if (errors.length > 1) {
+        if (errors.length > 0) {
           throw new Error(JSON.stringify(errors));
         }
         result = vm.processVirtualMachineSettings(mergedSettings, parameters["buildingBlockSettings"]);

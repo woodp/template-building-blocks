@@ -8,12 +8,12 @@ let v = require('./validation.js');
 const defaultsPath = './nodejs-spike/defaults/networkInterfaceSettings.json';
 
 function merge(settings) {
-  let defaultsStamp = JSON.parse(fs.readFileSync(defaultsPath, 'UTF-8'));
-  let defaults = [];
-  for(let i=0; i < settings.length; i++){
-      defaults.push(v.merge(settings[i], defaultsStamp));
-  }
-  return defaults;
+    let defaultsStamp = JSON.parse(fs.readFileSync(defaultsPath, 'UTF-8'));
+    let defaults = [];
+    for (let i = 0; i < settings.length; i++) {
+        defaults.push(v.merge(settings[i], defaultsStamp));
+    }
+    return defaults;
 }
 
 function validate(settings, baseObjectSettings) {
@@ -62,6 +62,14 @@ let networkInterfaceValidations = {
                 message: "Virtual machine can have only 1 primary NetworkInterface."
             })
         }
+    },
+    isPublic: (result, parentKey, key, value, parent, baseObjectSettings) => {
+        if (_.isNullOrWhitespace(value) || !_.isBoolean(value)) {
+            result.push({
+                name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
+                message: "Valid values are: true, false."
+            })
+        };
     }
 
 };
@@ -115,9 +123,9 @@ function process(settings, parent, vmIndex) {
             }
         };
 
-        instance.ipConfigurations[0].properties.subnet = { "id": resources.resourceId(n.subscription, n.resourceGroup, 'Microsoft.Network/virtualNetworks/subnets', parent.vNetName, n.subnetName)};
+        instance.ipConfigurations[0].properties.subnet = { "id": resources.resourceId(n.subscription, n.resourceGroup, 'Microsoft.Network/virtualNetworks/subnets', parent.vNetName, n.subnetName) };
 
-        if (n.hasOwnProperty("publicIPAllocationMethod")) {
+        if (n.isPublic) {
             let pip = createPipParameters(n);
             result.pips = result.pips.concat(pip);
 

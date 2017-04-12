@@ -20,7 +20,7 @@
                 },
                 "nics": [
                     {
-                        "isPublic": "true",
+                        "isPublic": true,
                         "subnetName": "web",
                         "privateIPAllocationMethod": "Static",
                         "startingIPAddress": "10.0.1.240",
@@ -60,7 +60,7 @@
         },
         "buildingBlockSettings": {
             "value": {
-                "resourceGroup": "rs-test2-rg",
+                "resourceGroup": "rs-test3-rg",
                 "subscription": "3b518fac-e5c8-4f59-8ed5-d70b626f8e10"
             }
         }
