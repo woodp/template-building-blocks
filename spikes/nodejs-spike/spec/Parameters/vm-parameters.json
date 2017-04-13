@@ -5,16 +5,21 @@
         "virtualMachinesSettings": {
             "value": {
                 "virtualNetwork": {
-                    "resourceGroup": "rs-rg",
-                    "subscription": "44455566-e5c8-4f59-8ed5-d70b626f8e10",
                     "name": "ra-ntier-sql-vnet"
                 },
-                "vmCount": 2,
+                "vmCount": 1,
                 "namePrefix": "test",
                 "computerNamePrefix": "test",
                 "osType": "windows",
                 "adminUsername": "testadminuser",
-                "adminPassword": "Pag$1Lab1111",
+                "adminPassword": {
+                    "reference": {
+                        "keyVault": {
+                            "id": "/subscriptions/3b518fac-e5c8-4f59-8ed5-d70b626f8e10/resourceGroups/testkeyvault/providers/Microsoft.KeyVault/vaults/rosharvault"
+                        },
+                        "secretName": "adminPassword"
+                    }
+                },
                 "osAuthenticationType": "password",
                 "storageAccounts": {
                     "count": 2
@@ -57,14 +62,14 @@
                     }
                 },
                 "availabilitySet": {
-                    "useExistingAvailabilitySet": "yes",
+                    "useExistingAvailabilitySet": "no",
                     "name": "test111-as"
                 }
             }
         },
         "buildingBlockSettings": {
             "value": {
-                "resourceGroup": "rs-test9-rg",
+                "resourceGroup": "rs-test7-rg",
                 "subscription": "3b518fac-e5c8-4f59-8ed5-d70b626f8e10"
             }
         }

@@ -56,4 +56,4 @@ exports.processParameters = processParameters;
 // ---------------------------------------------------------------------
 
 let result = processParameters("C:\\Projects\\GitHub\\template-building-blocks\\spikes\\nodejs-spike\\spec\\Parameters\\vm-parameters.json");
-console.log(JSON.stringify(result));
+fs.writeFileSync("C:\\temp\\parameters\\temp.parameter.json", JSON.stringify(result));

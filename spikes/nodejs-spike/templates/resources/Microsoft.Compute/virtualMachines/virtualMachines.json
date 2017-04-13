@@ -1,0 +1,56 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "deploymentContext": {
+            "type": "object"
+        },
+        "source": {
+            "type": "array"
+        },
+        "secret": {
+            "type": "securestring"
+        }
+    },
+    "variables": {
+        "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('source'))))]",
+        "vmTemplates": [
+            [
+                "[uri(deployment().properties.templateLink.uri, 'virtualMachine-ssh-no-avSet.json')]",
+                "[uri(deployment().properties.templateLink.uri, 'virtualMachine-ssh-avSet.json')]"
+            ],
+            [
+                "[uri(deployment().properties.templateLink.uri, 'virtualMachine-no-avSet.json')]",
+                "[uri(deployment().properties.templateLink.uri, 'virtualMachine-avSet.json')]"
+            ]
+        ],
+        "authTypeLength": "[sub(length(parameters('source')[0].osAuthenticationType), length('ssh'))]",
+        "avSetLength": "[length(parameters('source')[0].availabilitySet.id)]",
+        "templateToInvoke": "[variables('vmTemplates')[mod(add(variables('authTypeLength'), 2), add(variables('authTypeLength'), 1))][mod(add(variables('avSetLength'), 2), add(variables('avSetLength'), 1))]]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2015-01-01",
+            "name": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-vm', copyIndex(), '-', variables('templateUniqueString'))]",
+            "copy": {
+                "name": "iterator",
+                "count": "[length(parameters('source'))]"
+            },
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('templateToInvoke')]"
+                },
+                "parameters": {
+                    "source": {
+                        "value": "[parameters('source')[copyIndex()]]"
+                    },
+                    "secret": {
+                        "value": "[parameters('secret')]"
+                    }
+                }
+            }
+        }
+    ]
+}

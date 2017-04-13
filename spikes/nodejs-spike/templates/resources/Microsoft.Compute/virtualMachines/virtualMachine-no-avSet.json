@@ -4,6 +4,9 @@
   "parameters": {
     "source": {
       "type": "object"
+    },
+    "secret": {
+      "type": "securestring"
     }
   },
   "variables": {},
@@ -23,8 +26,8 @@
         "osProfile": {
           "computerName": "[parameters('source').computerName]",
           "adminUsername": "[parameters('source').adminUsername]",
-          "adminPassword": "[parameters('source')[concat(toLower(parameters('source').osType), 'Configuration')].adminPassword]",
-          "[concat(toLower(parameters('source').osType), 'Configuration')]": "[parameters('source')[concat(toLower(parameters('source').osType), 'Configuration')].configuration]"
+          "adminPassword": "[parameters('secret')]",
+          "[concat(toLower(parameters('source').osType), 'Configuration')]": null
         },
         "storageProfile": {
           "imageReference": {

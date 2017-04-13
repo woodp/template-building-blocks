@@ -189,27 +189,13 @@ let processorProperties = {
     osType: (value, key, index, parent) => {
         let temp = {};
         temp.osType = value;
-        let propName = value.concat("Configuration");
+
         if (value === "linux" && parent.osAuthenticationType === "ssh") {
-            temp[propName] = {
-                "adminPassword": null,
-                "configuration": {
-                    "disablePasswordAuthentication": "true",
-                    "ssh": {
-                        "publicKeys": [
-                            {
-                                "path": '/home/'.concat(parent.adminUsername, '/.ssh/authorized_keys'),
-                                "keyData": parent.sshPublicKey
-                            }
-                        ]
-                    }
-                }
-            };
+            output["secret"] = parent.sshPublicKey;
+            delete parent.sshPublicKey;
         } else {
-            temp[propName] = {
-                "adminPassword": parent.adminPassword,
-                "configuration": null
-            };
+            output["secret"] = parent.adminPassword;
+            delete parent.adminPassword;
         }
         return temp;
     },
@@ -375,8 +361,12 @@ function createTemplateParameters(resources) {
         }
     };
     templateParameters.parameters = _.transform(resources, (result, value, key, obj) => {
-        result[key] = { "value": [] };
-        result[key].value = value;
+        if (key === "secret" && !_.isString(value)) {
+            result[key] = value;
+        } else {
+            result[key] = {};
+            result[key].value = value;
+        }
         return result;
     }, {});
     return templateParameters;

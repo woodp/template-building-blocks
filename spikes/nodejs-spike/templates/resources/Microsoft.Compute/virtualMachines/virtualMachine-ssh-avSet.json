@@ -1,0 +1,77 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "source": {
+            "type": "object"
+        },
+        "secret": {
+            "type": "securestring"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2015-06-15",
+            "name": "[parameters('source').name]",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "displayName": "VM"
+            },
+            "properties": {
+                "availabilitySet": "[parameters('source').availabilitySet]",
+                "hardwareProfile": {
+                    "vmSize": "[parameters('source').size]"
+                },
+                "osProfile": {
+                    "computerName": "[parameters('source').computerName]",
+                    "adminUsername": "[parameters('source').adminUsername]",
+                    "adminPassword": null,
+                    "[concat(toLower(parameters('source').osType), 'Configuration')]": {
+                        "disablePasswordAuthentication": "true",
+                        "ssh": {
+                            "publicKeys": [
+                                {
+                                    "path": "[concat('/home/', parameters('source').adminUsername, '/.ssh/authorized_keys']",
+                                    "keyData": "[parameters('secret')]"
+                                }
+                            ]
+                        }
+                    }
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "[parameters('source').imageReference.publisher]",
+                        "offer": "[parameters('source').imageReference.offer]",
+                        "sku": "[parameters('source').imageReference.sku]",
+                        "version": "[parameters('source').imageReference.version]"
+                    },
+                    "osDisk": "[parameters('source').osDisk]",
+                    "dataDisks": "[parameters('source').dataDisks]"
+                },
+                "networkProfile": {
+                    "networkInterfaces": "[parameters('source').nics]"
+                },
+                "diagnosticsProfile": "[parameters('source').diagnosticsProfile]"
+            }
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachines/extensions",
+            "name": "[parameters('source').extensions[0].name]",
+            "apiVersion": "2015-06-15",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[parameters('source').name]"
+            ],
+            "properties": {
+                "publisher": "[parameters('source').extensions[0].publisher]",
+                "type": "[parameters('source').extensions[0].type]",
+                "typeHandlerVersion": "[parameters('source').extensions[0].typeHandlerVersion]",
+                "autoUpgradeMinorVersion": "[parameters('source').extensions[0].autoUpgradeMinorVersion]",
+                "protectedSettings": "[parameters('source').extensions[0].protectedSettings]",
+                "settings": "[parameters('source').extensions[0].settings]"
+            }
+        }
+    ]
+}

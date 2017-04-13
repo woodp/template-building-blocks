@@ -43,6 +43,12 @@
       "metadata": {
         "description": "Settings for virtual machines"
       }
+    },
+    "secret": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Settings for virtual machines"
+      }
     }
   },
   "variables": {
@@ -52,11 +58,7 @@
     "storageTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Storage/storageAccounts/storageAccount.json')]",
     "nicTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/networkInterfaces/networkInterface.json')]",
     "pipTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/publicIPAddresses/publicIPAddress.json')]",
-    "vmTemplates": [
-      "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Compute/virtualMachines/virtualMachine-no-avSet.json')]",
-      "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Compute/virtualMachines/virtualMachine-avSet.json')]"
-    ],
-    "vmTemplate": "[variables('vmTemplates')[mod(add(length(parameters('virtualMachines')[0].availabilitySet.id), 2), add(length(parameters('virtualMachines')[0].availabilitySet.id), 1))]]",
+    "vmTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Compute/virtualMachines/virtualMachines.json')]",
     "iteratorTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/common/resources.json')]",
     "avSetDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployAvSet-', variables('templateUniqueString'))]",
     "vmStorageDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployStorage-', variables('templateUniqueString'))]",
@@ -219,7 +221,7 @@
       "properties": {
         "mode": "Incremental",
         "templateLink": {
-          "uri": "[variables('iteratorTemplate')]"
+          "uri": "[variables('vmTemplate')]"
         },
         "parameters": {
           "deploymentContext": {
@@ -230,11 +232,8 @@
           "source": {
             "value": "[parameters('virtualMachines')]"
           },
-          "name": {
-            "value": "VMs"
-          },
-          "resourceTemplatePath": {
-            "value": "[variables('vmTemplate')]"
+          "secret": {
+            "value": "[parameters('secret')]"
           }
         }
       }
