@@ -1,9 +1,13 @@
 let restify = require('restify');
-let validation = require('./templates/validation.js');
-let virtualNetwork = require('./templates/virtualNetworkSettings.js');
-let routeTables = require('./templates/routeTableSettings.js');
-let r = require('./templates/resources.js');
-let avSet = require('./templates/availabilitySetSettings.js');
+// let validation = require('./templates/validation.js');
+// let virtualNetwork = require('./templates/virtualNetworkSettings.js');
+// let routeTables = require('./templates/routeTableSettings.js');
+// let r = require('./templates/resources.js');
+// let avSet = require('./templates/availabilitySetSettings.js');
+let validation = require('./core/validation.js');
+let virtualNetwork = require('./core/virtualNetworkSettings.js');
+let routeTables = require('./core/routeTableSettings.js');
+let r = require('./core/resources.js');
 
 
 let virtualNetworkSettingsWithPeering = [
@@ -242,84 +246,86 @@ function routeTableTests(req, res, next) {
   next();
 }
 
-var server = restify.createServer();
-server.get('/virtualNetwork', vnetTests);
-server.get('/routeTable', routeTableTests);
+exports.createRestServer = () => {
+  var server = restify.createServer();
+  server.get('/virtualNetwork', vnetTests);
+  server.get('/routeTable', routeTableTests);
 
-server.listen(8080, function() {
-  console.log('%s listening at %s', server.name, server.url);
-});5
-
-let vmSettings = require('./templates/virtualMachineSettings.js');
-
-var virtualMachinesSettings = {
-  "vmCount": 4,
-  "namePrefix": "ra-single",
-  "size": "Standard_DS10_v2",
-  "imageReference": {
-    "version": "NOT LATEST"
-  },
-  "adminUsername": "testuser",
-  "adminPassword": "AweS0me@PW",
-  "osAuthenticationType": "ssh",
-  "nics": [
-    {
-      "isPublic": "true",
-      "subnetName": "web",
-      "privateIPAllocationMethod": "Static",
-
-      "startingIPAddress": "10.0.1.240",
-
-      "domainNameLabelPrefix": "bb-dev-dns",
-
-      "isPrimary": true
-    },
-    {
-      "subnetName": "biz",
-      "privateIPAllocationMethod": "Static",
-
-      "startingIPAddress": "10.0.2.240",
-      "enableIPForwarding": true,
-
-
-      "isPrimary": false
-    }
-  ],
-  "extensions": [
-    {
-      "name": "malware",
-      "publisher": "Symantec",
-      "type": "SymantecEndpointProtection",
-      "typeHandlerVersion": "12.1",
-      "autoUpgradeMinorVersion": true,
-      "settingsConfigMapperUri": "https://raw.githubusercontent.com/mspnp/template-building-blocks/master/templates/resources/Microsoft.Compute/virtualMachines/extensions/vm-extension-passthrough-settings-mapper.json",
-      "settingsConfig": {},
-      "protectedSettingsConfig": {}
-    }
-  ],
-  "dataDisks": {
-    "count": 2,
-    "properties": {
-      "diskSizeGB": 127,
-    }
-  },
-  "availabilitySet": {
-    "useExistingAvailabilitySet": "No",
-    "name": "test-as"
-  }
+  server.listen(8080, function() {
+    console.log('%s listening at %s', server.name, server.url);
+  });
 };
 
-let buildingBlockSettings = {
-  "resourceGroup": "rg1",
-  "subscription": "76D54A21-DB2D-4BE5-AA87-806BD9AD08DD"
-}
+// let vmSettings = require('./templates/virtualMachineSettings.js');
 
-let settings = vmSettings.mergeWithDefaults(virtualMachinesSettings);
-//if (validationErrors) console.log(validationErrors);
-//console.log(JSON.stringify(settings));
+// var virtualMachinesSettings = {
+//   "vmCount": 4,
+//   "namePrefix": "ra-single",
+//   "size": "Standard_DS10_v2",
+//   "imageReference": {
+//     "version": "NOT LATEST"
+//   },
+//   "adminUsername": "testuser",
+//   "adminPassword": "AweS0me@PW",
+//   "osAuthenticationType": "ssh",
+//   "nics": [
+//     {
+//       "isPublic": "true",
+//       "subnetName": "web",
+//       "privateIPAllocationMethod": "Static",
 
-let validationErrors = vmSettings.validateSettings(settings);
-console.log(validationErrors);
+//       "startingIPAddress": "10.0.1.240",
 
-let vmParams = vmSettings.processVirtualMachineSettings(settings, buildingBlockSettings);
-console.log(JSON.stringify(vmParams));
+//       "domainNameLabelPrefix": "bb-dev-dns",
+
+//       "isPrimary": true
+//     },
+//     {
+//       "subnetName": "biz",
+//       "privateIPAllocationMethod": "Static",
+
+//       "startingIPAddress": "10.0.2.240",
+//       "enableIPForwarding": true,
+
+
+//       "isPrimary": false
+//     }
+//   ],
+//   "extensions": [
+//     {
+//       "name": "malware",
+//       "publisher": "Symantec",
+//       "type": "SymantecEndpointProtection",
+//       "typeHandlerVersion": "12.1",
+//       "autoUpgradeMinorVersion": true,
+//       "settingsConfigMapperUri": "https://raw.githubusercontent.com/mspnp/template-building-blocks/master/templates/resources/Microsoft.Compute/virtualMachines/extensions/vm-extension-passthrough-settings-mapper.json",
+//       "settingsConfig": {},
+//       "protectedSettingsConfig": {}
+//     }
+//   ],
+//   "dataDisks": {
+//     "count": 2,
+//     "properties": {
+//       "diskSizeGB": 127,
+//     }
+//   },
+//   "availabilitySet": {
+//     "useExistingAvailabilitySet": "No",
+//     "name": "test-as"
+//   }
+// };
+
+// let buildingBlockSettings = {
+//   "resourceGroup": "rg1",
+//   "subscription": "76D54A21-DB2D-4BE5-AA87-806BD9AD08DD"
+// }
+
+// let settings = vmSettings.mergeWithDefaults(virtualMachinesSettings);
+// //if (validationErrors) console.log(validationErrors);
+// //console.log(JSON.stringify(settings));
+
+// let validationErrors = vmSettings.validateSettings(settings);
+// console.log(validationErrors);
+
+// let vmParams = vmSettings.processVirtualMachineSettings(settings, buildingBlockSettings);
+// console.log(JSON.stringify(vmParams));

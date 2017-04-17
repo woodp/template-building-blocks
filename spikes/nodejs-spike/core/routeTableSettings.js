@@ -103,7 +103,13 @@ exports.transform = function ({settings, buildingBlockSettings}) {
     }
 
     let results = _.transform(settings, (result, setting, index) => {
-        let merged = v.mergeAndValidate(setting, routeTableSettingsDefaults, routeTableSettingsValidations);
+        //let merged = v.mergeAndValidate(setting, routeTableSettingsDefaults, routeTableSettingsValidations);
+        let merged = v.merge(setting, routeTableSettingsDefaults);
+        let errors = v.validate(merged, routeTableSettingsValidations);
+        if (errors.length > 0) {
+          throw new Error(JSON.stringify(errors));
+        }
+
         if (merged.validationErrors) {
             _.each(merged.validationErrors, (error) => {
                 error.name = `settings[${index}]${error.name}`;
@@ -113,10 +119,14 @@ exports.transform = function ({settings, buildingBlockSettings}) {
         result.push(merged);
     }, []);
 
-    buildingBlockSettings = v.mergeAndValidate(buildingBlockSettings, {}, {
+    buildingBlockErrors = v.validate(buildingBlockSettings, {
         subscriptionId: v.validationUtilities.isNullOrWhitespace,
         resourceGroupName: v.validationUtilities.isNullOrWhitespace,
-    });
+    }, buildingBlockSettings);
+
+    if (buildingBlockErrors.length > 0) {
+        throw new Error(JSON.stringify(buildingBlockErrors));
+    }
 
     if (buildingBlockSettings.validationErrors) {
         _.each(buildingBlockSettings.validationErrors, (error) => {

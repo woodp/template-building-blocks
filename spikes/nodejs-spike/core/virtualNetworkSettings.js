@@ -110,7 +110,12 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
     }
 
     let results = _.transform(settings, (result, setting, index) => {
-        let merged = v.mergeAndValidate(setting, virtualNetworkSettingsDefaults, virtualNetworkSettingsValidations, mergeCustomizer);
+        //let merged = v.mergeAndValidate(setting, virtualNetworkSettingsDefaults, virtualNetworkSettingsValidations, mergeCustomizer);
+        let merged = v.merge(setting, virtualNetworkSettingsDefaults, mergeCustomizer);
+        let errors = v.validate(merged, virtualNetworkSettingsValidations, merged);
+        if (errors.length > 0) {
+          throw new Error(JSON.stringify(errors));
+        }
         if (merged.validationErrors) {
             let name = v.utilities.nameOf({settings});
             _.each(merged.validationErrors, (error) => {
@@ -121,16 +126,31 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
         result.push(merged);
     }, []);
 
-    buildingBlockSettings = v.mergeAndValidate(buildingBlockSettings, {}, {
+    // buildingBlockSettings = v.mergeAndValidate(buildingBlockSettings, {}, {
+    //     subscriptionId: v.validationUtilities.isNullOrWhitespace,
+    //     resourceGroupName: v.validationUtilities.isNullOrWhitespace,
+    // });
+
+    // if (buildingBlockSettings.validationErrors) {
+    //     let name = v.utilities.nameOf({buildingBlockSettings});
+    //     _.each(buildingBlockSettings.validationErrors, (error) => {
+    //         error.name = `${name}${error.name}`;
+    //     });
+    // }
+
+    buildingBlockErrors = v.validate(buildingBlockSettings, {
         subscriptionId: v.validationUtilities.isNullOrWhitespace,
         resourceGroupName: v.validationUtilities.isNullOrWhitespace,
-    });
+    }, buildingBlockSettings);
 
-    if (buildingBlockSettings.validationErrors) {
-        let name = v.utilities.nameOf({buildingBlockSettings});
-        _.each(buildingBlockSettings.validationErrors, (error) => {
-            error.name = `${name}${error.name}`;
-        });
+    // if (buildingBlockSettings.validationErrors) {
+    //     let name = v.utilities.nameOf({buildingBlockSettings});
+    //     _.each(buildingBlockSettings.validationErrors, (error) => {
+    //         error.name = `${name}${error.name}`;
+    //     });
+    // }
+    if (buildingBlockErrors.length > 0) {
+        throw new Error(JSON.stringify(buildingBlockErrors));
     }
 
     if (_.some(results, 'validationErrors') || (buildingBlockSettings.validationErrors)) {
