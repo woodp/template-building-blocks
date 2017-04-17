@@ -182,14 +182,11 @@ let processorProperties = {
         return processedExtensions;
     },
     computerNamePrefix: (value, key, index, parent) => {
-        let temp = {};
-        temp.computerName = value.concat("-vm", index + 1);
-        return temp;
+        return {
+            computerName: value.concat("-vm", index + 1)
+        }
     },
     osType: (value, key, index, parent) => {
-        let temp = {};
-        temp.osType = value;
-
         if (value === "linux" && parent.osAuthenticationType === "ssh") {
             output["secret"] = parent.sshPublicKey;
             delete parent.sshPublicKey;
@@ -197,22 +194,27 @@ let processorProperties = {
             output["secret"] = parent.adminPassword;
             delete parent.adminPassword;
         }
-        return temp;
+        return {
+            osType: value
+        };
     },
     osDisk: (value, key, index, parent) => {
-        let temp = { "osDisk": {} };
         let storageAccounts = parent.storageAccounts;
         output.storageAccounts.forEach((account) => {
             storageAccounts.push(account.name);
         });
         let stroageAccountToUse = index % storageAccounts.length;
 
-        temp.osDisk.name = parent.name.concat('-os.vhd');
-        let vhdUri = 'http://'.concat(storageAccounts[stroageAccountToUse], '.blob.core.windows.net/vhds/', parent.name, '-os.vhd');
-        temp.osDisk.vhd = { "uri": vhdUri };
-        temp.osDisk.createOption = value.createOption;
-        temp.osDisk.caching = value.caching;
-        return temp;
+        return {
+            osDisk: {
+                name: parent.name.concat('-os.vhd'),
+                vhd: { 
+                    uri: `http://${storageAccounts[stroageAccountToUse]}.blob.core.windows.net/vhds/${parent.name}-os.vhd`
+                },
+                createOption: value.createOption,
+                caching: value.caching
+            }
+        }
     },
     dataDisks: (value, key, index, parent) => {
         let temp = { "dataDisks": [] };
@@ -223,21 +225,20 @@ let processorProperties = {
         let stroageAccountToUse = index % storageAccounts.length;
 
         for (let i = 0; i < value.count; i++) {
-            let instance = {};
-            instance.name = 'dataDisk'.concat(i + 1);
-            instance.diskSizeGB = value.properties.diskSizeGB;
-            instance.lun = i;
-            let vhdUri = 'http://'.concat(storageAccounts[stroageAccountToUse], '.blob.core.windows.net/vhds/', parent.name, '-dataDisk', (i + 1), '.vhd');
-            instance.vhd = { "uri": vhdUri };
-            instance.caching = value.properties.caching;
-            instance.createOption = value.properties.createOption;
-
-            temp.dataDisks.push(instance);
+            temp.dataDisks.push({
+                name: 'dataDisk'.concat(i + 1),
+                diskSizeGB: value.properties.diskSizeGB,
+                lun: i,
+                caching: value.properties.caching,
+                createOption: value.properties.createOption,
+                vhd: { 
+                    uri: `http://${storageAccounts[stroageAccountToUse]}.blob.core.windows.net/vhds/${parent.name}-dataDisk${i + 1}.vhd`
+                }
+            })
         }
         return temp;
     },
     diagonisticStorageAccounts: (value, key, index, parent) => {
-        let temp = { "diagnosticsProfile": { "bootDiagnostics": {} } };
         // get the diagonstic account name for the VM
         let diagonisticAccounts = parent.diagonisticStorageAccounts;
         output.diagonisticStorageAccounts.forEach((account) => {
@@ -246,9 +247,14 @@ let processorProperties = {
         let diagonisticAccountToUse = index % diagonisticAccounts.length;
         let diagnosticAccountName = diagonisticAccounts[diagonisticAccountToUse];
 
-        temp.diagnosticsProfile.bootDiagnostics.enabled = true;
-        temp.diagnosticsProfile.bootDiagnostics.storageUri = 'http://'.concat(diagnosticAccountName, '.blob.core.windows.net');
-        return temp;
+        return { 
+            diagnosticsProfile: { 
+                bootDiagnostics: {
+                    enabled: true,
+                    storageUri: `http://${diagnosticAccountName}.blob.core.windows.net`
+                } 
+            } 
+        };
     },
     passThrough: (value, key, index) => {
         let temp = {};
