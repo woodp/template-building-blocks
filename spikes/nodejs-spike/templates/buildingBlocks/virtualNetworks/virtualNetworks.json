@@ -24,7 +24,7 @@
       "[uri(deployment().properties.templateLink.uri, '../../resources/common/nop-array.json')]",
       "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/virtualNetworks/virtualNetworkPeerings.json')]"
     ],
-    "virtualNetworkPeeringsTemplate": "[variables('templates')[mod(add(length(parameters('virtualNetworkPeerings')), 2), add(length(parameters('virtualNetworkPeerings')), 1))]]",
+    "virtualNetworkPeeringsTemplate": "[variables('virtualNetworkPeeringsTemplates')[mod(add(length(parameters('virtualNetworkPeerings')), 2), add(length(parameters('virtualNetworkPeerings')), 1))]]",
     "virtualNetworksDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployVNet-', variables('templateUniqueString'))]",
     "virtualNetworkPeeringsDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployVNetPeering-', variables('templateUniqueString'))]"
   },
