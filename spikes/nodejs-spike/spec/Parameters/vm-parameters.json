@@ -7,19 +7,12 @@
                 "virtualNetwork": {
                     "name": "ra-ntier-sql-vnet"
                 },
-                "vmCount": 1,
+                "vmCount": 2,
                 "namePrefix": "test",
                 "computerNamePrefix": "test",
                 "osType": "windows",
                 "adminUsername": "testadminuser",
-                "adminPassword": {
-                    "reference": {
-                        "keyVault": {
-                            "id": "/subscriptions/3b518fac-e5c8-4f59-8ed5-d70b626f8e10/resourceGroups/testkeyvault/providers/Microsoft.KeyVault/vaults/rosharvault"
-                        },
-                        "secretName": "adminPassword"
-                    }
-                },
+                "adminPassword": "sssssssssssssssssss",
                 "osAuthenticationType": "password",
                 "storageAccounts": {
                     "count": 2

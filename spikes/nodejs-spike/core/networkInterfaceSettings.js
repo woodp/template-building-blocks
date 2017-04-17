@@ -104,26 +104,25 @@ function process(settings, parent, vmIndex) {
         n.subscription = parent.subscription;
 
         let instance = {
-            "resourceGroup": n.resourceGroup,
-            "subscription": n.subscription,
-            "name": n.name,
-            "ipConfigurations": [
+            resourceGroup: n.resourceGroup,
+            subscription: n.subscription,
+            name: n.name,
+            ipConfigurations: [
                 {
-                    "name": "ipconfig1",
-                    "properties": {
-                        "privateIPAllocationMethod": n.privateIPAllocationMethod
+                    name: "ipconfig1",
+                    properties: {
+                        privateIPAllocationMethod: n.privateIPAllocationMethod,
+                        subnet: { "id": resources.resourceId(parent.virtualNetwork.subscription, parent.virtualNetwork.resourceGroup, 'Microsoft.Network/virtualNetworks/subnets', parent.virtualNetwork.name, n.subnetName) }
                     }
                 }
             ],
-            "primary": n.isPrimary,
-            "enableIPForwarding": n.enableIPForwarding,
-            "dnsSettings": {
-                "dnsServers": n.dnsServers,
-                "appliedDnsServers": n.dnsServers
+            primary: n.isPrimary,
+            enableIPForwarding: n.enableIPForwarding,
+            dnsSettings: {
+                dnsServers: n.dnsServers,
+                appliedDnsServers: n.dnsServers
             }
         };
-
-        instance.ipConfigurations[0].properties.subnet = { "id": resources.resourceId(parent.virtualNetwork.subscription, parent.virtualNetwork.resourceGroup, 'Microsoft.Network/virtualNetworks/subnets', parent.virtualNetwork.name, n.subnetName) };
 
         if (n.isPublic) {
             let pip = createPipParameters(n);

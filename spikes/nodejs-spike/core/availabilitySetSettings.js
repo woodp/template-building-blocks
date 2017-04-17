@@ -35,12 +35,12 @@ function process(settings, parent) {
   }
   // Use resourceGroup and subscription from parent if not not specified 
   let instance = {
-    "resourceGroup": settings.resourceGroup || parent.resourceGroup,
-    "subscription": settings.subscription || parent.subscription,
-    "name": settings.name,
-    "properties": {
-      "platformFaultDomainCount": settings.platformFaultDomainCount,
-      "platformUpdateDomainCount": settings.platformUpdateDomainCount
+    resourceGroup: settings.resourceGroup || parent.resourceGroup,
+    subscription: settings.subscription || parent.subscription,
+    name: settings.name,
+    properties: {
+      platformFaultDomainCount: settings.platformFaultDomainCount,
+      platformUpdateDomainCount: settings.platformUpdateDomainCount
     }
   };
 

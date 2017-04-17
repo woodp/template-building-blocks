@@ -7,18 +7,16 @@ function merge(settings) {
 }
 
 function process(parent) {
-    let instance = {
-        "resourceGroup": parent.resourceGroup,
-        "subscription": parent.subscription,
-        "name": "",
-        "properties": {
-            "publicIPAllocationMethod": ""
-        }
-    };
-
+    let instance = {};
     return _.transform(_.castArray(instance), (result, n) => {
-        instance.name = parent.name.concat('-pip');
-        instance.properties.publicIPAllocationMethod = parent.publicIPAllocationMethod;
+        instance = {
+            resourceGroup: parent.resourceGroup,
+            subscription: parent.subscription,
+            name: parent.name.concat('-pip'),
+            properties: {
+                publicIPAllocationMethod: parent.publicIPAllocationMethod
+            }
+        };
 
         if (parent.hasOwnProperty("domainNameLabelPrefix") && !_.isNullOrWhitespace(parent.domainNameLabelPrefix)) {
             instance.properties.dnsSettings = {};

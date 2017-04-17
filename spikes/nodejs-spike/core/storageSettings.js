@@ -81,16 +81,16 @@ function createStamps(settings, parent) {
 
 function process(settings, parent) {
     return _.transform(createStamps(settings, parent), (result, n, index) => {
-        let temp = { "sku": {} };
-        let storageName = 'vm'.concat(getUniqueString(parent), n.nameSuffix, (index + 1));
-
-        temp.resourceGroup = n.resourceGroup;
-        temp.subscription = n.subscription;
-        temp.kind = 'Storage';
-        temp.sku.name = n.skuType;
-        temp.name = storageName;
-        result.push(temp);
-
+        let instance = {
+            resourceGroup: n.resourceGroup,
+            subscription: n.subscription,
+            name: `vm${getUniqueString(parent)}${n.nameSuffix}${index + 1}`,
+            kind: 'Storage',
+            "sku": {
+                name: n.skuType
+            }
+        };
+        result.push(instance);
         return result;
     }, [])
 }
