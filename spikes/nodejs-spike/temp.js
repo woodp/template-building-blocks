@@ -24,14 +24,14 @@ let virtualNetworkSettingsWithPeering = [
     ],
     dnsServers: [],
     virtualNetworkPeerings: [
-      {
-        remoteVirtualNetwork: {
-          //name: "my-other-virtual-network"
-        },
-        allowForwardedTraffic: true,
-        allowGatewayTransit: true,
-        useRemoteGateways: false
-      },
+      // {
+      //   remoteVirtualNetwork: {
+      //     //name: "my-other-virtual-network"
+      //   },
+      //   allowForwardedTraffic: true,
+      //   allowGatewayTransit: true,
+      //   useRemoteGateways: false
+      // },
       {
         remoteVirtualNetwork: {
           name: "my-other-virtual-network"
@@ -39,22 +39,61 @@ let virtualNetworkSettingsWithPeering = [
         allowForwardedTraffic: true,
         allowGatewayTransit: true,
         useRemoteGateways: false
+      },
+      {
+        name: "provided-peering-name",
+        remoteVirtualNetwork: {
+          name: "my-third-virtual-network",
+          resourceGroupName: "different-resource-group"
+        },
+        allowForwardedTraffic: false,
+        allowGatewayTransit: false,
+        useRemoteGateways: true
       }
     ]
   },
   {
     name: "my-other-virtual-network",
     addressPrefixes: [
-      "10.0.0.0/16"
+      "10.1.0.0/16"
     ],
     subnets: [
       {
         name: "web",
-        addressPrefix: "10.0.1.0/24"
+        addressPrefix: "10.1.1.0/24"
       },
       {
         name: "biz",
-        addressPrefix: "10.0.2.0/24"
+        addressPrefix: "10.1.2.0/24"
+      }
+    ],
+    dnsServers: [],
+    virtualNetworkPeerings: [
+      {
+        name: "another-provided-peering-name",
+        remoteVirtualNetwork: {
+          name: "my-third-virtual-network",
+          resourceGroupName: "different-resource-group"
+        },
+        allowForwardedTraffic: false,
+        allowGatewayTransit: false,
+        useRemoteGateways: true
+      }
+    ]
+  },
+  {
+    name: "my-third-virtual-network",
+    addressPrefixes: [
+      "10.2.0.0/16"
+    ],
+    subnets: [
+      {
+        name: "web",
+        addressPrefix: "10.2.1.0/24"
+      },
+      {
+        name: "biz",
+        addressPrefix: "10.2.2.0/24"
       }
     ],
     dnsServers: [],
@@ -203,24 +242,26 @@ function routeTableTests(req, res, next) {
   next();
 }
 
-//var server = restify.createServer();
-// server.get('/virtualNetwork', vnetTests);
-// server.get('/routeTable', routeTableTests);
+var server = restify.createServer();
+server.get('/virtualNetwork', vnetTests);
+server.get('/routeTable', routeTableTests);
+
+server.listen(8080, function() {
+  console.log('%s listening at %s', server.name, server.url);
+});5
 
 let vmSettings = require('./templates/virtualMachineSettings.js');
 
 var virtualMachinesSettings = {
-  "vNetName": "testvnet",
-  "vmCount": 2,
-  "namePrefix": "test",
-  "computerNamePrefix": "test",
-  "osType": "linux",
-  "adminUsername": "adminUser",
-  "adminPassword": "uuuuuuuu",
-  "osAuthenticationType": "password",
-  "storageAccounts": {
-
+  "vmCount": 4,
+  "namePrefix": "ra-single",
+  "size": "Standard_DS10_v2",
+  "imageReference": {
+    "version": "NOT LATEST"
   },
+  "adminUsername": "testuser",
+  "adminPassword": "AweS0me@PW",
+  "osAuthenticationType": "ssh",
   "nics": [
     {
       "isPublic": "true",

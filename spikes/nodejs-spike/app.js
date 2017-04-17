@@ -6,7 +6,6 @@ let routeTables = require('./core/routeTableSettings.js');
 let availabilitySet = require('./core/availabilitySetSettings.js');
 let vm = require('./core/virtualMachineSettings.js');
 
-
 function processParameters(parametersFilePath) {
   if (!path.isAbsolute(parametersFilePath)) throw new Error("ERROR: Absolute path required.");
 

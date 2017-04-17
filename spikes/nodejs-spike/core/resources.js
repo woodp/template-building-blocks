@@ -18,7 +18,7 @@ function getObject(collection, parentKey, stack, callback) {
     let hasPushed = false;
     if (_.isPlainObject(item)) {
       if ((item.hasOwnProperty('resourceGroupName')) || (item.hasOwnProperty('subscriptionId'))) {
-        stack.push(_.merge({}, stack[stack.length - 1], {subscriptionId: item.subscriptionId, resourceGroup: item.resourceGroup}));
+        stack.push(_.merge({}, stack[stack.length - 1], {subscriptionId: item.subscriptionId, resourceGroupName: item.resourceGroupName}));
         hasPushed = true;
       }
 
