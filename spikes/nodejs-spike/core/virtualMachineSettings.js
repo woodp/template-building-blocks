@@ -171,7 +171,7 @@ let processorProperties = {
                 // build protectedSettings property for diagonistic extension
                 temp.protectedSettings.storageAccountName = diagnosticAccountName;
                 temp.protectedSettings.storageAccountEndPoint = "https://core.windows.net/";
-                temp.protectedSettings.storageAccountKey = "[listKeys('".concat(accountResourceId, "', '2015-06-15').key1]");
+                temp.protectedSettings.storageAccountKey1 = `[listKeys('${accountResourceId}', '2015-06-15').key1]`;
             } else {
                 temp.settings = extension.settingsConfig;
                 temp.protectedSettings = extension.protectedSettingsConfig;
