@@ -5,7 +5,7 @@
     "deploymentContext": {
       "type": "object",
       "defaultValue": {
-        "parentTemplateUniqueString": "VNET"
+        "parentTemplateUniqueString": "bbVNet"
       }
     },
     "virtualNetworkSettings": {
@@ -17,33 +17,62 @@
     }
   },
   "variables": {
-    "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('virtualNetworkSettings'))))]"
+    "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('virtualNetworkSettings')), string(parameters('virtualNetworkPeerings'))))]",
+    "location": "[resourceGroup().location]",
+    "virtualNetworksTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/virtualNetworks/virtualNetworks.json')]",
+    "virtualNetworkPeeringsTemplates": [
+      "[uri(deployment().properties.templateLink.uri, '../../resources/common/nop-array.json')]",
+      "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/virtualNetworks/virtualNetworkPeerings.json')]"
+    ],
+    "virtualNetworkPeeringsTemplate": "[variables('templates')[mod(add(length(parameters('virtualNetworkPeerings')), 2), add(length(parameters('virtualNetworkPeerings')), 1))]]",
+    "virtualNetworksDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployVNet-', variables('templateUniqueString'))]",
+    "virtualNetworkPeeringsDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployVNetPeering-', variables('templateUniqueString'))]"
   },
   "resources": [
     {
-      "type": "Microsoft.Network/virtualNetworks",
-      "apiVersion": "2016-06-01",
-      "location": "[resourceGroup().location]",
-      "name": "[parameters('virtualNetworkSettings')[copyIndex()].name]",
-      "copy": {
-        "name": "vnetIterator",
-        "count": "[length(parameters('virtualNetworkSettings'))]"
-      },
-      "properties": "[parameters('virtualNetworkSettings')[copyIndex()].properties]"
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "name": "[variables('virtualNetworksDeploymentName')]",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('virtualNetworksTemplate')]"
+        },
+        "parameters": {
+          "deploymentContext": {
+            "value": {
+              "parentTemplateUniqueString": "[concat(variables('templateUniqueString'), '-deployVNet')]"
+            }
+          },
+          "source": {
+            "value": "[parameters('virtualNetworkSettings')]"
+          }
+        }
+      }
     },
     {
-      "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
-      "apiVersion": "2016-06-01",
-      "location": "[resourceGroup().location]",
-      "name": "[parameters('virtualNetworkPeerings')[copyIndex()].name]",
-      "copy": {
-        "name": "vnetPeeringIterator",
-        "count": "[length(parameters('virtualNetworkPeerings'))]"
-      },
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "name": "[variables('virtualNetworkPeeringsDeploymentName')]",
       "dependsOn": [
-        "vnetIterator"
+        "[variables('virtualNetworksDeploymentName')]"
       ],
-      "properties": "[parameters('virtualNetworkPeerings')[copyIndex()].properties]"
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('virtualNetworkPeeringsTemplate')]"
+        },
+        "parameters": {
+          "deploymentContext": {
+            "value": {
+              "parentTemplateUniqueString": "[concat(variables('templateUniqueString'), '-deployVNetPeering')]"
+            }
+          },
+          "source": {
+            "value": "[parameters('virtualNetworkPeerings')]"
+          }
+        }
+      }
     }
   ],
   "outputs": {
