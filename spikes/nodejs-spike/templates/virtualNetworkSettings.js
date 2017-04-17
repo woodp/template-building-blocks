@@ -24,20 +24,33 @@ let virtualNetworkSettingsValidations = {
     name: v.validationUtilities.isNullOrWhitespace,
     addressPrefixes: v.validationUtilities.networking.isValidCidr,
     subnets: (result, parentKey, key, value, parent) => {
-        let validations = {
+        // let validations = {
+        //     name: v.validationUtilities.isNullOrWhitespace,
+        //     addressPrefix: v.validationUtilities.networking.isValidCidr
+        // };
+
+        // v.reduce(validations, value, parentKey, parent, result);
+        v.reduce({
             name: v.validationUtilities.isNullOrWhitespace,
             addressPrefix: v.validationUtilities.networking.isValidCidr
-        };
-
-        v.reduce(validations, value, parentKey, parent, result);
+        }, value, parentKey, parent, result);
     },
     dnsServers: v.validationUtilities.isNullOrWhitespace,
     virtualNetworkPeerings: (result, parentKey, key, value, parent) => {
-        let validations = {
+        // let validations = {
+        //     remoteVirtualNetwork: (result, parentKey, key, value, parent) => {
+        //         v.reduce({name: v.validationUtilities.isNullOrWhitespace}, value, parentKey, parent, result);
+        //     }
+        // };
+
+        // v.reduce(validations, value, parentKey, parent, result);
+        v.reduce({
             remoteVirtualNetwork: (result, parentKey, key, value, parent) => {
-                name: v.validationUtilities.isNullOrWhitespace
+                v.reduce({
+                    name: v.validationUtilities.isNullOrWhitespace
+                }, value, parentKey, parent, result);
             }
-        }
+        }, value, parentKey, parent, result);
     }
 };
 
@@ -53,12 +66,30 @@ function transform(settings) {
             subnets: _.map(settings.subnets, (value, index) => {
                 return {
                     name: value.name,
-                    addressPrefix: value.addressPrefix
+                    properties: {
+                        addressPrefix: value.addressPrefix
+                    }
                 }
             }),
             dhcpOptions: {
                 dnsServers: settings.dnsServers
             }
+        }
+    };
+}
+
+function transformVirtualNetworkPeering({settings, parentSettings}) {
+    let peeringName = settings.name ? settings.name : `${settings.remoteVirtualNetwork.name}-peer`;
+    return {
+        name: `${parentSettings.name}/${peeringName}`,
+        properties: {
+            remoteVirtualNetwork: {
+                id: r.resourceId(settings.remoteVirtualNetwork.subscriptionId, settings.remoteVirtualNetwork.resourceGroupName,
+                    'Microsoft.Network/virtualNetworks', settings.remoteVirtualNetwork.name)
+            },
+            allowForwardedTraffic: settings.allowForwardedTraffic,
+            allowGatewayTransit: settings.allowGatewayTransit,
+            useRemoteGateways: settings.useRemoteGateways
         }
     };
 }
@@ -113,13 +144,32 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
         };
     }
 
+    // results = _.transform(results, (result, setting) => {
+    //     setting = r.setupResources(setting, buildingBlockSettings, (parentKey) => {
+    //         return ((parentKey === null) || (parentKey === "remoteVirtualNetwork"));
+    //     });
+    //     setting = transform(setting);
+    //     result.push(setting);
+    // }, []);
+
+    // return { settings: results };
     results = _.transform(results, (result, setting) => {
         setting = r.setupResources(setting, buildingBlockSettings, (parentKey) => {
             return ((parentKey === null) || (parentKey === "remoteVirtualNetwork"));
         });
-        setting = transform(setting);
-        result.push(setting);
-    }, []);
+        //setting = transform(setting);
+        //result.push(setting);
+        result.virtualNetworks.push(transform(setting));
+        if ((setting.virtualNetworkPeerings) && (setting.virtualNetworkPeerings.length > 0)) {
+            result.virtualNetworkPeerings = result.virtualNetworkPeerings.concat(_.transform(setting.virtualNetworkPeerings,
+                (result, virtualNetworkPeeringSettings) => {
+                    result.push(transformVirtualNetworkPeering({settings: virtualNetworkPeeringSettings, parentSettings: setting}));
+                }, []));
+        }
+    }, {
+        virtualNetworks: [],
+        virtualNetworkPeerings: []
+    });
 
     return { settings: results };
 };
