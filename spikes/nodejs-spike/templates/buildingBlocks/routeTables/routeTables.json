@@ -1,0 +1,61 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "deploymentContext": {
+      "type": "object",
+      "defaultValue": {
+        "parentTemplateUniqueString": "bbRouteTable"
+      }
+    },
+    "routeTableSettings": {
+      "type": "array"
+    }
+  },
+  "variables": {
+    "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('virtualNetworkSettings')), string(parameters('virtualNetworkPeerings'))))]",
+    "location": "[resourceGroup().location]",
+    "routeTableTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/routeTables/routeTable.json')]",
+    "routeTableDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployVNet-', variables('templateUniqueString'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/routeTables",
+      "apiVersion": "2016-06-01",
+      "location": "[resourceGroup().location]",
+      "name": "[parameters('routeTableSettings')[copyIndex()].name]",
+      "copy": {
+        "name": "iterator",
+        "count": "[length(parameters('routeTableSettings'))]"
+      },
+      "properties": "[parameters('routeTableSettings')[copyIndex()].properties]"
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "name": "[concat(variables('routeTableDeploymentName'), copyIndex())]",
+      "copy": {
+          "name": "[concat(parameters('routeTableSettings')[copyIndex()].name, '-sn-iterator')]",
+          "count": "[length(parameters('routeTableSettings'))]"
+      },
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('routeTableTemplate')]"
+        },
+        "parameters": {
+          "deploymentContext": {
+                "value": {
+                    "parentTemplateUniqueString": "[variables('templateUniqueString')]"
+                }
+            },
+          "routeTableSetting": {
+            "value": "[parameters('routeTableSettings')[copyIndex()]]"
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {
+  }
+}
