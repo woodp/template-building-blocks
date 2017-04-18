@@ -13,7 +13,7 @@
     }
   },
   "variables": {
-    "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('virtualNetworkSettings')), string(parameters('virtualNetworkPeerings'))))]",
+    "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('routeTableSettings'))))]",
     "location": "[resourceGroup().location]",
     "routeTableTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/routeTables/routeTable.json')]",
     "routeTableDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployVNet-', variables('templateUniqueString'))]"
