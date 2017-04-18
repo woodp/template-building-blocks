@@ -16,7 +16,7 @@
     "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('routeTableSettings'))))]",
     "location": "[resourceGroup().location]",
     "routeTableTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/routeTables/routeTable.json')]",
-    "routeTableDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployVNet-', variables('templateUniqueString'))]"
+    "routeTableDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployRt-', variables('templateUniqueString'))]"
   },
   "resources": [
     {
@@ -33,9 +33,9 @@
     {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2015-01-01",
-      "name": "[concat(variables('routeTableDeploymentName'), copyIndex())]",
+      "name": "[concat(variables('routeTableDeploymentName'), '-', copyIndex())]",
       "copy": {
-          "name": "[concat(parameters('routeTableSettings')[copyIndex()].name, '-sn-iterator')]",
+          "name": "rt-iterator",
           "count": "[length(parameters('routeTableSettings'))]"
       },
       "properties": {
