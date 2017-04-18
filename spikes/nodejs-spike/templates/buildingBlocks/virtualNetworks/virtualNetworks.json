@@ -17,7 +17,6 @@
     }
   },
   "variables": {
-    "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('virtualNetworkSettings')), string(parameters('virtualNetworkPeerings'))))]",
     "location": "[resourceGroup().location]",
     "virtualNetworksTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/virtualNetworks/virtualNetworks.json')]",
     "virtualNetworkPeeringsTemplates": [
@@ -39,11 +38,6 @@
           "uri": "[variables('virtualNetworksTemplate')]"
         },
         "parameters": {
-          "deploymentContext": {
-            "value": {
-              "parentTemplateUniqueString": "[concat(variables('templateUniqueString'), '-deployVNet')]"
-            }
-          },
           "source": {
             "value": "[parameters('virtualNetworkSettings')]"
           }
@@ -63,11 +57,6 @@
           "uri": "[variables('virtualNetworkPeeringsTemplate')]"
         },
         "parameters": {
-          "deploymentContext": {
-            "value": {
-              "parentTemplateUniqueString": "[concat(variables('templateUniqueString'), '-deployVNetPeering')]"
-            }
-          },
           "source": {
             "value": "[parameters('virtualNetworkPeerings')]"
           }
