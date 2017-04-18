@@ -17,6 +17,7 @@
     }
   },
   "variables": {
+    "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('virtualNetworkSettings')), string(parameters('virtualNetworkPeerings'))))]",
     "location": "[resourceGroup().location]",
     "virtualNetworksTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/virtualNetworks/virtualNetworks.json')]",
     "virtualNetworkPeeringsTemplates": [
