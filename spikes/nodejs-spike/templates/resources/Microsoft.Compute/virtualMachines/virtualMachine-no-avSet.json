@@ -27,7 +27,9 @@
           "computerName": "[parameters('source').computerName]",
           "adminUsername": "[parameters('source').adminUsername]",
           "adminPassword": "[parameters('secret')]",
-          "[concat(toLower(parameters('source').osType), 'Configuration')]": null
+          "[concat(toLower(parameters('source').osType), 'Configuration')]": {
+            "provisionVmAgent": "true"
+          }
         },
         "storageProfile": {
           "imageReference": {

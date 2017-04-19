@@ -1,5 +1,6 @@
 {
     "nameSuffix": "st",
     "count": 1,
-    "skuType": "Premium_LRS"
+    "skuType": "Premium_LRS",
+    "managed": true
 }

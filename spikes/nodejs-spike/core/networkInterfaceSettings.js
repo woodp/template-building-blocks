@@ -16,10 +16,6 @@ function merge(settings) {
     return defaults;
 }
 
-function validate(settings, baseObjectSettings) {
-    return v.validate(settings, networkInterfaceValidations, baseObjectSettings)
-}
-
 let networkInterfaceValidations = {
     enableIPForwarding: v.validationUtilities.isBoolean,
     subnetName: v.validationUtilities.isNullOrWhitespace,
@@ -98,21 +94,16 @@ function createPipParameters(parent) {
 
 function process(settings, parent, vmIndex) {
     return _.transform(settings, (result, n, index) => {
-        // add the name, resourceGroup & subscription to the input nic parameter, since we might need that for creating pip
         n.name = parent.name.concat('-nic', (index + 1));
-        n.resourceGroup = parent.resourceGroup;
-        n.subscription = parent.subscription;
 
         let instance = {
-            resourceGroup: n.resourceGroup,
-            subscription: n.subscription,
             name: n.name,
             ipConfigurations: [
                 {
                     name: "ipconfig1",
                     properties: {
                         privateIPAllocationMethod: n.privateIPAllocationMethod,
-                        subnet: { "id": resources.resourceId(parent.virtualNetwork.subscription, parent.virtualNetwork.resourceGroup, 'Microsoft.Network/virtualNetworks/subnets', parent.virtualNetwork.name, n.subnetName) }
+                        subnet: { "id": resources.resourceId(parent.virtualNetwork.subscriptionId, parent.virtualNetwork.resourceGroupName, 'Microsoft.Network/virtualNetworks/subnets', parent.virtualNetwork.name, n.subnetName) }
                     }
                 }
             ],
@@ -128,7 +119,7 @@ function process(settings, parent, vmIndex) {
             let pip = createPipParameters(n);
             result.pips = result.pips.concat(pip);
 
-            instance.ipConfigurations[0].properties.publicIPAddress = { "id": resources.resourceId(n.subscription, n.resourceGroup, 'Microsoft.Network/publicIPAddresses', pip[0].name) };
+            instance.ipConfigurations[0].properties.publicIPAddress = { "id": resources.resourceId(n.subscriptionId, n.resourceGroupName, 'Microsoft.Network/publicIPAddresses', pip[0].name) };
         };
         if (_.toLower(n.privateIPAllocationMethod) === 'static') {
             let updatedIp = intToIP(ipToInt(n.startingIPAddress) + vmIndex);
@@ -141,4 +132,4 @@ function process(settings, parent, vmIndex) {
 
 exports.processNetworkInterfaceSettings = process;
 exports.mergeWithDefaults = merge;
-exports.validateSettings = validate;
+exports.validations = networkInterfaceValidations;

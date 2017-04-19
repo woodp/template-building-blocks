@@ -10,6 +10,9 @@
     "skuType": "Premium_LRS",
     "accounts": []
   },
+  "osDisk": {
+    "osType": "windows"
+  },
   "diagonisticStorageAccounts": {
     "count": 1,
     "skuType": "Standard_LRS",

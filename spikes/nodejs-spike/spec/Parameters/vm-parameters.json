@@ -5,12 +5,12 @@
         "virtualMachinesSettings": {
             "value": {
                 "virtualNetwork": {
+                    "subscriptionId": "11111111-e5c8-4f59-8ed5-111111111111",
                     "name": "ra-ntier-sql-vnet"
                 },
                 "vmCount": 2,
                 "namePrefix": "test",
-                "computerNamePrefix": "test",
-                "osType": "windows",
+                "computerNamePrefix": "test",             
                 "adminUsername": "testadminuser",
                 "adminPassword": "sssssssssssssssssss",
                 "osAuthenticationType": "password",
@@ -48,6 +48,20 @@
                         "protectedSettingsConfig": {}
                     }
                 ],
+                "osDisk": {
+                    "osType": "windows",
+                    "encryptionSettings": {
+                        "diskEncryptionKey": {
+                            "secretUrl": "string",
+                            "sourceVaultName": "string"
+                        },
+                        "keyEncryptionKey": {
+                            "keyUrl": "string",
+                            "sourceVaultName": "string"
+                        },
+                        "enabled": true
+                    }
+                },
                 "dataDisks": {
                     "count": 2,
                     "properties": {
@@ -62,8 +76,8 @@
         },
         "buildingBlockSettings": {
             "value": {
-                "resourceGroup": "rs-test7-rg",
-                "subscription": "3b518fac-e5c8-4f59-8ed5-d70b626f8e10"
+                "resourceGroupName": "rs-test7-rg",
+                "subscriptionId": "3b518fac-e5c8-4f59-8ed5-d70b626f8e10"
             }
         }
     }
