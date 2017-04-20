@@ -7,6 +7,7 @@ let restify = require('restify');
 let validation = require('./core/validation.js');
 let virtualNetwork = require('./core/virtualNetworkSettings.js');
 let routeTables = require('./core/routeTableSettings.js');
+let networkSecurityGroups = require('./core/networkSecurityGroupSettings.js');
 let r = require('./core/resources.js');
 
 
@@ -226,14 +227,69 @@ let routeTableSettings2 = {
   ]
 };
 
+let nsg = {
+  name: "test-nsg",
+  securityRules: [
+    {
+      name: "rule1",
+      protocol: "TCP",
+      sourcePortRange: 0,
+      destinationPortRange: 65536
+    },
+    {
+      name: "rule1",
+      protocol: "UDP",
+      sourcePortRange: 1,
+      destinationPortRange: 65535
+    },
+    {
+      name: "rule3",
+      protocol: "*",
+      sourcePortRange: "*",
+      destinationPortRange: "*"
+    },
+    {
+      protocol: "TCP"
+    },
+    {
+      name: "rule4",
+      protocol: "*",
+      sourcePortRange: "1-1234",
+      destinationPortRange: "1-1234"
+    },
+    {
+      name: "rule5",
+      protocol: ""
+    }
+  ]
+};
+
 function routeTableTests(req, res, next) {
-  routeTableSettings.push(routeTableSettings2);
+  //routeTableSettings.push(routeTableSettings2);
   let { settings, validationErrors } = routeTables.transform({
     //settings: routeTableSettings2,
     settings: routeTableSettings,
     buildingBlockSettings: {
       subscriptionId: "3b518fac-e5c8-4f59-8ed5-d70b626f8e10",
-      resourceGroupName: "template-v2-rg"
+      resourceGroupName: "test-vnet-rg"
+    }
+  });
+
+  if (validationErrors) {
+    res.send(400, validationErrors);
+  } else {
+    res.send(settings);
+  }
+
+  next();
+}
+
+function nsgTests(req, res, next) {
+  let { settings, validationErrors } = networkSecurityGroups.transform({
+    settings: nsg,
+    buildingBlockSettings: {
+      subscriptionId: "3b518fac-e5c8-4f59-8ed5-d70b626f8e10",
+      resourceGroupName: "test-vnet-rg"
     }
   });
 
@@ -250,6 +306,7 @@ exports.createRestServer = () => {
   var server = restify.createServer();
   server.get('/virtualNetwork', vnetTests);
   server.get('/routeTable', routeTableTests);
+  server.get('/networkSecurityGroup', nsgTests);
 
   server.listen(8080, function() {
     console.log('%s listening at %s', server.name, server.url);

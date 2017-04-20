@@ -13,7 +13,7 @@ let routeTableSettingsValidations = {
     routes: (result, parentKey, key, value, parent) => {
         let validations = {
             name: v.validationUtilities.isNullOrWhitespace,
-            addressPrefix: v.validationUtilities.networking.validateCidr,
+            addressPrefix: v.validationUtilities.networking.isValidCidr,
             nextHopType: (result, parentKey, key, value, parent) => {
                 if (_.isNullOrWhitespace(value)) {
                     result.push({
@@ -60,7 +60,13 @@ let routeTableSettingsValidations = {
             }
         }
 
-        v.reduce(validations, value, parentKey, parent, result);
+        v.reduce({
+            validations: validations,
+            value: value,
+            parentKey: parentKey,
+            parentValue: parent,
+            accumulator: result
+        });
     }
 };
 

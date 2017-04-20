@@ -13,3 +13,14 @@ exports.routeTable = {
         InvalidNextHopType: 'nextHopType is not valid'
     }
 };
+
+exports.networkSecurityGroup = {
+    securityRules: {
+        InvalidProtocol: 'Specified protocol is not valid',
+        InvalidPortRange: 'Specified port range is invalid',
+        InvalidAddressPrefix: 'Specified address prefix is invalid',
+        InvalidDirection: 'Specified direction is invalid',
+        InvalidPriority: 'Specified priority is invalid',
+        InvalidAccess: 'Specified access is invalid'
+    }
+}

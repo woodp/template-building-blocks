@@ -13,10 +13,17 @@ function merge(settings, defaultSettings, mergeCustomizer, childResources) {
 }
 
 function validate(settings, validations, baseObjectSettings) { 
-    return reduce(validations, settings, '', null, baseObjectSettings, []);
+    return reduce({
+        validations: validations,
+        value: settings,
+        parentKey: '',
+        parentValue: null,
+        baseObjectSettings: baseObjectSettings,
+        accumulator: []
+    });
 }
 
-function reduce(validations, value, parentKey, parentValue, baseObjectSettings, accumulator) {
+function reduce({validations, value, parentKey, parentValue, baseObjectSettings, accumulator}) {
     if (_.isNil(value)) {
         accumulator.push({
             name: parentKey,
@@ -33,7 +40,14 @@ function reduce(validations, value, parentKey, parentValue, baseObjectSettings, 
         } else {
             // The value is a plain object, so iterate the validations and run them against value[key]
             _.reduce(validations, (accumulator, validation, key) => {
-                reduce(validation, value[key], `${parentKey}.${key}`, value, baseObjectSettings, accumulator);
+                reduce({
+                    validations: validation,
+                    value: value[key],
+                    parentKey: `${parentKey}.${key}`,
+                    parentValue: value,
+                    baseObjectSettings: baseObjectSettings,
+                    accumulator: accumulator
+                });
                 return accumulator;
             }, accumulator);
         }
@@ -62,12 +76,38 @@ let guidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-
 let utilities = {
     nameOf: varObj => Object.keys(varObj)[0],
     isGuid: (guid) => guidRegex.test(guid),
+    isStringInArray: (value, array) => _.indexOf(array, value) > -1,
     networking: {
         isValidIpAddress: function (value) {
             return ipAddressRegex.test(value);
         },
         isValidCidr: function (value) {
             return cidrRegex.test(value);
+        },
+        isValidPortRange: value => {
+            if (_.isFinite(value)) {
+                // If value is a number, make sure it's in the proper range.
+                return _.inRange(value, 1, 65536);
+            } else if (value === '*') {
+                return true;
+            } else {
+                let split = _.split(value, '-');
+                if (split.length !== 2) {
+                    return false;
+                }
+
+                var [low, high] = _.map(split, (value, index, collection) => {
+                    return _.toNumber(value);
+                });
+
+                // Make sure it only has two parts
+                if (_.isUndefined(low) || _.isUndefined(high) || !_.isFinite(low) || !_.isFinite(high)) {
+                    return false;
+                }
+
+                // Make sure both numbers are in the valid range
+                return _.inRange(low, 1, 65536) && _.inRange(high, 1, 65536);
+            }
         }
     }
 };
