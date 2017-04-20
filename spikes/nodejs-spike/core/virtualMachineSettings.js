@@ -166,6 +166,147 @@ let childResourceToMerge = {
 }
 
 let processorProperties = {
+    availabilitySet: (value, key, index, parent) => {
+        if (_.toLower(value.useExistingAvailabilitySet) === "no" && parent.vmCount < 2) {
+            return;
+        }
+
+        return {
+            availabilitySet: {
+                id: resources.resourceId(value.subscriptionId, value.resourceGroupName, 'Microsoft.Network/availabilitySets', value.name)
+            }
+        }
+    },
+    size: (value, key, index, parent) => {
+        return {
+            hardwareProfile: {
+                vmSize: value
+            }
+        }
+    },
+    imageReference: (value, key, index, parent) => {
+        return {
+            storageProfile: {
+                imageReference: value
+            }
+        }
+    },
+    osDisk: (value, key, index, parent) => {
+        let instance = {
+            name: parent.name.concat('-os.vhd'),
+            createOption: value.createOption,
+            caching: value.caching
+        }
+        if (value.encryptionSettings) {
+            instance.encryptionSettings = {
+                diskEncryptionKey: {
+                    secretUrl: value.encryptionSettings.diskEncryptionKey.secretUrl,
+                    sourceVault: {
+                        id: resources.resourceId(value.encryptionSettings.subscriptionId, value.encryptionSettings.resourceGroupName, "Microsoft.KeyVault/vaults", value.encryptionSettings.diskEncryptionKey.sourceVaultName)
+                    }
+                },
+                keyEncryptionKey: {
+                    keyUrl: value.encryptionSettings.keyEncryptionKey.keyUrl,
+                    sourceVault: {
+                        id: resources.resourceId(value.encryptionSettings.subscriptionId, value.encryptionSettings.resourceGroupName, "Microsoft.KeyVault/vaults", value.encryptionSettings.keyEncryptionKey.sourceVaultName)
+                    }
+                },
+                enabled: true
+            }
+        }
+
+        if (parent.storageAccounts.managed) {
+            instance.managedDisk = {
+                storageAccountType: parent.storageAccounts.skuType
+            }
+        } else {
+            let storageAccounts = parent.storageAccounts.accounts;
+            output.storageAccounts.forEach((account) => {
+                storageAccounts.push(account.name);
+            });
+            let stroageAccountToUse = index % storageAccounts.length;
+            instance.vhd = {
+                uri: `http://${storageAccounts[stroageAccountToUse]}.blob.core.windows.net/vhds/${parent.name}-os.vhd`
+            }
+        }
+
+        return {
+            storageProfile: {
+                osDisk: instance
+            }
+        }
+    },
+    dataDisks: (value, key, index, parent) => {
+        let disks = [];
+        for (let i = 0; i < value.count; i++) {
+            let instance = {
+                name: 'dataDisk'.concat(i + 1),
+                diskSizeGB: value.properties.diskSizeGB,
+                lun: i,
+                caching: value.properties.caching,
+                createOption: value.properties.createOption
+            };
+
+            if (parent.storageAccounts.managed) {
+                instance.managedDisk = {
+                    storageAccountType: parent.storageAccounts.skuType
+                }
+            } else {
+                let storageAccounts = parent.storageAccounts.accounts;
+                output.storageAccounts.forEach((account) => {
+                    storageAccounts.push(account.name);
+                });
+                let stroageAccountToUse = index % storageAccounts.length;
+                instance.vhd = {
+                    uri: `http://${storageAccounts[stroageAccountToUse]}.blob.core.windows.net/vhds/${parent.name}-dataDisk${i + 1}.vhd`
+                }
+            }
+
+            disks.push(instance)
+        }
+        return {
+            storageProfile: {
+                dataDisks: disks
+            }
+        }
+    },
+    nics: (value, key, index, parent) => {
+        let ntwkInterfaces = _.transform(output.nics, (result, n) => {
+            if (_.includes(n.name, parent.name)) {
+                let nicRef = {
+                    id: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/networkInterfaces', n.name),
+                    properties: {
+                        primary: n.primary
+                    }
+                }
+                result.push(nicRef);
+            }
+            return result;
+        }, []);
+        return {
+            networkProfile: {
+                networkInterfaces: ntwkInterfaces
+            }
+        }
+    },
+    diagonisticStorageAccounts: (value, key, index, parent) => {
+        // get the diagonstic account name for the VM
+        let diagonisticAccounts = parent.diagonisticStorageAccounts.accounts;
+        output.diagonisticStorageAccounts.forEach((account) => {
+            diagonisticAccounts.push(account.name);
+        });
+        let diagonisticAccountToUse = index % diagonisticAccounts.length;
+        let diagnosticAccountName = diagonisticAccounts[diagonisticAccountToUse];
+
+        return {
+            diagnosticsProfile: {
+                bootDiagnostics: {
+                    enabled: true,
+                    storageUri: `http://${diagnosticAccountName}.blob.core.windows.net`
+                }
+            }
+        };
+    },
     extensions: (value, key, index, parent) => {
         let processedExtensions = { "extensions": [] };
         value.forEach((extension) => {
@@ -214,104 +355,11 @@ let processorProperties = {
             computerName: value.concat("-vm", index + 1)
         }
     },
-    osDisk: (value, key, index, parent) => {
-        if (value.osType === "linux" && parent.osAuthenticationType === "ssh") {
-            output["secret"] = parent.sshPublicKey;
-            delete parent.sshPublicKey;
-        } else {
-            output["secret"] = parent.adminPassword;
-            delete parent.adminPassword;
-        }
-
-        let instance = {
-            osDisk: {
-                name: parent.name.concat('-os.vhd'),
-                createOption: value.createOption,
-                caching: value.caching
-            }
-        }
-        if (value.encryptionSettings) {
-            instance.osDisk.encryptionSettings = {
-                diskEncryptionKey: {
-                    secretUrl: value.encryptionSettings.diskEncryptionKey.secretUrl,
-                    sourceVault: {
-                        id: resources.resourceId(value.encryptionSettings.subscriptionId, value.encryptionSettings.resourceGroupName, "Microsoft.KeyVault/vaults", value.encryptionSettings.diskEncryptionKey.sourceVaultName)
-                    }
-                },
-                keyEncryptionKey: {
-                    keyUrl: value.encryptionSettings.keyEncryptionKey.keyUrl,
-                    sourceVault: {
-                        id: resources.resourceId(value.encryptionSettings.subscriptionId, value.encryptionSettings.resourceGroupName, "Microsoft.KeyVault/vaults", value.encryptionSettings.keyEncryptionKey.sourceVaultName)
-                    }
-                },
-                enabled: true
-            }
-        }
-
-        if (parent.storageAccounts.managed) {
-            instance.managedDisk = {
-                storageAccountType: parent.storageAccounts.skuType
-            }
-        } else {
-            let storageAccounts = parent.storageAccounts.accounts;
-            output.storageAccounts.forEach((account) => {
-                storageAccounts.push(account.name);
-            });
-            let stroageAccountToUse = index % storageAccounts.length;
-            instance.osDisk.vhd = {
-                uri: `http://${storageAccounts[stroageAccountToUse]}.blob.core.windows.net/vhds/${parent.name}-os.vhd`
-            }
-        }
-
-        return instance;
+    adminPassword: (value, key, index, parent) => {
+        return;
     },
-    dataDisks: (value, key, index, parent) => {
-        let temp = { "dataDisks": [] };
-        for (let i = 0; i < value.count; i++) {
-            let instance = {
-                name: 'dataDisk'.concat(i + 1),
-                diskSizeGB: value.properties.diskSizeGB,
-                lun: i,
-                caching: value.properties.caching,
-                createOption: value.properties.createOption
-            };
-
-            if (parent.storageAccounts.managed) {
-                instance.managedDisk = {
-                    storageAccountType: parent.storageAccounts.skuType
-                }
-            } else {
-                let storageAccounts = parent.storageAccounts.accounts;
-                output.storageAccounts.forEach((account) => {
-                    storageAccounts.push(account.name);
-                });
-                let stroageAccountToUse = index % storageAccounts.length;
-                instance.vhd = {
-                    uri: `http://${storageAccounts[stroageAccountToUse]}.blob.core.windows.net/vhds/${parent.name}-dataDisk${i + 1}.vhd`
-                }
-            }
-
-            temp.dataDisks.push(instance)
-        }
-        return temp;
-    },
-    diagonisticStorageAccounts: (value, key, index, parent) => {
-        // get the diagonstic account name for the VM
-        let diagonisticAccounts = parent.diagonisticStorageAccounts.accounts;
-        output.diagonisticStorageAccounts.forEach((account) => {
-            diagonisticAccounts.push(account.name);
-        });
-        let diagonisticAccountToUse = index % diagonisticAccounts.length;
-        let diagnosticAccountName = diagonisticAccounts[diagonisticAccountToUse];
-
-        return {
-            diagnosticsProfile: {
-                bootDiagnostics: {
-                    enabled: true,
-                    storageUri: `http://${diagnosticAccountName}.blob.core.windows.net`
-                }
-            }
-        };
+    sshPublicKey: (value, key, index, parent) => {
+        return;
     },
     passThrough: (value, key, index) => {
         let temp = {};
@@ -330,8 +378,6 @@ let processChildResources = {
             output.storageAccounts = mergedCol;
             storageAccountsProcessed = true;
         }
-        // return account. VMs will need to use existing accounts and the new accounts. Outputs only has the list of new accounts.
-        return value;
     },
     diagonisticStorageAccounts: (value, key, index, parent) => {
         if (!diagonisticStorageAccountsProcessed) {
@@ -339,8 +385,6 @@ let processChildResources = {
             output.diagonisticStorageAccounts = mergedCol;
             diagonisticStorageAccountsProcessed = true;
         }
-        // return account. VMs will need to use existing accounts and the new accounts. Outputs only has the list of new accounts.
-        return value;
     },
     nics: (value, key, index, parent) => {
         let col = nicSettings.processNetworkInterfaceSettings(value, parent, index);
@@ -349,29 +393,21 @@ let processChildResources = {
         output["nics"] = mergedCol;
         mergedCol = (output["pips"] || (output["pips"] = [])).concat(col.pips);
         output["pips"] = mergedCol;
-
-        return _.transform(col.nics, (result, n) => {
-            let ref = { "properties": {} }
-
-            ref.id = resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/networkInterfaces', n.name);
-            ref.properties.primary = n.primary;
-            result.push(ref);
-            return result;
-        }, []);
     },
     availabilitySet: (value, key, index, parent) => {
         if (_.toLower(value.useExistingAvailabilitySet) === "no" && parent.vmCount === 1) {
             output["availabilitySet"] = [];
-            return { "id": "" };
-        }
-        if (!availabilitySetProcessed) {
+        } else if (!availabilitySetProcessed) {
             output["availabilitySet"] = avSetSettings.processAvSetSettings(value, parent);
         }
-        let result = { "id": "" }
-
-        result.id = resources.resourceId(value.subscriptionId, value.resourceGroupName, 'Microsoft.Network/availabilitySets', value.name);
-        return result;
-    }
+    },
+    osDisk: (value, key, index, parent) => {
+        if (value.osType === "linux" && parent.osAuthenticationType === "ssh") {
+            output["secret"] = parent.sshPublicKey;
+        } else {
+            output["secret"] = parent.adminPassword;
+        }
+    },
 }
 
 function processVMStamps(param, buildingBlockSettings) {
@@ -399,7 +435,7 @@ function process(param, buildingBlockSettings) {
     output.virtualMachines = _.transform(processVMStamps(param, buildingBlockSettings), (result, n, index, parent) => {
         for (let prop in n) {
             if (typeof processChildResources[prop] === 'function') {
-                n[prop] = processChildResources[prop](n[prop], prop, index, n);
+                processChildResources[prop](n[prop], prop, index, n);
             }
         }
         result.push(_.transform(n, (inner, value, key, obj) => {
