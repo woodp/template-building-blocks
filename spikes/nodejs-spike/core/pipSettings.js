@@ -10,8 +10,6 @@ function process(parent) {
     let instance = {};
     return _.transform(_.castArray(instance), (result, n) => {
         instance = {
-            resourceGroup: parent.resourceGroup,
-            subscription: parent.subscription,
             name: parent.name.concat('-pip'),
             properties: {
                 publicIPAllocationMethod: parent.publicIPAllocationMethod

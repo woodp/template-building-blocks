@@ -18,11 +18,34 @@ function merge(settings, key) {
     return v.merge(settings, defaults)
 }
 
-function validate(settings, baseObjectSettings) {
-    return v.validate(settings, storageValidations, baseObjectSettings)
-}
-
 let storageValidations = {
+    count: (result, parentKey, key, value, parent, baseObjectSettings) => {
+        if (!parent.managed && (!_.isNumber(value) || value < 1)) {
+            result.push({
+                name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
+                message: "Value should be greater than 1."
+            })
+        }
+    }
+};
+
+let diagonisticValidations = {
+    managed: (result, parentKey, key, value, parent, baseObjectSettings) => {
+        if (parent.managed) {
+            result.push({
+                name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
+                message: "Diagonistic storage cannot be managed."
+            })
+        }
+    },
+    skuType: (result, parentKey, key, value, parent, baseObjectSettings) => {
+        if (_.includes(_.toLower(value), "premium")) {
+            result.push({
+                name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
+                message: "Diagonistic storage cannot use premium storage."
+            })
+        }
+    },
     count: (result, parentKey, key, value, parent, baseObjectSettings) => {
         if (!_.isNumber(value) || value < 1) {
             result.push({
@@ -63,13 +86,6 @@ function getUniqueString(input) {
 }
 
 function createStamps(settings, parent) {
-    if (!settings.hasOwnProperty('resourceGroup')) {
-        settings.resourceGroup = parent.resourceGroup;
-    }
-    if (!settings.hasOwnProperty('subscription')) {
-        settings.subscription = parent.subscription;
-    }
-
     // deep clone settings for the number of VMs required (vmCount)  
     return _.transform(_.castArray(settings), (result, n) => {
         for (let i = 0; i < settings.count - settings.accounts.length; i++) {
@@ -80,10 +96,11 @@ function createStamps(settings, parent) {
 }
 
 function process(settings, parent) {
+    if(settings.managed){
+        return [];
+    }
     return _.transform(createStamps(settings, parent), (result, n, index) => {
         let instance = {
-            resourceGroup: n.resourceGroup,
-            subscription: n.subscription,
             name: `vm${getUniqueString(parent)}${n.nameSuffix}${index + 1}`,
             kind: 'Storage',
             "sku": {
@@ -97,4 +114,5 @@ function process(settings, parent) {
 
 exports.processStorageSettings = process;
 exports.mergeWithDefaults = merge;
-exports.validateSettings = validate;
+exports.storageValidations = storageValidations;
+exports.diagonisticValidations = diagonisticValidations;

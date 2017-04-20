@@ -3,7 +3,9 @@
   "namePrefix": "test",
   "computerNamePrefix": "test",
   "size": "Standard_DS2_v2",
-  "osType": "windows",
+  "osDisk": {
+    "osType": "windows"
+  },
   "adminUsername": "adminUser",
   "adminPassword": "",
   "osAuthenticationType": "password",
@@ -12,14 +14,14 @@
     "count": 1,
     "skuType": "Premium_LRS",
     "accounts": [],
-    "managed": "true"
+    "managed": true
   },
   "diagonisticStorageAccounts": {
     "nameSuffix": "diag",
     "count": 1,
     "skuType": "Standard_LRS",
     "accounts": [],
-    "managed": "true"
+    "managed": false
   },
   "nics": [
     {

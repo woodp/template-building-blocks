@@ -11,10 +11,6 @@ function merge(settings) {
   return v.merge(settings, defaults)
 }
 
-function validate(settings, baseObjectSettings) {
-  return v.validate(settings, availabilitySetValidations, baseObjectSettings)
-}
-
 let availabilitySetValidations = {
   useExistingAvailabilitySet: (result, parentKey, key, value, parent, baseObjectSettings) => {
     if (_.isNullOrWhitespace(value) || (_.toLower(value) !== 'yes' && _.toLower(value) !== 'no')) {
@@ -33,10 +29,8 @@ function process(settings, parent) {
   if (_.toLower(settings.useExistingAvailabilitySet) === "yes") {
     return [];
   }
-  // Use resourceGroup and subscription from parent if not not specified 
+
   let instance = {
-    resourceGroup: settings.resourceGroup || parent.resourceGroup,
-    subscription: settings.subscription || parent.subscription,
     name: settings.name,
     properties: {
       platformFaultDomainCount: settings.platformFaultDomainCount,
@@ -44,9 +38,13 @@ function process(settings, parent) {
     }
   };
 
+  if(parent.storageAccounts.managed){
+    instance.properties.managed = true;
+  }
+
   return _.castArray(instance)
 }
 
 exports.processAvSetSettings = process;
 exports.mergeWithDefaults = merge;
-exports.validateSettings = validate;
+exports.validations = availabilitySetValidations;

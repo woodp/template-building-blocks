@@ -21,28 +21,17 @@
       },
       "properties": {
         "availabilitySet": "[parameters('source').availabilitySet]",
-        "hardwareProfile": {
-          "vmSize": "[parameters('source').size]"
-        },
+        "hardwareProfile": "[parameters('source').hardwareProfile]",
         "osProfile": {
           "computerName": "[parameters('source').computerName]",
           "adminUsername": "[parameters('source').adminUsername]",
           "adminPassword": "[parameters('secret')]",
-          "[concat(toLower(parameters('source').osType), 'Configuration')]": null
+          "[concat(toLower(parameters('source').osType), 'Configuration')]": {
+            "provisionVmAgent": "true"
+          }
         },
-        "storageProfile": {
-          "imageReference": {
-            "publisher": "[parameters('source').imageReference.publisher]",
-            "offer": "[parameters('source').imageReference.offer]",
-            "sku": "[parameters('source').imageReference.sku]",
-            "version": "[parameters('source').imageReference.version]"
-          },
-          "osDisk": "[parameters('source').osDisk]",
-          "dataDisks": "[parameters('source').dataDisks]"
-        },
-        "networkProfile": {
-          "networkInterfaces": "[parameters('source').nics]"
-        },
+        "storageProfile": "[parameters('source').storageProfile]",
+        "networkProfile": "[parameters('source').networkProfile]",
         "diagnosticsProfile": "[parameters('source').diagnosticsProfile]"
       }
     },

@@ -1,5 +1,6 @@
 {
     "nameSuffix": "diag",
     "count": 1,
-    "skuType": "Standard_LRS"
+    "skuType": "Standard_LRS",
+    "managed": false
 }
