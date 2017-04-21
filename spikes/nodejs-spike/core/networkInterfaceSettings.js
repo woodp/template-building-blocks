@@ -5,7 +5,7 @@ var pipSettings = require('./pipSettings.js');
 var resources = require('./resources.js');
 let v = require('./validation.js');
 
-const defaultsPath = './nodejs-spike/defaults/networkInterfaceSettings.json';
+const defaultsPath = './defaults/networkInterfaceSettings.json';
 
 function merge(settings) {
     let defaultsStamp = JSON.parse(fs.readFileSync(defaultsPath, 'UTF-8'));

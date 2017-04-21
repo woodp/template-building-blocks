@@ -6,7 +6,7 @@ var avSetSettings = require('./availabilitySetSettings.js');
 var resources = require('./resources.js');
 let v = require('./validation.js');
 
-const defaultsPath = './nodejs-spike/defaults/virtualMachinesSettings.';
+const defaultsPath = './defaults/virtualMachinesSettings.';
 
 let output = {};
 
