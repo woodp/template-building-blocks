@@ -1,0 +1,34 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "deploymentContext": {
+      "type": "object",
+      "defaultValue": {
+        "parentTemplateUniqueString": "bbNetworkSecurityGroup"
+      }
+    },
+    "networkSecurityGroupSettings": {
+      "type": "array"
+    }
+  },
+  "variables": {
+    "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('networkSecurityGroupSettings'))))]",
+    "location": "[resourceGroup().location]"
+  },
+  "resources": [
+    {
+        "type": "Microsoft.Network/networkSecurityGroups",
+        "name": "[parameters('networkSecurityGroupSettings')[copyIndex()].name]",
+        "apiVersion": "2015-06-15",
+        "location": "[variables('location')]",
+        "copy": {
+            "name": "iterator",
+            "count": "[length(parameters('networkSecurityGroupSettings'))]"
+        },
+        "properties": "[parameters('networkSecurityGroupSettings')[copyIndex()].properties]"
+    }
+  ],
+  "outputs": {
+  }
+}
