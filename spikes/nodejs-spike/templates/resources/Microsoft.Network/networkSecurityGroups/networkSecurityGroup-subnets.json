@@ -1,0 +1,105 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "deploymentContext": { "type": "object" },
+    "networkSecurityGroupSetting": {
+      "type": "object"
+    }
+  },
+  "variables": {
+    "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('networkSecurityGroupSetting'))))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "name": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-subnetRef', copyIndex(), '-', variables('templateUniqueString'))]",
+      "copy": {
+        "name": "subnet-reference-iterator",
+        "count": "[length(parameters('networkSecurityGroupSetting').subnets)]"
+      },
+      "properties": {
+        "mode": "Incremental",
+        "template": {
+          "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {},
+          "variables": {},
+          "resources": [
+          ],
+          "outputs": {
+            "reference": {
+              "type": "object",
+              "value": {
+                "name": "[split(parameters('networkSecurityGroupSetting').subnets[copyIndex()], '/')[10]]",
+                "properties": "[reference(parameters('networkSecurityGroupSetting').subnets[copyIndex()], '2015-06-15')]"
+              }
+            }
+          }
+        },
+        "parameters": {}
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "name": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-updateSN0', 'Rt-', variables('templateUniqueString'))]",
+      "properties": {
+        "mode": "Incremental",
+        "parameters": { },
+        "template": {
+          "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": { },
+          "variables": { },
+          "resources": [ ],
+          "outputs": { }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "name": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-updateSN', copyindex(1), 'Rt-', variables('templateUniqueString'))]",
+      "dependsOn": [
+        "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-updateSN', copyindex(), 'Rt-', variables('templateUniqueString'))]"
+      ],
+      "copy": {
+        "name": "[concat(parameters('networkSecurityGroupSetting').name, '-sn-iterator')]",
+        "count": "[length(parameters('networkSecurityGroupSetting').subnets)]"
+      },
+      "properties": {
+        "mode": "Incremental",
+        "template": {
+          "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+          },
+          "variables": {
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Network/virtualNetworks/subnets",
+              "apiVersion": "2016-03-30",
+              "name": "[concat(split(parameters('networkSecurityGroupSetting').subnets[copyIndex()], '/')[8], '/', split(parameters('networkSecurityGroupSetting').subnets[copyIndex()], '/')[10])]",
+              "location": "[resourceGroup().location]",
+              "properties": {
+                "addressPrefix": "[reference(concat(parameters('deploymentContext').parentTemplateUniqueString, '-subnetRef', copyIndex(), '-', variables('templateUniqueString'))).outputs.reference.value.properties.addressPrefix]",
+                "networkSecurityGroup": {
+                  "id": "[parameters('networkSecurityGroupSetting').id]"
+                }
+              }
+            }
+          ],
+          "outputs": {
+          }
+        },
+        "parameters": {
+        }
+      }
+    }
+  ],
+  "outputs": {
+  }
+}

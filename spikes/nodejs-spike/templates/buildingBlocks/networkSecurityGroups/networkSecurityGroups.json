@@ -14,7 +14,12 @@
   },
   "variables": {
     "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('networkSecurityGroupSettings'))))]",
-    "location": "[resourceGroup().location]"
+    "location": "[resourceGroup().location]",
+    "subnetsTemplates": [
+      "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/networkSecurityGroups/networkSecurityGroup-nop.json')]",
+      "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/networkSecurityGroups/networkSecurityGroup-subnets.json')]"
+    ],
+    "networkSecurityGroupDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployNsg-', variables('templateUniqueString'))]"
   },
   "resources": [
     {
@@ -27,6 +32,31 @@
             "count": "[length(parameters('networkSecurityGroupSettings'))]"
         },
         "properties": "[parameters('networkSecurityGroupSettings')[copyIndex()].properties]"
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "name": "[concat(variables('networkSecurityGroupDeploymentName'), '-', copyIndex())]",
+      "copy": {
+          "name": "nsg-iterator",
+          "count": "[length(parameters('networkSecurityGroupSettings'))]"
+      },
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('subnetsTemplates')[mod(add(length(parameters('networkSecurityGroupSettings')[copyIndex()]].subnets)), 2), add(length(parameters('networkSecurityGroupSettings')[copyIndex()]].subnets)), 1))]]"
+        },
+        "parameters": {
+          "deploymentContext": {
+                "value": {
+                    "parentTemplateUniqueString": "[variables('templateUniqueString')]"
+                }
+            },
+          "networkSecurityGroupSetting": {
+            "value": "[parameters('networkSecurityGroupSettings')[copyIndex()]]"
+          }
+        }
+      }
     }
   ],
   "outputs": {
