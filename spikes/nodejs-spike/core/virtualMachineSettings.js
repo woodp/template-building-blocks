@@ -145,16 +145,44 @@ let virtualMachineValidations = {
         }
     },
     storageAccounts: (result, parentKey, key, value, parent, baseObjectSettings) => {
-        v.reduce(storageSettings.storageValidations, value, parentKey, parent, baseObjectSettings, result);
+        v.reduce({
+            validations: storageSettings.storageValidations,
+            value: value,
+            parentKey: parentKey,
+            parentValue: parent,
+            baseObjectSettings: baseObjectSettings,
+            accumulator: result
+        });
     },
     diagonisticStorageAccounts: (result, parentKey, key, value, parent, baseObjectSettings) => {
-        v.reduce(storageSettings.diagonisticValidations, value, parentKey, parent, baseObjectSettings, result);
+        v.reduce({
+            validations: storageSettings.diagonisticValidations,
+            value: value,
+            parentKey: parentKey,
+            parentValue: parent,
+            baseObjectSettings: baseObjectSettings,
+            accumulator: result
+        });
     },
     nics: (result, parentKey, key, value, parent, baseObjectSettings) => {
-        v.reduce(nicSettings.validations, value, parentKey, parent, baseObjectSettings, result);
+        v.reduce({
+            validations: nicSettings.validations,
+            value: value,
+            parentKey: parentKey,
+            parentValue: parent,
+            baseObjectSettings: baseObjectSettings,
+            accumulator: result
+        });
     },
     availabilitySet: (result, parentKey, key, value, parent, baseObjectSettings) => {
-        v.reduce(avSetSettings.validations, value, parentKey, parent, baseObjectSettings, result);
+        v.reduce({
+            validations: avSetSettings.validations,
+            value: value,
+            parentKey: parentKey,
+            parentValue: parent,
+            baseObjectSettings: baseObjectSettings,
+            accumulator: result
+        });
     }
 };
 
