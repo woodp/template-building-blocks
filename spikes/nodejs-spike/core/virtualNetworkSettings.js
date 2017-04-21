@@ -24,12 +24,6 @@ let virtualNetworkSettingsValidations = {
     name: v.validationUtilities.isNullOrWhitespace,
     addressPrefixes: v.validationUtilities.networking.isValidCidr,
     subnets: (result, parentKey, key, value, parent) => {
-        // let validations = {
-        //     name: v.validationUtilities.isNullOrWhitespace,
-        //     addressPrefix: v.validationUtilities.networking.isValidCidr
-        // };
-
-        // v.reduce(validations, value, parentKey, parent, result);
         v.reduce({
             name: v.validationUtilities.isNullOrWhitespace,
             addressPrefix: v.validationUtilities.networking.isValidCidr
@@ -37,13 +31,6 @@ let virtualNetworkSettingsValidations = {
     },
     dnsServers: v.validationUtilities.isNullOrWhitespace,
     virtualNetworkPeerings: (result, parentKey, key, value, parent) => {
-        // let validations = {
-        //     remoteVirtualNetwork: (result, parentKey, key, value, parent) => {
-        //         v.reduce({name: v.validationUtilities.isNullOrWhitespace}, value, parentKey, parent, result);
-        //     }
-        // };
-
-        // v.reduce(validations, value, parentKey, parent, result);
         v.reduce({
             remoteVirtualNetwork: (result, parentKey, key, value, parent) => {
                 v.reduce({
@@ -102,15 +89,12 @@ let mergeCustomizer = function (objValue, srcValue, key, object, source, stack) 
     }
 };
 
-//const nameOf = varObj => Object.keys(varObj)[0];
-
 exports.transform = function ({ settings, buildingBlockSettings }) {
     if (_.isPlainObject(settings)) {
         settings = [settings];
     }
 
     let results = _.transform(settings, (result, setting, index) => {
-        //let merged = v.mergeAndValidate(setting, virtualNetworkSettingsDefaults, virtualNetworkSettingsValidations, mergeCustomizer);
         let merged = v.merge(setting, virtualNetworkSettingsDefaults, mergeCustomizer);
         let errors = v.validate(merged, virtualNetworkSettingsValidations, merged);
         if (errors.length > 0) {
@@ -126,29 +110,11 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
         result.push(merged);
     }, []);
 
-    // buildingBlockSettings = v.mergeAndValidate(buildingBlockSettings, {}, {
-    //     subscriptionId: v.validationUtilities.isNullOrWhitespace,
-    //     resourceGroupName: v.validationUtilities.isNullOrWhitespace,
-    // });
-
-    // if (buildingBlockSettings.validationErrors) {
-    //     let name = v.utilities.nameOf({buildingBlockSettings});
-    //     _.each(buildingBlockSettings.validationErrors, (error) => {
-    //         error.name = `${name}${error.name}`;
-    //     });
-    // }
-
     buildingBlockErrors = v.validate(buildingBlockSettings, {
         subscriptionId: v.validationUtilities.isNullOrWhitespace,
         resourceGroupName: v.validationUtilities.isNullOrWhitespace,
     }, buildingBlockSettings);
 
-    // if (buildingBlockSettings.validationErrors) {
-    //     let name = v.utilities.nameOf({buildingBlockSettings});
-    //     _.each(buildingBlockSettings.validationErrors, (error) => {
-    //         error.name = `${name}${error.name}`;
-    //     });
-    // }
     if (buildingBlockErrors.length > 0) {
         throw new Error(JSON.stringify(buildingBlockErrors));
     }
@@ -164,21 +130,11 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
         };
     }
 
-    // results = _.transform(results, (result, setting) => {
-    //     setting = r.setupResources(setting, buildingBlockSettings, (parentKey) => {
-    //         return ((parentKey === null) || (parentKey === "remoteVirtualNetwork"));
-    //     });
-    //     setting = transform(setting);
-    //     result.push(setting);
-    // }, []);
-
-    // return { settings: results };
     results = _.transform(results, (result, setting) => {
         setting = r.setupResources(setting, buildingBlockSettings, (parentKey) => {
             return ((parentKey === null) || (parentKey === "remoteVirtualNetwork"));
         });
-        //setting = transform(setting);
-        //result.push(setting);
+
         result.virtualNetworks.push(transform(setting));
         if ((setting.virtualNetworkPeerings) && (setting.virtualNetworkPeerings.length > 0)) {
             result.virtualNetworkPeerings = result.virtualNetworkPeerings.concat(_.transform(setting.virtualNetworkPeerings,

@@ -83,8 +83,6 @@ let networkSecurityGroupSettingsSecurityRulesValidations = {
         }
     },
     priority: (result, parentKey, key, value, parent) => {
-        //let priority = _.toNumber(value);
-        //if ((_.isUndefined(priority)) || (!_.isFinite(priority)) || (!_.inRange(priority, 100, 4097))) {
         if (!isValidPriority(value)) {
             result.push({
                 name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
@@ -93,7 +91,6 @@ let networkSecurityGroupSettingsSecurityRulesValidations = {
         }
     },
     access: (result, parentKey, key, value, parent) => {
-        //if (!v.utilities.isStringInArray(value, ['Allow', 'Deny'])) {
         if (!isValidAccess(value)) {
             result.push({
                 name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
@@ -106,127 +103,7 @@ let networkSecurityGroupSettingsSecurityRulesValidations = {
 let networkSecurityGroupSettingsValidations = {
     name: v.validationUtilities.isNullOrWhitespace,
     securityRules: (result, parentKey, key, value, parent) => {
-        // let validations = {
-        //     name: v.validationUtilities.isNullOrWhitespace,
-        //     protocol: (result, parentKey, key, value, parent) => {
-        //         //if (!v.utilities.isStringInArray(value, ['TCP', 'UDP', '*'])) {
-        //         if (!isValidProtocol(value)) {
-        //             result.push({
-        //                 name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-        //                 message: validationMessages.networkSecurityGroup.securityRules.InvalidProtocol
-        //             });
-        //         }
-        //     },
-        //     sourcePortRange: (result, parentKey, key, value, parent) => {
-        //         if (!v.utilities.networking.isValidPortRange(value)) {
-        //             result.push({
-        //                 name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-        //                 message: validationMessages.networkSecurityGroup.securityRules.InvalidPortRange
-        //             });
-        //         }
-        //     },
-        //     destinationPortRange: (result, parentKey, key, value, parent) => {
-        //         if (!v.utilities.networking.isValidPortRange(value)) {
-        //             result.push({
-        //                 name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-        //                 message: validationMessages.networkSecurityGroup.securityRules.InvalidPortRange
-        //             });
-        //         }
-        //     },
-        //     sourceAddressPrefix: (result, parentKey, key, value, parent) => {
-        //         // if ((!v.utilities.networking.isValidIpAddress(value)) && (!v.utilities.networking.isValidCidr(value)) &&
-        //         //     (!v.utilities.isStringInArray(value, ['VirtualNetwork', 'AzureLoadBalancer', 'Internet', '*']))) {
-        //         if (!isValidAddressPrefix(value)) {
-        //             result.push({
-        //                 name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-        //                 message: validationMessages.networkSecurityGroup.securityRules.InvalidAddressPrefix
-        //             });
-        //         }
-        //     },
-        //     destinationAddressPrefix: (result, parentKey, key, value, parent) => {
-        //         // if ((!v.utilities.networking.isValidIpAddress(value)) && (!v.utilities.networking.isValidCidr(value)) &&
-        //         //     (!v.utilities.isStringInArray(value, ['VirtualNetwork', 'AzureLoadBalancer', 'Internet', '*']))) {
-        //         if (!isValidAddressPrefix(value)) {
-        //             result.push({
-        //                 name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-        //                 message: validationMessages.networkSecurityGroup.securityRules.InvalidAddressPrefix
-        //             });
-        //         }                
-        //     },
-        //     direction: (result, parentKey, key, value, parent) => {
-        //         if (!v.utilities.isStringInArray(value, ['Inbound', 'Outbound'])) {
-        //             result.push({
-        //                 name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-        //                 message: validationMessages.networkSecurityGroup.securityRules.InvalidDirection
-        //             });
-        //         }
-        //     },
-        //     priority: (result, parentKey, key, value, parent) => {
-        //         let priority = _.toNumber(value);
-        //         if ((_.isUndefined(priority)) || (!_.isFinite(priority)) || (!_.inRange(priority, 100, 4097))) {
-        //             result.push({
-        //                 name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-        //                 message: validationMessages.networkSecurityGroup.securityRules.InvalidPriority
-        //             });
-        //         }
-        //     },
-        //     access: (result, parentKey, key, value, parent) => {
-        //         if (!v.utilities.isStringInArray(value, ['Allow', 'Deny'])) {
-        //             result.push({
-        //                 name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-        //                 message: validationMessages.networkSecurityGroup.securityRules.InvalidAccess
-        //             });
-        //         }
-        //     }
-        //     // addressPrefix: v.validationUtilities.networking.isValidCidr,
-        //     // nextHopType: (result, parentKey, key, value, parent) => {
-        //     //     if (_.isNullOrWhitespace(value)) {
-        //     //         result.push({
-        //     //             name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-        //     //             message: validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace
-        //     //         });
-        //     //     } else {
-        //     //         // Go ahead and calculate this so we don't have to put it everywhere
-        //     //         parentKey = _.join(_.initial(_.split(parentKey, '.')), '.');
-        //     //         switch (value) {
-        //     //             case 'VirtualNetworkGateway':
-        //     //             case 'VnetLocal':
-        //     //             case 'Internet':
-        //     //             case 'HyperNetGateway':
-        //     //             case 'None':
-        //     //                 if (parent.hasOwnProperty('nextHopIpAddress')) {
-        //     //                     result.push({
-        //     //                         name: _.join((parentKey ? [parentKey, 'nextHopIpAddress'] : ['nextHopIpAddress']), '.'),
-        //     //                         message: validationMessages.routeTable.routes.NextHopIpAddressCannotBePresent
-        //     //                     });
-        //     //                 }
-        //     //                 break;
-        //     //             case 'VirtualAppliance':
-        //     //                 if (_.isNullOrWhitespace(parent.nextHopIpAddress)) {
-        //     //                     result.push({
-        //     //                         name: _.join((parentKey ? [parentKey, 'nextHopIpAddress'] : ['nextHopIpAddress']), '.'),
-        //     //                         message: validationMessages.routeTable.routes.NextHopIpAddressMustBePresent
-        //     //                     });
-        //     //                 } else if (!v.utilities.networking.isValidIpAddress(parent.nextHopIpAddress)) {
-        //     //                     result.push({
-        //     //                         name: _.join((parentKey ? [parentKey, 'nextHopIpAddress'] : ['nextHopIpAddress']), '.'),
-        //     //                         message: validationMessages.InvalidIpAddress
-        //     //                     });
-        //     //                 }
-        //     //                 break;
-        //     //             default:
-        //     //                 result.push({
-        //     //                     name: _.join((parentKey ? [parentKey, 'nextHopType'] : ['nextHopType']), '.'),
-        //     //                     message: validationMessages.routeTable.routes.InvalidNextHopType
-        //     //                 })
-        //     //                 break;
-        //     //         }
-        //     //     }
-        //     // }
-        // }
-
         v.reduce({
-            //validations: validations,
             validations: networkSecurityGroupSettingsSecurityRulesValidations,
             value: value,
             parentKey: parentKey,
