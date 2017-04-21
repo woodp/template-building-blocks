@@ -41,6 +41,9 @@
           "name": "nsg-iterator",
           "count": "[length(parameters('networkSecurityGroupSettings'))]"
       },
+      "dependsOn": [
+          "iterator"
+      ],
       "properties": {
         "mode": "Incremental",
         "templateLink": {
