@@ -47,7 +47,7 @@
       "properties": {
         "mode": "Incremental",
         "templateLink": {
-          "uri": "[variables('subnetsTemplates')[mod(add(length(parameters('networkSecurityGroupSettings')[copyIndex()]].subnets)), 2), add(length(parameters('networkSecurityGroupSettings')[copyIndex()]].subnets)), 1))]]"
+          "uri": "[variables('subnetsTemplates')[mod(add(length(parameters('networkSecurityGroupSettings')[copyIndex()].subnets), 2), add(length(parameters('networkSecurityGroupSettings')[copyIndex()].subnets), 1))]"
         },
         "parameters": {
           "deploymentContext": {
