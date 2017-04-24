@@ -1,0 +1,70 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "deploymentContext": {
+      "type": "object",
+      "defaultValue": {
+        "parentTemplateUniqueString": "bbVNet"
+      }
+    },
+    "virtualNetworkSettings": {
+      "type": "array"
+    },
+    "virtualNetworkPeerings": {
+      "type": "array",
+      "defaultValue": []
+    }
+  },
+  "variables": {
+    "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('virtualNetworkSettings')), string(parameters('virtualNetworkPeerings'))))]",
+    "location": "[resourceGroup().location]",
+    "virtualNetworksTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/virtualNetworks/virtualNetworks.json')]",
+    "virtualNetworkPeeringsTemplates": [
+      "[uri(deployment().properties.templateLink.uri, '../../resources/common/nop-array.json')]",
+      "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/virtualNetworks/virtualNetworkPeerings.json')]"
+    ],
+    "virtualNetworkPeeringsTemplate": "[variables('virtualNetworkPeeringsTemplates')[mod(add(length(parameters('virtualNetworkPeerings')), 2), add(length(parameters('virtualNetworkPeerings')), 1))]]",
+    "virtualNetworksDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployVNet-', variables('templateUniqueString'))]",
+    "virtualNetworkPeeringsDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployVNetPeering-', variables('templateUniqueString'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "name": "[variables('virtualNetworksDeploymentName')]",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('virtualNetworksTemplate')]"
+        },
+        "parameters": {
+          "source": {
+            "value": "[parameters('virtualNetworkSettings')]"
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "name": "[variables('virtualNetworkPeeringsDeploymentName')]",
+      "dependsOn": [
+        "[variables('virtualNetworksDeploymentName')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('virtualNetworkPeeringsTemplate')]"
+        },
+        "parameters": {
+          "source": {
+            "value": "[parameters('virtualNetworkPeerings')]"
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {
+  }
+}

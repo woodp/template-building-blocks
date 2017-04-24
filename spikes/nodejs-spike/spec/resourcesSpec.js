@@ -1,6 +1,6 @@
 describe('resourceId function', () => {
-    let resources = require('../templates/resources.js');
-    let validationMessages = require('../templates/validationMessages.js');
+    let resources = require('../core/resources.js');
+    let validationMessages = require('../core/validationMessages.js');
 
     let subscriptionId = '689B3D5F-F473-405A-B3EB-7F59D418C682';
     let resourceGroupName = 'test-rg';

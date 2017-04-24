@@ -1,0 +1,100 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "deploymentContext": {
+      "type": "object",
+      "defaultValue": {
+        "parentTemplateUniqueString": "bbNetworkSecurityGroup"
+      }
+    },
+    "networkSecurityGroupSettings": {
+      "type": "array"
+    }
+  },
+  "variables": {
+    "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('networkSecurityGroupSettings'))))]",
+    "location": "[resourceGroup().location]",
+
+    "subnetsTemplates": [
+      "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/networkSecurityGroups/networkSecurityGroup-nop.json')]",
+      "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/networkSecurityGroups/networkSecurityGroup-subnets.json')]"
+    ],
+    "networkInterfacesTemplates": [
+        "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/networkSecurityGroups/networkSecurityGroup-nop.json')]",
+        "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/networkSecurityGroups/networkSecurityGroup-networkInterfaces.json')]"
+    ],
+    "networkSecurityGroupDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployNsg-', variables('templateUniqueString'))]"
+  },
+  "resources": [
+    {
+        "type": "Microsoft.Network/networkSecurityGroups",
+        "name": "[parameters('networkSecurityGroupSettings')[copyIndex()].name]",
+        "apiVersion": "2015-06-15",
+        "location": "[variables('location')]",
+        "copy": {
+            "name": "iterator",
+            "count": "[length(parameters('networkSecurityGroupSettings'))]"
+        },
+        "properties": "[parameters('networkSecurityGroupSettings')[copyIndex()].properties]"
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "name": "[concat(variables('networkSecurityGroupDeploymentName'), '-sn-', copyIndex())]",
+      "copy": {
+          "name": "subnet-iterator",
+          "count": "[length(parameters('networkSecurityGroupSettings'))]"
+      },
+      "dependsOn": [
+          "iterator"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('subnetsTemplates')[mod(add(length(parameters('networkSecurityGroupSettings')[copyIndex()].subnets), 2), add(length(parameters('networkSecurityGroupSettings')[copyIndex()].subnets), 1))]]"
+        },
+        "parameters": {
+          "deploymentContext": {
+                "value": {
+                    "parentTemplateUniqueString": "[variables('templateUniqueString')]"
+                }
+            },
+          "networkSecurityGroupSetting": {
+            "value": "[parameters('networkSecurityGroupSettings')[copyIndex()]]"
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "name": "[concat(variables('networkSecurityGroupDeploymentName'), '-nic-', copyIndex())]",
+      "copy": {
+          "name": "nic-iterator",
+          "count": "[length(parameters('networkSecurityGroupSettings'))]"
+      },
+      "dependsOn": [
+          "subnet-iterator"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('networkInterfacesTemplates')[mod(add(length(parameters('networkSecurityGroupSettings')[copyIndex()].networkInterfaces), 2), add(length(parameters('networkSecurityGroupSettings')[copyIndex()].networkInterfaces), 1))]]"
+        },
+        "parameters": {
+          "deploymentContext": {
+                "value": {
+                    "parentTemplateUniqueString": "[variables('templateUniqueString')]"
+                }
+            },
+          "networkSecurityGroupSetting": {
+            "value": "[parameters('networkSecurityGroupSettings')[copyIndex()]]"
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {
+  }
+}

@@ -13,7 +13,7 @@ let routeTableSettingsValidations = {
     routes: (result, parentKey, key, value, parent) => {
         let validations = {
             name: v.validationUtilities.isNullOrWhitespace,
-            addressPrefix: v.validationUtilities.networking.validateCidr,
+            addressPrefix: v.validationUtilities.networking.isValidCidr,
             nextHopType: (result, parentKey, key, value, parent) => {
                 if (_.isNullOrWhitespace(value)) {
                     result.push({
@@ -60,7 +60,13 @@ let routeTableSettingsValidations = {
             }
         }
 
-        v.reduce(validations, value, parentKey, parent, result);
+        v.reduce({
+            validations: validations,
+            value: value,
+            parentKey: parentKey,
+            parentValue: parent,
+            accumulator: result
+        });
     }
 };
 
@@ -74,7 +80,6 @@ function transform(settings) {
             _.each(virtualNetwork.subnets, (subnet) => {
                 result.push(r.resourceId(virtualNetwork.subscriptionId, virtualNetwork.resourceGroupName, 'Microsoft.Network/virtualNetworks/subnets',
                     virtualNetwork.name, subnet));
-                    //virtualNetwork.name, subnet.name));
             })
         }, []),
         properties: {
@@ -103,7 +108,13 @@ exports.transform = function ({settings, buildingBlockSettings}) {
     }
 
     let results = _.transform(settings, (result, setting, index) => {
-        let merged = v.mergeAndValidate(setting, routeTableSettingsDefaults, routeTableSettingsValidations);
+        //let merged = v.mergeAndValidate(setting, routeTableSettingsDefaults, routeTableSettingsValidations);
+        let merged = v.merge(setting, routeTableSettingsDefaults);
+        let errors = v.validate(merged, routeTableSettingsValidations);
+        if (errors.length > 0) {
+          throw new Error(JSON.stringify(errors));
+        }
+
         if (merged.validationErrors) {
             _.each(merged.validationErrors, (error) => {
                 error.name = `settings[${index}]${error.name}`;
@@ -113,10 +124,14 @@ exports.transform = function ({settings, buildingBlockSettings}) {
         result.push(merged);
     }, []);
 
-    buildingBlockSettings = v.mergeAndValidate(buildingBlockSettings, {}, {
+    buildingBlockErrors = v.validate(buildingBlockSettings, {
         subscriptionId: v.validationUtilities.isNullOrWhitespace,
         resourceGroupName: v.validationUtilities.isNullOrWhitespace,
-    });
+    }, buildingBlockSettings);
+
+    if (buildingBlockErrors.length > 0) {
+        throw new Error(JSON.stringify(buildingBlockErrors));
+    }
 
     if (buildingBlockSettings.validationErrors) {
         _.each(buildingBlockSettings.validationErrors, (error) => {

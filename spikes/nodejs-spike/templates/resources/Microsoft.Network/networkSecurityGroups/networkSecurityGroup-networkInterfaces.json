@@ -1,0 +1,107 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "deploymentContext": { "type": "object" },
+    "networkSecurityGroupSetting": {
+      "type": "object"
+    }
+  },
+  "variables": {
+    "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('networkSecurityGroupSetting'))))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "name": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-nicRef', copyIndex(), '-', variables('templateUniqueString'))]",
+      "copy": {
+        "name": "nic-reference-iterator",
+        "count": "[length(parameters('networkSecurityGroupSetting').networkInterfaces)]"
+      },
+      "properties": {
+        "mode": "Incremental",
+        "template": {
+          "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {},
+          "variables": {},
+          "resources": [
+          ],
+          "outputs": {
+            "reference": {
+              "type": "object",
+              "value": {
+                "name": "[split(parameters('networkSecurityGroupSetting').networkInterfaces[copyIndex()], '/')[8]]",
+                "properties": "[reference(parameters('networkSecurityGroupSetting').networkInterfaces[copyIndex()], '2016-03-30')]"
+              }
+            }
+          }
+        },
+        "parameters": {}
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "name": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-updateNic0', 'Nsg-', variables('templateUniqueString'))]",
+      "properties": {
+        "mode": "Incremental",
+        "parameters": { },
+        "template": {
+          "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": { },
+          "variables": { },
+          "resources": [ ],
+          "outputs": { }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "name": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-updateNic', copyindex(1), 'Nsg-', variables('templateUniqueString'))]",
+      "dependsOn": [
+        "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-updateNic', copyindex(), 'Nsg-', variables('templateUniqueString'))]"
+      ],
+      "copy": {
+        "name": "[concat(parameters('networkSecurityGroupSetting').name, '-nic-iterator')]",
+        "count": "[length(parameters('networkSecurityGroupSetting').networkInterfaces)]"
+      },
+      "properties": {
+        "mode": "Incremental",
+        "template": {
+          "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+          },
+          "variables": {
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Network/networkInterfaces",
+              "apiVersion": "2016-03-30",
+              "name": "[split(parameters('networkSecurityGroupSetting').networkInterfaces[copyIndex()], '/')[8]]",
+              "location": "[resourceGroup().location]",
+              "properties": {
+                "ipConfigurations": "[reference(concat(parameters('deploymentContext').parentTemplateUniqueString, '-nicRef', copyIndex(), '-', variables('templateUniqueString'))).outputs.reference.value.properties.ipConfigurations]",
+                "dnsSettings": "[reference(concat(parameters('deploymentContext').parentTemplateUniqueString, '-nicRef', copyIndex(), '-', variables('templateUniqueString'))).outputs.reference.value.properties.dnsSettings]",
+                "enableIPForwarding": "[reference(concat(parameters('deploymentContext').parentTemplateUniqueString, '-nicRef', copyIndex(), '-', variables('templateUniqueString'))).outputs.reference.value.properties.enableIPForwarding]",
+                "networksecurityGroup": {
+                "id": "[parameters('networkSecurityGroupSetting').id]"
+                }
+              }
+            }
+          ],
+          "outputs": {
+          }
+        },
+        "parameters": {
+        }
+      }
+    }
+  ],
+  "outputs": {
+  }
+}

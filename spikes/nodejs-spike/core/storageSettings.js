@@ -4,8 +4,8 @@ var _ = require('../lodashMixins.js');
 let v = require('./validation.js');
 var murmurHash = require('murmurhash-native').murmurHash64
 
-const storageDefaultsFile = './nodejs-spike/defaults/storageSettings.json';
-const diagDefaultsFile = './nodejs-spike/defaults/diagonisticStorageSettings.json';
+const storageDefaultsFile = './defaults/storageSettings.json';
+const diagDefaultsFile = './defaults/diagonisticStorageSettings.json';
 
 function merge(settings, key) {
     let defaults;

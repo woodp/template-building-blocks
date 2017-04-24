@@ -3,7 +3,7 @@ var fs = require('fs');
 var _ = require('../lodashMixins.js');
 let v = require('./validation.js');
 
-const defaultsPath = './nodejs-spike/defaults/availabilitySetSettings.json';
+const defaultsPath = './defaults/availabilitySetSettings.json';
 
 function merge(settings) {
   let defaults = JSON.parse(fs.readFileSync(defaultsPath, 'UTF-8'));

@@ -1,7 +1,7 @@
 describe('routeTableSettings', () => {
     let rewire = require('rewire');
-    let resources = require('../templates/resources.js');
-    let routeTableSettings = rewire('../templates/routeTableSettings.js');
+    let resources = require('../core/resources.js');
+    let routeTableSettings = rewire('../core/routeTableSettings.js');
     let transform = routeTableSettings.__get__("transform");
     let validSettings = {
         subscriptionId: '689B3D5F-F473-405A-B3EB-7F59D418C682',
