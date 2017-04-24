@@ -14,10 +14,10 @@
     {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2015-01-01",
-      "name": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-subnetRef', copyIndex(), '-', variables('templateUniqueString'))]",
+      "name": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-nicRef', copyIndex(), '-', variables('templateUniqueString'))]",
       "copy": {
-        "name": "subnet-reference-iterator",
-        "count": "[length(parameters('networkSecurityGroupSetting').subnets)]"
+        "name": "nic-reference-iterator",
+        "count": "[length(parameters('networkSecurityGroupSetting').networkInterfaces)]"
       },
       "properties": {
         "mode": "Incremental",
@@ -32,8 +32,8 @@
             "reference": {
               "type": "object",
               "value": {
-                "name": "[split(parameters('networkSecurityGroupSetting').subnets[copyIndex()], '/')[10]]",
-                "properties": "[reference(parameters('networkSecurityGroupSetting').subnets[copyIndex()], '2016-03-30')]"
+                "name": "[split(parameters('networkSecurityGroupSetting').networkInterfaces[copyIndex()], '/')[10]]",
+                "properties": "[reference(parameters('networkSecurityGroupSetting').networkInterfaces[copyIndex()], '2016-03-30')]"
               }
             }
           }
@@ -44,7 +44,7 @@
     {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2015-01-01",
-      "name": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-updateSN0', 'Nsg-', variables('templateUniqueString'))]",
+      "name": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-updateNic0', 'Nsg-', variables('templateUniqueString'))]",
       "properties": {
         "mode": "Incremental",
         "parameters": { },
@@ -61,13 +61,13 @@
     {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2015-01-01",
-      "name": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-updateSN', copyindex(1), 'Nsg-', variables('templateUniqueString'))]",
+      "name": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-updateNic', copyindex(1), 'Nsg-', variables('templateUniqueString'))]",
       "dependsOn": [
-        "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-updateSN', copyindex(), 'Nsg-', variables('templateUniqueString'))]"
+        "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-updateNic', copyindex(), 'Nsg-', variables('templateUniqueString'))]"
       ],
       "copy": {
-        "name": "[concat(parameters('networkSecurityGroupSetting').name, '-sn-iterator')]",
-        "count": "[length(parameters('networkSecurityGroupSetting').subnets)]"
+        "name": "[concat(parameters('networkSecurityGroupSetting').name, '-nic-iterator')]",
+        "count": "[length(parameters('networkSecurityGroupSetting').networkInterfaces)]"
       },
       "properties": {
         "mode": "Incremental",
@@ -80,14 +80,16 @@
           },
           "resources": [
             {
-              "type": "Microsoft.Network/virtualNetworks/subnets",
+              "type": "Microsoft.Network/networkInterfaces",
               "apiVersion": "2016-03-30",
-              "name": "[concat(split(parameters('networkSecurityGroupSetting').subnets[copyIndex()], '/')[8], '/', split(parameters('networkSecurityGroupSetting').subnets[copyIndex()], '/')[10])]",
+              "name": "[concat(split(parameters('networkSecurityGroupSetting').networkInterfaces[copyIndex()], '/')[8], '/', split(parameters('networkSecurityGroupSetting').networkInterfaces[copyIndex()], '/')[10])]",
               "location": "[resourceGroup().location]",
               "properties": {
-                "addressPrefix": "[reference(concat(parameters('deploymentContext').parentTemplateUniqueString, '-subnetRef', copyIndex(), '-', variables('templateUniqueString'))).outputs.reference.value.properties.addressPrefix]",
-                "networkSecurityGroup": {
-                  "id": "[parameters('networkSecurityGroupSetting').id]"
+                "ipConfigurations": "[reference(concat(parameters('deploymentContext').parentTemplateUniqueString, '-nicRef', copyIndex(), '-', variables('templateUniqueString'))).outputs.reference.value.properties.ipConfigurations]",
+                "dnsSettings": "[reference(concat(parameters('deploymentContext').parentTemplateUniqueString, '-nicRef', copyIndex(), '-', variables('templateUniqueString'))).outputs.reference.value.properties.dnsSettings]",
+                "enableIPForwarding": "[reference(concat(parameters('deploymentContext').parentTemplateUniqueString, '-nicRef', copyIndex(), '-', variables('templateUniqueString'))).outputs.reference.value.properties.enableIPForwarding]",
+                "networksecurityGroup": {
+                "id": "[parameters('networkSecurityGroupSetting').id]"
                 }
               }
             }

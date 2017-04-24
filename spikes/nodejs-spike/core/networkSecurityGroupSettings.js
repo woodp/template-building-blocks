@@ -5,6 +5,8 @@ let r = require('./resources.js');
 let validationMessages = require('./validationMessages.js');
 
 let networkSecurityGroupSettingsDefaults = {
+    virtualNetworks: [],
+    networkInterfaces: [],
     securityRules: []
 };
 
@@ -74,7 +76,6 @@ let networkSecurityGroupSettingsSecurityRulesValidations = {
         }                
     },
     direction: (result, parentKey, key, value, parent) => {
-        //if (!v.utilities.isStringInArray(value, ['Inbound', 'Outbound'])) {
         if (!isValidDirection(value)) {
             result.push({
                 name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
@@ -113,38 +114,43 @@ let networkSecurityGroupSettingsValidations = {
     }
 };
 
-// function transform(settings) {
-//     return {
-//         name: settings.name,
-//         id: r.resourceId(settings.subscriptionId, settings.resourceGroupName, 'Microsoft.Network/routeTables', settings.name),
-//         resourceGroupName: settings.resourceGroupName,
-//         subscriptionId: settings.subscriptionId,
-//         subnets: _.transform(settings.virtualNetworks, (result, virtualNetwork) => {
-//             _.each(virtualNetwork.subnets, (subnet) => {
-//                 result.push(r.resourceId(virtualNetwork.subscriptionId, virtualNetwork.resourceGroupName, 'Microsoft.Network/virtualNetworks/subnets',
-//                     virtualNetwork.name, subnet));
-//                     //virtualNetwork.name, subnet.name));
-//             })
-//         }, []),
-//         properties: {
-//             routes: _.map(settings.routes, (value, index) => {
-//                 let result = {
-//                     name: value.name,
-//                     properties: {
-//                         addressPrefix: value.addressPrefix,
-//                         nextHopType: value.nextHopType
-//                     }
-//                 };
+function transform(settings) {
+    return {
+        name: settings.name,
+        id: r.resourceId(settings.subscriptionId, settings.resourceGroupName, 'Microsoft.Network/networkSecurityGroups', settings.name),
+        resourceGroupName: settings.resourceGroupName,
+        subscriptionId: settings.subscriptionId,
+        subnets: _.transform(settings.virtualNetworks, (result, virtualNetwork) => {
+            _.each(virtualNetwork.subnets, (subnet) => {
+                result.push(r.resourceId(virtualNetwork.subscriptionId, virtualNetwork.resourceGroupName, 'Microsoft.Network/virtualNetworks/subnets',
+                    virtualNetwork.name, subnet));
+            })
+        }, []),
+        networkInterfaces: _.transform(settings.networkInterfaces, (result, networkInterface) => {
+            result.push(r.resourceId(networkInterface.subscriptionId, networkInterface.resourceGroupName, 'Microsoft.Network/networkInterfaces',
+                    networkInterface.name));
+        }, []),
+        properties: {
+            securityRules: _.map(settings.securityRules, (value, index) => {
+                let result = {
+                    name: value.name,
+                    properties: {
+                        direction: value.direction,
+                        priority: value.priority,
+                        sourceAddressPrefix: value.sourceAddressPrefix,
+                        destinationAddressPrefix: value.destinationAddressPrefix,
+                        sourcePortRange: value.sourcePortRange,
+                        destinationPortRange: value.destinationPortRange,
+                        access: value.access,
+                        protocol: value.protocol
+                    }
+                };
 
-//                 if (value.nextHopIpAddress) {
-//                     result.properties.nextHopIpAddress = value.nextHopIpAddress;
-//                 }
-                
-//                 return result;
-//             })
-//         }
-//     };
-// }
+                return result;
+            })
+        }
+    };
+}
 
 exports.transform = function ({settings, buildingBlockSettings}) {
     if (_.isPlainObject(settings)) {
@@ -159,11 +165,11 @@ exports.transform = function ({settings, buildingBlockSettings}) {
           throw new Error(JSON.stringify(errors));
         }
 
-        if (merged.validationErrors) {
-            _.each(merged.validationErrors, (error) => {
-                error.name = `settings[${index}]${error.name}`;
-            });
-        }
+        // if (merged.validationErrors) {
+        //     _.each(merged.validationErrors, (error) => {
+        //         error.name = `settings[${index}]${error.name}`;
+        //     });
+        // }
 
         result.push(merged);
     }, []);
@@ -177,26 +183,26 @@ exports.transform = function ({settings, buildingBlockSettings}) {
         throw new Error(JSON.stringify(buildingBlockErrors));
     }
 
-    if (buildingBlockSettings.validationErrors) {
-        _.each(buildingBlockSettings.validationErrors, (error) => {
-            error.name = `buildingBlockSettings${error.name}`;
-        });
-    }
+    // if (buildingBlockSettings.validationErrors) {
+    //     _.each(buildingBlockSettings.validationErrors, (error) => {
+    //         error.name = `buildingBlockSettings${error.name}`;
+    //     });
+    // }
 
-    if (_.some(results, 'validationErrors') || (buildingBlockSettings.validationErrors)) {
-        results.push(buildingBlockSettings);
-        return {
-            validationErrors: _.transform(_.compact(results), (result, value) => {
-                if (value.validationErrors) {
-                    result.validationErrors.push(value.validationErrors);
-                }
-            }, { validationErrors: [] })
-        };
-    }
+    // if (_.some(results, 'validationErrors') || (buildingBlockSettings.validationErrors)) {
+    //     results.push(buildingBlockSettings);
+    //     return {
+    //         validationErrors: _.transform(_.compact(results), (result, value) => {
+    //             if (value.validationErrors) {
+    //                 result.validationErrors.push(value.validationErrors);
+    //             }
+    //         }, { validationErrors: [] })
+    //     };
+    // }
 
     results = _.transform(results, (result, setting) => {
         setting = r.setupResources(setting, buildingBlockSettings, (parentKey) => {
-            return ((parentKey === null) || (parentKey === "virtualNetworks"));
+            return ((parentKey === null) || (parentKey === "virtualNetworks") || (parentKey === "networkInterfaces"));
         });
         setting = transform(setting);
         result.push(setting);
