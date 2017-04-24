@@ -229,37 +229,68 @@ let routeTableSettings2 = {
 
 let nsg = {
   name: "test-nsg",
+  virtualNetworks: [
+    {
+      name: "my-virtual-network",
+      subnets: ["web", "biz"]
+    },
+    {
+      name: "my-other-virtual-network",
+      subnets: ["web"]
+    }
+  ],
+  networkInterfaces: [
+    {
+      name: "my-nic1"
+    },
+    {
+      name: "my-nic2"
+    }
+  ],
   securityRules: [
     {
-      name: "rule1",
-      protocol: "TCP",
-      sourcePortRange: 0,
-      destinationPortRange: 65536
+      name: 'rule1',
+      direction: 'Inbound',
+      priority: 100,
+      sourceAddressPrefix: '192.168.1.1',
+      destinationAddressPrefix: '*',
+      sourcePortRange: '*',
+      destinationPortRange: '*',
+      access: 'Allow',
+      protocol: '*'
     },
     {
-      name: "rule1",
-      protocol: "UDP",
-      sourcePortRange: 1,
-      destinationPortRange: 65535
+      name: 'rule2',
+      direction: 'Inbound',
+      priority: 101,
+      sourceAddressPrefix: '192.168.1.1/24',
+      destinationAddressPrefix: '*',
+      sourcePortRange: '*',
+      destinationPortRange: '*',
+      access: 'Allow',
+      protocol: '*'
     },
     {
-      name: "rule3",
-      protocol: "*",
-      sourcePortRange: "*",
-      destinationPortRange: "*"
+      name: 'rule3',
+      direction: 'Inbound',
+      priority: 102,
+      sourceAddressPrefix: 'VirtualNetwork',
+      destinationAddressPrefix: 'AzureLoadBalancer',
+      sourcePortRange: '1-65535',
+      destinationPortRange: '*',
+      access: 'Allow',
+      protocol: '*'
     },
     {
-      protocol: "TCP"
-    },
-    {
-      name: "rule4",
-      protocol: "*",
-      sourcePortRange: "1-1234",
-      destinationPortRange: "1-1234"
-    },
-    {
-      name: "rule5",
-      protocol: ""
+      name: 'rule4',
+      direction: 'Inbound',
+      priority: 103,
+      sourceAddressPrefix: 'Internet',
+      destinationAddressPrefix: '*',
+      sourcePortRange: '*',
+      destinationPortRange: 1234,
+      access: 'Allow',
+      protocol: '*'
     }
   ]
 };
