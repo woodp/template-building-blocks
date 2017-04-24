@@ -34,7 +34,14 @@ function reduce({validations, value, parentKey, parentValue, baseObjectSettings,
         if (_.isArray(value)) {
             // The value is an array, so we need to iterate it and then reduce
             _.reduce(value, (accumulator, item, index) => {
-                reduce(validations, item, `${parentKey}[${index}]`, parentValue, baseObjectSettings, accumulator);
+                reduce({
+                    validations: validations,
+                    value: item,
+                    parentKey: `${parentKey}[${index}]`,
+                    parentValue: parentValue,
+                    baseObjectSettings: baseObjectSettings,
+                    accumulator: accumulator
+                });
                 return accumulator;
             }, accumulator);
         } else {
