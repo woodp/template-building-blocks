@@ -11,7 +11,9 @@
     "accounts": []
   },
   "osDisk": {
-    "osType": "windows"
+    "osType": "linux",
+    "caching": "ReadWrite",
+    "createOption": "FromImage"
   },
   "diagonisticStorageAccounts": {
     "count": 1,
@@ -42,10 +44,6 @@
       "caching": "None",
       "createOption": "Empty"
     }
-  },
-  "osDisk": {
-    "caching": "ReadWrite",
-    "createOption": "FromImage"
   },
   "extensions": [
     {

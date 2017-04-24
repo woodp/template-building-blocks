@@ -25,13 +25,12 @@
           "computerName": "[parameters('source').computerName]",
           "adminUsername": "[parameters('source').adminUsername]",
           "adminPassword": "[parameters('secret')]",
-          "[concat(toLower(parameters('source').osType), 'Configuration')]": {
-            "provisionVmAgent": "true"
-          }
+          "[concat(toLower(parameters('source').osType), 'Configuration')]": "[parameters('source')[concat(toLower(parameters('source').osType), 'Configuration')]"
         },
         "storageProfile": "[parameters('source').storageProfile]",
         "networkProfile": "[parameters('source').networkProfile]",
-        "diagnosticsProfile": "[parameters('source').diagnosticsProfile]"
+        "diagnosticsProfile": "[parameters('source').diagnosticsProfile]",
+        "licenseType": "[parameters('source').licenseType]"
       }
     },
     {

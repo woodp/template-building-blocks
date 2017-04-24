@@ -123,6 +123,7 @@ let virtualMachineValidations = {
             };
         }
     },
+    existingWindowsServerlicense: v.validationUtilities.isBoolean,
     adminUsername: v.validationUtilities.isNullOrWhitespace,
     osAuthenticationType: (result, parentKey, key, value, parent, baseObjectSettings) => {
         if (_.isNullOrWhitespace(value) || (_.toLower(value) !== 'ssh' && _.toLower(value) !== 'password')) {
@@ -194,6 +195,17 @@ let childResourceToMerge = {
 }
 
 let processorProperties = {
+    existingWindowsServerlicense: (value, key, index, parent) => {
+        if (_.toLower(parent.osType) === "windows" && value) {
+            return {
+                licenseType: "Windows_Server"
+            }
+        }else {
+            return {
+                licenseType: ""
+            }
+        }
+    },
     availabilitySet: (value, key, index, parent) => {
         if (_.toLower(value.useExistingAvailabilitySet) === "no" && parent.vmCount < 2) {
             return;
@@ -224,6 +236,11 @@ let processorProperties = {
             name: parent.name.concat('-os.vhd'),
             createOption: value.createOption,
             caching: value.caching
+        }
+        if (value.image) {
+            instance.image = {
+                uri: value.image
+            }
         }
         if (value.encryptionSettings) {
             instance.encryptionSettings = {
@@ -259,6 +276,7 @@ let processorProperties = {
         }
 
         return {
+            osType: _.toLower(value.osType),
             storageProfile: {
                 osDisk: instance
             }
@@ -384,7 +402,18 @@ let processorProperties = {
         }
     },
     adminPassword: (value, key, index, parent) => {
-        return;
+        if (_.toLower(parent.osAuthenticationType) === "password" && _.toLower(parent.osDisk.osType) === "windows") {
+            return {
+                windowsConfiguration: {
+                    "provisionVmAgent": "true"
+                }
+            }
+        } else {
+             return {
+                linuxConfiguration: null
+            }
+        }
+
     },
     sshPublicKey: (value, key, index, parent) => {
         return;
@@ -430,7 +459,7 @@ let processChildResources = {
         }
     },
     osDisk: (value, key, index, parent) => {
-        if (value.osType === "linux" && parent.osAuthenticationType === "ssh") {
+        if (_.toLower(value.osType) === "linux" && _.toLower(parent.osAuthenticationType) === "ssh") {
             output["secret"] = parent.sshPublicKey;
         } else {
             output["secret"] = parent.adminPassword;

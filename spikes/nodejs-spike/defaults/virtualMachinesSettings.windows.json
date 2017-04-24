@@ -4,7 +4,9 @@
   "computerNamePrefix": "test",
   "size": "Standard_DS2_v2",
   "osDisk": {
-    "osType": "windows"
+    "osType": "windows",
+    "caching": "ReadWrite",
+    "createOption": "FromImage"
   },
   "adminUsername": "adminUser",
   "adminPassword": "",
@@ -49,10 +51,7 @@
       "createOption": "Empty"
     }
   },
-  "osDisk": {
-    "caching": "ReadWrite",
-    "createOption": "FromImage"
-  },
+  "existingWindowsServerlicense": false,
   "extensions": [
     {
       "name": "Microsoft.Insights.VMDiagnosticsSettings",

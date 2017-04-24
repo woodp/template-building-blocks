@@ -26,9 +26,7 @@
           "computerName": "[parameters('source').computerName]",
           "adminUsername": "[parameters('source').adminUsername]",
           "adminPassword": "[parameters('secret')]",
-          "[concat(toLower(parameters('source').osType), 'Configuration')]": {
-            "provisionVmAgent": "true"
-          }
+          "[concat(toLower(parameters('source').osType), 'Configuration')]": "[parameters('source').osProfile[concat(toLower(parameters('source').osType), 'Configuration')]"
         },
         "storageProfile": "[parameters('source').storageProfile]",
         "networkProfile": "[parameters('source').networkProfile]",
