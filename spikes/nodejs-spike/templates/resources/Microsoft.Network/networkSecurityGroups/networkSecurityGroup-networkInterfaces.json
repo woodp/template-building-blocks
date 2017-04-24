@@ -32,7 +32,7 @@
             "reference": {
               "type": "object",
               "value": {
-                "name": "[split(parameters('networkSecurityGroupSetting').networkInterfaces[copyIndex()], '/')[10]]",
+                "name": "[split(parameters('networkSecurityGroupSetting').networkInterfaces[copyIndex()], '/')[8]]",
                 "properties": "[reference(parameters('networkSecurityGroupSetting').networkInterfaces[copyIndex()], '2016-03-30')]"
               }
             }
@@ -82,7 +82,7 @@
             {
               "type": "Microsoft.Network/networkInterfaces",
               "apiVersion": "2016-03-30",
-              "name": "[concat(split(parameters('networkSecurityGroupSetting').networkInterfaces[copyIndex()], '/')[8], '/', split(parameters('networkSecurityGroupSetting').networkInterfaces[copyIndex()], '/')[10])]",
+              "name": "[split(parameters('networkSecurityGroupSetting').networkInterfaces[copyIndex()], '/')[8]]",
               "location": "[resourceGroup().location]",
               "properties": {
                 "ipConfigurations": "[reference(concat(parameters('deploymentContext').parentTemplateUniqueString, '-nicRef', copyIndex(), '-', variables('templateUniqueString'))).outputs.reference.value.properties.ipConfigurations]",
