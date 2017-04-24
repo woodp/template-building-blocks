@@ -80,7 +80,6 @@ function transform(settings) {
             _.each(virtualNetwork.subnets, (subnet) => {
                 result.push(r.resourceId(virtualNetwork.subscriptionId, virtualNetwork.resourceGroupName, 'Microsoft.Network/virtualNetworks/subnets',
                     virtualNetwork.name, subnet));
-                    //virtualNetwork.name, subnet.name));
             })
         }, []),
         properties: {
