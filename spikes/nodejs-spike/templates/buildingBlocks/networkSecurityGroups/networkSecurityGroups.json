@@ -41,7 +41,7 @@
     {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2015-01-01",
-      "name": "[concat(variables('networkSecurityGroupDeploymentName'), '-', copyIndex())]",
+      "name": "[concat(variables('networkSecurityGroupDeploymentName'), '-sn-', copyIndex())]",
       "copy": {
           "name": "subnet-iterator",
           "count": "[length(parameters('networkSecurityGroupSettings'))]"
@@ -69,7 +69,7 @@
     {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2015-01-01",
-      "name": "[concat(variables('networkSecurityGroupDeploymentName'), '-', copyIndex())]",
+      "name": "[concat(variables('networkSecurityGroupDeploymentName'), '-nic-', copyIndex())]",
       "copy": {
           "name": "nic-iterator",
           "count": "[length(parameters('networkSecurityGroupSettings'))]"
