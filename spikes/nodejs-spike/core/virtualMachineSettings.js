@@ -145,27 +145,10 @@ let virtualMachineValidations = {
             })
         }
     },
-    storageAccounts: (result, parentKey, key, value, parent, baseObjectSettings) => {
-        v.reduce({
-            validations: storageSettings.storageValidations,
-            value: value,
-            parentKey: parentKey,
-            parentValue: parent,
-            baseObjectSettings: baseObjectSettings,
-            accumulator: result
-        });
-    },
-    diagonisticStorageAccounts: (result, parentKey, key, value, parent, baseObjectSettings) => {
-        v.reduce({
-            validations: storageSettings.diagonisticValidations,
-            value: value,
-            parentKey: parentKey,
-            parentValue: parent,
-            baseObjectSettings: baseObjectSettings,
-            accumulator: result
-        });
-    },
+    storageAccounts: storageSettings.storageValidations,
+    diagonisticStorageAccounts: storageSettings.diagonisticValidations,
     nics: (result, parentKey, key, value, parent, baseObjectSettings) => {
+        // Validate the network interfaces individually
         v.reduce({
             validations: nicSettings.validations,
             value: value,
@@ -174,6 +157,22 @@ let virtualMachineValidations = {
             baseObjectSettings: baseObjectSettings,
             accumulator: result
         });
+
+        // Make sure only one network interface is primary
+        let primaryNicCount = _.reduce(parent.nics, (accumulator, value, index, collection) => {
+            if (value.isPrimary) {
+                accumulator++;
+            }
+
+            return accumulator;
+        }, 0);
+
+        if (primaryNicCount !== 1) {
+            result.push({
+                name: '.nics',
+                message: "Virtual machine can have only 1 primary NetworkInterface."
+            })
+        }
     },
     availabilitySet: (result, parentKey, key, value, parent, baseObjectSettings) => {
         v.reduce({
