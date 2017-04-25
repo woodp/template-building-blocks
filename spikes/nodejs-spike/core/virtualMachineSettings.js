@@ -45,7 +45,7 @@ function defaultsCustomizer(objValue, srcValue, key) {
 }
 
 let virtualMachineValidations = {
-    virtualNetwork: (result, parentKey, key, value, parent, baseObjectSettings) => {
+    virtualNetwork: (result, parentKey, key, value, parent) => {
         if (_.isNullOrWhitespace(value.name)) {
             result.push({
                 name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
@@ -53,7 +53,7 @@ let virtualMachineValidations = {
             })
         }
     },
-    vmCount: (result, parentKey, key, value, parent, baseObjectSettings) => {
+    vmCount: (result, parentKey, key, value, parent) => {
         if (!_.isNumber(value) || value < 1) {
             result.push({
                 name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
@@ -62,7 +62,7 @@ let virtualMachineValidations = {
         }
     },
     namePrefix: v.validationUtilities.isNullOrWhitespace,
-    computerNamePrefix: (result, parentKey, key, value, parent, baseObjectSettings) => {
+    computerNamePrefix: (result, parentKey, key, value, parent) => {
         if (_.isNullOrWhitespace(value) || value.length >= 6) {
             result.push({
                 name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
@@ -71,7 +71,7 @@ let virtualMachineValidations = {
         }
     },
     size: v.validationUtilities.isNullOrWhitespace,
-    osDisk: (result, parentKey, key, value, parent, baseObjectSettings) => {
+    osDisk: (result, parentKey, key, value, parent) => {
         if (_.isNullOrWhitespace(value.osType) || (_.toLower(value.osType) !== 'linux' && _.toLower(value.osType) !== 'windows')) {
             result.push({
                 name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
@@ -125,7 +125,7 @@ let virtualMachineValidations = {
     },
     existingWindowsServerlicense: v.validationUtilities.isBoolean,
     adminUsername: v.validationUtilities.isNullOrWhitespace,
-    osAuthenticationType: (result, parentKey, key, value, parent, baseObjectSettings) => {
+    osAuthenticationType: (result, parentKey, key, value, parent) => {
         if (_.isNullOrWhitespace(value) || (_.toLower(value) !== 'ssh' && _.toLower(value) !== 'password')) {
             result.push({
                 name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
@@ -147,14 +147,13 @@ let virtualMachineValidations = {
     },
     storageAccounts: storageSettings.storageValidations,
     diagonisticStorageAccounts: storageSettings.diagonisticValidations,
-    nics: (result, parentKey, key, value, parent, baseObjectSettings) => {
+    nics: (result, parentKey, key, value, parent) => {
         // Validate the network interfaces individually
         v.reduce({
             validations: nicSettings.validations,
             value: value,
             parentKey: parentKey,
             parentValue: parent,
-            baseObjectSettings: baseObjectSettings,
             accumulator: result
         });
 
@@ -174,13 +173,12 @@ let virtualMachineValidations = {
             })
         }
     },
-    availabilitySet: (result, parentKey, key, value, parent, baseObjectSettings) => {
+    availabilitySet: (result, parentKey, key, value, parent) => {
         v.reduce({
             validations: avSetSettings.validations,
             value: value,
             parentKey: parentKey,
             parentValue: parent,
-            baseObjectSettings: baseObjectSettings,
             accumulator: result
         });
     }

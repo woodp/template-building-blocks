@@ -19,7 +19,7 @@ function merge(settings) {
 let networkInterfaceValidations = {
     enableIPForwarding: v.validationUtilities.isBoolean,
     subnetName: v.validationUtilities.isNullOrWhitespace,
-    privateIPAllocationMethod: (result, parentKey, key, value, parent, baseObjectSettings) => {
+    privateIPAllocationMethod: (result, parentKey, key, value, parent) => {
         if (_.isNullOrWhitespace(value) || (_.toLower(value) !== 'static' && _.toLower(value) !== 'dynamic')) {
             result.push({
                 name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
@@ -33,7 +33,7 @@ let networkInterfaceValidations = {
             })
         }
     },
-    publicIPAllocationMethod: (result, parentKey, key, value, parent, baseObjectSettings) => {
+    publicIPAllocationMethod: (result, parentKey, key, value, parent) => {
         if (_.isNullOrWhitespace(value) || (_.toLower(value) !== 'static' && _.toLower(value) !== 'dynamic')) {
             result.push({
                 name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
@@ -41,7 +41,7 @@ let networkInterfaceValidations = {
             })
         }
     },
-    isPrimary: (result, parentKey, key, value, parent, baseObjectSettings) => {
+    isPrimary: (result, parentKey, key, value, parent) => {
         if (_.isNullOrWhitespace(value) || !_.isBoolean(value)) {
             result.push({
                 name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
@@ -49,7 +49,7 @@ let networkInterfaceValidations = {
             })
         };
     },
-    isPublic: (result, parentKey, key, value, parent, baseObjectSettings) => {
+    isPublic: (result, parentKey, key, value, parent) => {
         if (_.isNullOrWhitespace(value) || !_.isBoolean(value)) {
             result.push({
                 name: _.join((parentKey ? [parentKey, key] : [key]), '.'),

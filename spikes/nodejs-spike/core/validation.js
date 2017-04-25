@@ -12,18 +12,17 @@ function merge(settings, defaultSettings, mergeCustomizer, childResources) {
     return mergedSettings;
 }
 
-function validate(settings, validations, baseObjectSettings) { 
+function validate(settings, validations) { 
     return reduce({
         validations: validations,
         value: settings,
         parentKey: '',
         parentValue: null,
-        baseObjectSettings: baseObjectSettings,
         accumulator: []
     });
 }
 
-function reduce({validations, value, parentKey, parentValue, baseObjectSettings, accumulator}) {
+function reduce({validations, value, parentKey, parentValue, accumulator}) {
     if (_.isPlainObject(validations)) {
         // We are working with a validation OBJECT, so we need to iterate the keys
         if (_.isArray(value)) {
@@ -34,7 +33,6 @@ function reduce({validations, value, parentKey, parentValue, baseObjectSettings,
                     value: item,
                     parentKey: `${parentKey}[${index}]`,
                     parentValue: parentValue,
-                    baseObjectSettings: baseObjectSettings,
                     accumulator: accumulator
                 });
                 return accumulator;
@@ -47,7 +45,6 @@ function reduce({validations, value, parentKey, parentValue, baseObjectSettings,
                     value: value[key],
                     parentKey: `${parentKey}.${key}`,
                     parentValue: value,
-                    baseObjectSettings: baseObjectSettings,
                     accumulator: accumulator
                 });
                 return accumulator;
@@ -58,12 +55,12 @@ function reduce({validations, value, parentKey, parentValue, baseObjectSettings,
         // Otherwise, just call the validation
         if (_.isArray(value)) {
             _.reduce(value, (accumulator, item, index) => {
-                validations(accumulator, `${parentKey}[${index}]`, index, item, parentValue, baseObjectSettings);
+                validations(accumulator, `${parentKey}[${index}]`, index, item, parentValue);
                 return accumulator;
             }, accumulator);
         } else {
             // We're just a value
-            validations(accumulator, `${parentKey}`, '', value, parentValue, baseObjectSettings);
+            validations(accumulator, `${parentKey}`, '', value, parentValue);
         }
     }
 

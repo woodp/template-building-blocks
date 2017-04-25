@@ -12,7 +12,7 @@ function merge(settings) {
 }
 
 let availabilitySetValidations = {
-  useExistingAvailabilitySet: (result, parentKey, key, value, parent, baseObjectSettings) => {
+  useExistingAvailabilitySet: (result, parentKey, key, value, parent) => {
     if (_.isNullOrWhitespace(value) || (_.toLower(value) !== 'yes' && _.toLower(value) !== 'no')) {
       result.push({
         name: _.join((parentKey ? [parentKey, key] : [key]), '.'),

@@ -19,7 +19,7 @@ function merge(settings, key) {
 }
 
 let storageValidations = {
-    count: (result, parentKey, key, value, parent, baseObjectSettings) => {
+    count: (result, parentKey, key, value, parent) => {
         if (!parent.managed && (!_.isNumber(value) || value < 1)) {
             result.push({
                 name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
@@ -30,7 +30,7 @@ let storageValidations = {
 };
 
 let diagonisticValidations = {
-    managed: (result, parentKey, key, value, parent, baseObjectSettings) => {
+    managed: (result, parentKey, key, value, parent) => {
         if (parent.managed) {
             result.push({
                 name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
@@ -38,7 +38,7 @@ let diagonisticValidations = {
             })
         }
     },
-    skuType: (result, parentKey, key, value, parent, baseObjectSettings) => {
+    skuType: (result, parentKey, key, value, parent) => {
         if (_.includes(_.toLower(value), "premium")) {
             result.push({
                 name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
@@ -46,7 +46,7 @@ let diagonisticValidations = {
             })
         }
     },
-    count: (result, parentKey, key, value, parent, baseObjectSettings) => {
+    count: (result, parentKey, key, value, parent) => {
         if (!_.isNumber(value) || value < 1) {
             result.push({
                 name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
