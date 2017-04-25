@@ -8,65 +8,61 @@ let routeTableSettingsDefaults = {
     routes: []
 };
 
-let routeTableSettingsValidations = {
-    name: v.validationUtilities.isNullOrWhitespace,
-    routes: (result, parentKey, key, value, parent) => {
-        let validations = {
-            name: v.validationUtilities.isNullOrWhitespace,
-            addressPrefix: v.validationUtilities.networking.isValidCidr,
-            nextHopType: (result, parentKey, key, value, parent) => {
-                if (_.isNullOrWhitespace(value)) {
-                    result.push({
-                        name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-                        message: validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace
-                    });
-                } else {
-                    // Go ahead and calculate this so we don't have to put it everywhere
-                    parentKey = _.join(_.initial(_.split(parentKey, '.')), '.');
-                    switch (value) {
-                        case 'VirtualNetworkGateway':
-                        case 'VnetLocal':
-                        case 'Internet':
-                        case 'HyperNetGateway':
-                        case 'None':
-                            if (parent.hasOwnProperty('nextHopIpAddress')) {
-                                result.push({
-                                    name: _.join((parentKey ? [parentKey, 'nextHopIpAddress'] : ['nextHopIpAddress']), '.'),
-                                    message: validationMessages.routeTable.routes.NextHopIpAddressCannotBePresent
-                                });
-                            }
-                            break;
-                        case 'VirtualAppliance':
-                            if (_.isNullOrWhitespace(parent.nextHopIpAddress)) {
-                                result.push({
-                                    name: _.join((parentKey ? [parentKey, 'nextHopIpAddress'] : ['nextHopIpAddress']), '.'),
-                                    message: validationMessages.routeTable.routes.NextHopIpAddressMustBePresent
-                                });
-                            } else if (!v.utilities.networking.isValidIpAddress(parent.nextHopIpAddress)) {
-                                result.push({
-                                    name: _.join((parentKey ? [parentKey, 'nextHopIpAddress'] : ['nextHopIpAddress']), '.'),
-                                    message: validationMessages.InvalidIpAddress
-                                });
-                            }
-                            break;
-                        default:
-                            result.push({
-                                name: _.join((parentKey ? [parentKey, 'nextHopType'] : ['nextHopType']), '.'),
-                                message: validationMessages.routeTable.routes.InvalidNextHopType
-                            })
-                            break;
-                    }
-                }
-            }
+let isValidNextHopType = (nextHopType) => {
+    return v.utilities.isStringInArray(nextHopType, ['VirtualNetworkGateway', 'VnetLocal', 'Internet', 'HyperNetGateway', 'None', 'VirtualAppliance']);
+};
+
+let validate = (settings) => {
+    // Validate each setting
+    let errors = v.validate(settings, routeTableSettingsValidations);
+    // Validate route names
+    let names = _.reduce(settings.routes, (accumulator, value, index, collection) => {
+        if (!accumulator[value.name]) {
+            accumulator[value.name] = 0;
+        }
+        accumulator[value.name] = accumulator[value.name] + 1;
+        return accumulator;
+    }, {});
+
+    let duplicates = _.reduce(names, (accumulator, value, key, collection) => {
+        if (value > 1) {
+            accumulator.push(key);
         }
 
-        v.reduce({
-            validations: validations,
-            value: value,
-            parentKey: parentKey,
-            parentValue: parent,
-            accumulator: result
+        return accumulator;
+    }, []);
+
+    if (duplicates.length > 0) {
+        errors.push({
+            name: '.routes',
+            message: `Duplicate route names: ${duplicates.join(',')}`
         });
+    }
+
+    return errors;
+}
+
+let routeTableSettingsValidations = {
+    name: v.validationUtilities.isNullOrWhitespace,
+    routes: {
+        name: v.validationUtilities.isNullOrWhitespace,
+        addressPrefix: v.validationUtilities.networking.isValidCidr,
+        nextHopType: (result, parentKey, key, value, parent) => {
+            if (!isValidNextHopType(value)) {
+                result.push({
+                    name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
+                    message: validationMessages.routeTable.routes.InvalidNextHopType
+                });
+            }
+        },
+        nextHopIpAddress: (result, parentKey, key, value, parent) => {
+            if ((parent.nextHopType === 'VirtualAppliance') && (!v.utilities.networking.isValidIpAddress(value))) {
+                result.push({
+                    name: _.join((parentKey ? [parentKey, 'nextHopIpAddress'] : ['nextHopIpAddress']), '.'),
+                    message: validationMessages.InvalidIpAddress
+                });
+            }
+        }
     }
 };
 
@@ -108,17 +104,10 @@ exports.transform = function ({settings, buildingBlockSettings}) {
     }
 
     let results = _.transform(settings, (result, setting, index) => {
-        //let merged = v.mergeAndValidate(setting, routeTableSettingsDefaults, routeTableSettingsValidations);
         let merged = v.merge(setting, routeTableSettingsDefaults);
-        let errors = v.validate(merged, routeTableSettingsValidations);
+        let errors = validate(merged);
         if (errors.length > 0) {
           throw new Error(JSON.stringify(errors));
-        }
-
-        if (merged.validationErrors) {
-            _.each(merged.validationErrors, (error) => {
-                error.name = `settings[${index}]${error.name}`;
-            });
         }
 
         result.push(merged);
