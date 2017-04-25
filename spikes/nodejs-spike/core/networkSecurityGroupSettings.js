@@ -103,15 +103,7 @@ let networkSecurityGroupSettingsSecurityRulesValidations = {
 
 let networkSecurityGroupSettingsValidations = {
     name: v.validationUtilities.isNullOrWhitespace,
-    securityRules: (result, parentKey, key, value, parent) => {
-        v.reduce({
-            validations: networkSecurityGroupSettingsSecurityRulesValidations,
-            value: value,
-            parentKey: parentKey,
-            parentValue: parent,
-            accumulator: result
-        });
-    }
+    securityRules: networkSecurityGroupSettingsSecurityRulesValidations
 };
 
 function transform(settings) {
@@ -158,18 +150,11 @@ exports.transform = function ({settings, buildingBlockSettings}) {
     }
 
     let results = _.transform(settings, (result, setting, index) => {
-        //let merged = v.mergeAndValidate(setting, routeTableSettingsDefaults, routeTableSettingsValidations);
         let merged = v.merge(setting, networkSecurityGroupSettingsDefaults);
         let errors = v.validate(merged, networkSecurityGroupSettingsValidations);
         if (errors.length > 0) {
           throw new Error(JSON.stringify(errors));
         }
-
-        // if (merged.validationErrors) {
-        //     _.each(merged.validationErrors, (error) => {
-        //         error.name = `settings[${index}]${error.name}`;
-        //     });
-        // }
 
         result.push(merged);
     }, []);
@@ -182,23 +167,6 @@ exports.transform = function ({settings, buildingBlockSettings}) {
     if (buildingBlockErrors.length > 0) {
         throw new Error(JSON.stringify(buildingBlockErrors));
     }
-
-    // if (buildingBlockSettings.validationErrors) {
-    //     _.each(buildingBlockSettings.validationErrors, (error) => {
-    //         error.name = `buildingBlockSettings${error.name}`;
-    //     });
-    // }
-
-    // if (_.some(results, 'validationErrors') || (buildingBlockSettings.validationErrors)) {
-    //     results.push(buildingBlockSettings);
-    //     return {
-    //         validationErrors: _.transform(_.compact(results), (result, value) => {
-    //             if (value.validationErrors) {
-    //                 result.validationErrors.push(value.validationErrors);
-    //             }
-    //         }, { validationErrors: [] })
-    //     };
-    // }
 
     results = _.transform(results, (result, setting) => {
         setting = r.setupResources(setting, buildingBlockSettings, (parentKey) => {

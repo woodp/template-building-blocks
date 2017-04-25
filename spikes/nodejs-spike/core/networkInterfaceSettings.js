@@ -48,16 +48,6 @@ let networkInterfaceValidations = {
                 message: "Valid values are: true, false."
             })
         };
-        let primaryNicCount = 0;
-        baseObjectSettings.nics.forEach((nic) => {
-            if (nic.isPrimary) primaryNicCount++;
-        })
-        if (primaryNicCount !== 1) {
-            result.push({
-                name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-                message: "Virtual machine can have only 1 primary NetworkInterface."
-            })
-        }
     },
     isPublic: (result, parentKey, key, value, parent, baseObjectSettings) => {
         if (_.isNullOrWhitespace(value) || !_.isBoolean(value)) {

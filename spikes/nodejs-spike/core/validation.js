@@ -24,12 +24,7 @@ function validate(settings, validations, baseObjectSettings) {
 }
 
 function reduce({validations, value, parentKey, parentValue, baseObjectSettings, accumulator}) {
-    if (_.isNil(value)) {
-        accumulator.push({
-            name: parentKey,
-            message: validationMessages.ValueCannotBeNull
-        });
-    } else if (_.isPlainObject(validations)) {
+    if (_.isPlainObject(validations)) {
         // We are working with a validation OBJECT, so we need to iterate the keys
         if (_.isArray(value)) {
             // The value is an array, so we need to iterate it and then reduce
