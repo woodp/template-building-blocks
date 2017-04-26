@@ -11,18 +11,22 @@ function merge(settings) {
   return v.merge(settings, defaults)
 }
 
+let validUseExistingAvailabilitySetValues = ['yes', 'no'];
+
+let isValidUseExistingAvailabilitySet = (useExistingAvailabilitySet) => {
+    return v.utilities.isStringInArray(useExistingAvailabilitySet, validUseExistingAvailabilitySetValues);
+};
+
 let availabilitySetValidations = {
-  useExistingAvailabilitySet: (result, parentKey, key, value, parent) => {
-    if (_.isNullOrWhitespace(value) || (_.toLower(value) !== 'yes' && _.toLower(value) !== 'no')) {
-      result.push({
-        name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-        message: "Invalid value provided for 'useExistingAvailabilitySet'. Valid values are: 'yes', 'no'."
-      })
-    }
+  useExistingAvailabilitySet: (value, parent) => {
+    return {
+        result: isValidUseExistingAvailabilitySet(value),
+        message: `Valid values are ${validUseExistingAvailabilitySetValues.join(',')}`
+    };
   },
-  platformFaultDomainCount: v.validationUtilities.isNumber,
-  platformUpdateDomainCount: v.validationUtilities.isNumber,
-  name: v.validationUtilities.isNullOrWhitespace,
+  platformFaultDomainCount: _.isFinite,
+  platformUpdateDomainCount: _.isFinite,
+  name: v.utilities.isNotNullOrWhitespace,
 };
 
 function process(settings, parent) {

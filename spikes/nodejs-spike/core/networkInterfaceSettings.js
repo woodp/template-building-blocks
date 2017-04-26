@@ -16,48 +16,42 @@ function merge(settings) {
     return defaults;
 }
 
-let networkInterfaceValidations = {
-    enableIPForwarding: v.validationUtilities.isBoolean,
-    subnetName: v.validationUtilities.isNullOrWhitespace,
-    privateIPAllocationMethod: (result, parentKey, key, value, parent) => {
-        if (_.isNullOrWhitespace(value) || (_.toLower(value) !== 'static' && _.toLower(value) !== 'dynamic')) {
-            result.push({
-                name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-                message: "Valid values are: 'static', 'dymanic'."
-            })
-        };
-        if (_.toLower(value) === 'static' && !parent.hasOwnProperty('startingIPAddress')) {
-            result.push({
-                name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-                message: "If privateIPAllocationMethod is static, the startingIPAddress cannot be null/empty"
-            })
-        }
-    },
-    publicIPAllocationMethod: (result, parentKey, key, value, parent) => {
-        if (_.isNullOrWhitespace(value) || (_.toLower(value) !== 'static' && _.toLower(value) !== 'dynamic')) {
-            result.push({
-                name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-                message: "Valid values are: 'static', 'dymanic'."
-            })
-        }
-    },
-    isPrimary: (result, parentKey, key, value, parent) => {
-        if (_.isNullOrWhitespace(value) || !_.isBoolean(value)) {
-            result.push({
-                name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-                message: "Valid values are: true, false."
-            })
-        };
-    },
-    isPublic: (result, parentKey, key, value, parent) => {
-        if (_.isNullOrWhitespace(value) || !_.isBoolean(value)) {
-            result.push({
-                name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-                message: "Valid values are: true, false."
-            })
-        };
-    }
+let validIPAllocationMethods = ['Static', 'Dynamic'];
 
+let isValidIPAllocationMethod = (ipAllocationMethod) => {
+    return v.utilities.isStringInArray(ipAllocationMethod, validIPAllocationMethods);
+};
+
+let networkInterfaceValidations = {
+    enableIPForwarding: _.isBoolean,
+    subnetName: v.utilities.isNotNullOrWhitespace,
+    privateIPAllocationMethod: (value, parent) => {
+        let result = {
+            result: true
+        };
+
+        if (!isValidIPAllocationMethod(value)) {
+            result = {
+                result: false,
+                message: `Valid values are ${validIPAllocationMethods.join(',')}`
+            };
+        } else if ((value === 'Static') && (!v.utilities.networking.isValidIpAddress(parent.startingIPAddress))) {
+            result = {
+                result: false,
+                message: 'If privateIPAllocationMethod is Static, startingIPAddress must be a valid IP address'
+            };
+        }
+
+        return result;
+    },
+    publicIPAllocationMethod: (value, parent) => {
+        return {
+            result: isValidIPAllocationMethod(value),
+            message: `Valid values are ${validIPAllocationMethods.join(',')}`
+        };
+    },
+    isPrimary: _.isBoolean,
+    isPublic: _.isBoolean
 };
 
 function intToIP(int) {

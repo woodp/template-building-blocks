@@ -239,136 +239,168 @@ describe('networkSecurityGroupSettings', () => {
         describe('protocol', () => {
             let validation = nsgSettings.__get__('networkSecurityGroupSettingsSecurityRulesValidations').protocol;
             it('invalid', () => {
-                let results = [];
-                validation(results, 'securityRules[0]', 'protocol', 'NOT_A_VALID_PROTOCOL', null);
-                expect(results.length).toEqual(1);
-                expect(results[0].name).toEqual('securityRules[0].protocol');
-                expect(results[0].message).toEqual(validationMessages.networkSecurityGroup.securityRules.InvalidProtocol);
+                let result = validation('NOT_A_VALID_PROTOCOL', null);
+                expect(result.result).toEqual(false);
+                //let results = [];
+                // validation(results, 'securityRules[0]', 'protocol', 'NOT_A_VALID_PROTOCOL', null);
+                // expect(results.length).toEqual(1);
+                // expect(results[0].name).toEqual('securityRules[0].protocol');
+                // expect(results[0].message).toEqual(validationMessages.networkSecurityGroup.securityRules.InvalidProtocol);
             });
 
             it('valid', () => {
-                let results = [];
-                validation(results, 'securityRules[0]', 'protocol', '*', null);
-                expect(results.length).toEqual(0);
+                let result = validation('*', null);
+                expect(result.result).toEqual(true);
+                // let results = [];
+                // validation(results, 'securityRules[0]', 'protocol', '*', null);
+                // expect(results.length).toEqual(0);
             });
         });
 
         describe('sourcePortRange', () => {
             let validation = nsgSettings.__get__('networkSecurityGroupSettingsSecurityRulesValidations').sourcePortRange;
             it('invalid', () => {
-                let results = [];
-                validation(results, 'securityRules[0]', 'sourcePortRange', 'NOT_A_VALID_PORT_RANGE', null);
-                expect(results.length).toEqual(1);
-                expect(results[0].name).toEqual('securityRules[0].sourcePortRange');
-                expect(results[0].message).toEqual(validationMessages.networkSecurityGroup.securityRules.InvalidPortRange);
+                let result = validation('NOT_A_VALID_PORT_RANGE', null);
+                expect(result).toEqual(false);
+                // let results = [];
+                // validation(results, 'securityRules[0]', 'sourcePortRange', 'NOT_A_VALID_PORT_RANGE', null);
+                // expect(results.length).toEqual(1);
+                // expect(results[0].name).toEqual('securityRules[0].sourcePortRange');
+                // expect(results[0].message).toEqual(validationMessages.networkSecurityGroup.securityRules.InvalidPortRange);
             });
 
             it('valid', () => {
-                let results = [];
-                validation(results, 'securityRules[0]', 'sourcePortRange', '*', null);
-                expect(results.length).toEqual(0);
+                let result = validation('*', null);
+                expect(result).toEqual(true);
+                // let results = [];
+                // validation(results, 'securityRules[0]', 'sourcePortRange', '*', null);
+                // expect(results.length).toEqual(0);
             });
         });
 
         describe('destinationPortRange', () => {
             let validation = nsgSettings.__get__('networkSecurityGroupSettingsSecurityRulesValidations').destinationPortRange;
             it('invalid', () => {
-                let results = [];
-                validation(results, 'securityRules[0]', 'destinationPortRange', 'NOT_A_VALID_PORT_RANGE', null);
-                expect(results.length).toEqual(1);
-                expect(results[0].name).toEqual('securityRules[0].destinationPortRange');
-                expect(results[0].message).toEqual(validationMessages.networkSecurityGroup.securityRules.InvalidPortRange);
+                let result = validation('NOT_A_VALID_PORT_RANGE', null);
+                expect(result).toEqual(false);
+                // let results = [];
+                // validation(results, 'securityRules[0]', 'destinationPortRange', 'NOT_A_VALID_PORT_RANGE', null);
+                // expect(results.length).toEqual(1);
+                // expect(results[0].name).toEqual('securityRules[0].destinationPortRange');
+                // expect(results[0].message).toEqual(validationMessages.networkSecurityGroup.securityRules.InvalidPortRange);
             });
 
             it('valid', () => {
-                let results = [];
-                validation(results, 'securityRules[0]', 'destinationPortRange', '*', null);
-                expect(results.length).toEqual(0);
+                let result = validation('*', null);
+                expect(result).toEqual(true);
+                // let results = [];
+                // validation(results, 'securityRules[0]', 'destinationPortRange', '*', null);
+                // expect(results.length).toEqual(0);
             });
         });
 
         describe('sourceAddressPrefix', () => {
             let validation = nsgSettings.__get__('networkSecurityGroupSettingsSecurityRulesValidations').sourceAddressPrefix;
             it('invalid', () => {
-                let results = [];
-                validation(results, 'securityRules[0]', 'sourceAddressPrefix', 'NOT_A_VALID_ADDRESS_PREFIX', null);
-                expect(results.length).toEqual(1);
-                expect(results[0].name).toEqual('securityRules[0].sourceAddressPrefix');
-                expect(results[0].message).toEqual(validationMessages.networkSecurityGroup.securityRules.InvalidAddressPrefix);
+                let result = validation('NOT_A_VALID_ADDRESS_PREFIX', null);
+                expect(result.result).toEqual(false);
+                // let results = [];
+                // validation(results, 'securityRules[0]', 'sourceAddressPrefix', 'NOT_A_VALID_ADDRESS_PREFIX', null);
+                // expect(results.length).toEqual(1);
+                // expect(results[0].name).toEqual('securityRules[0].sourceAddressPrefix');
+                // expect(results[0].message).toEqual(validationMessages.networkSecurityGroup.securityRules.InvalidAddressPrefix);
             });
 
             it('valid', () => {
-                let results = [];
-                validation(results, 'securityRules[0]', 'sourceAddressPrefix', '*', null);
-                expect(results.length).toEqual(0);
+                let result = validation('*', null);
+                expect(result.result).toEqual(true);
+                // let results = [];
+                // validation(results, 'securityRules[0]', 'sourceAddressPrefix', '*', null);
+                // expect(results.length).toEqual(0);
             });
         });
 
         describe('destinationAddressPrefix', () => {
             let validation = nsgSettings.__get__('networkSecurityGroupSettingsSecurityRulesValidations').destinationAddressPrefix;
             it('invalid', () => {
-                let results = [];
-                validation(results, 'securityRules[0]', 'destinationAddressPrefix', 'NOT_A_VALID_ADDRESS_PREFIX', null);
-                expect(results.length).toEqual(1);
-                expect(results[0].name).toEqual('securityRules[0].destinationAddressPrefix');
-                expect(results[0].message).toEqual(validationMessages.networkSecurityGroup.securityRules.InvalidAddressPrefix);
+                let result = validation('NOT_A_VALID_ADDRESS_PREFIX', null);
+                expect(result.result).toEqual(false);
+                // let results = [];
+                // validation(results, 'securityRules[0]', 'destinationAddressPrefix', 'NOT_A_VALID_ADDRESS_PREFIX', null);
+                // expect(results.length).toEqual(1);
+                // expect(results[0].name).toEqual('securityRules[0].destinationAddressPrefix');
+                // expect(results[0].message).toEqual(validationMessages.networkSecurityGroup.securityRules.InvalidAddressPrefix);
             });
 
             it('valid', () => {
-                let results = [];
-                validation(results, 'securityRules[0]', 'destinationAddressPrefix', '*', null);
-                expect(results.length).toEqual(0);
+                let result = validation('*', null);
+                expect(result.result).toEqual(true);
+                // let results = [];
+                // validation(results, 'securityRules[0]', 'destinationAddressPrefix', '*', null);
+                // expect(results.length).toEqual(0);
             });
         });
 
         describe('direction', () => {
             let validation = nsgSettings.__get__('networkSecurityGroupSettingsSecurityRulesValidations').direction;
             it('invalid', () => {
-                let results = [];
-                validation(results, 'securityRules[0]', 'direction', 'NOT_A_VALID_DIRECTION', null);
-                expect(results.length).toEqual(1);
-                expect(results[0].name).toEqual('securityRules[0].direction');
-                expect(results[0].message).toEqual(validationMessages.networkSecurityGroup.securityRules.InvalidDirection);
+                let result = validation('NOT_A_VALID_DIRECTION', null);
+                expect(result.result).toEqual(false);
+                // let results = [];
+                // validation(results, 'securityRules[0]', 'direction', 'NOT_A_VALID_DIRECTION', null);
+                // expect(results.length).toEqual(1);
+                // expect(results[0].name).toEqual('securityRules[0].direction');
+                // expect(results[0].message).toEqual(validationMessages.networkSecurityGroup.securityRules.InvalidDirection);
             });
 
             it('valid', () => {
-                let results = [];
-                validation(results, 'securityRules[0]', 'direction', 'Inbound', null);
-                expect(results.length).toEqual(0);
+                let result = validation('Inbound', null);
+                expect(result.result).toEqual(true);
+                // let results = [];
+                // validation(results, 'securityRules[0]', 'direction', 'Inbound', null);
+                // expect(results.length).toEqual(0);
             });
         });
 
         describe('priority', () => {
             let validation = nsgSettings.__get__('networkSecurityGroupSettingsSecurityRulesValidations').priority;
             it('invalid', () => {
-                let results = [];
-                validation(results, 'securityRules[0]', 'priority', 'NOT_A_VALID_PRIORITY', null);
-                expect(results.length).toEqual(1);
-                expect(results[0].name).toEqual('securityRules[0].priority');
-                expect(results[0].message).toEqual(validationMessages.networkSecurityGroup.securityRules.InvalidPriority);
+                let result = validation('NOT_A_VALID_PRIORITY', null);
+                expect(result).toEqual(false);
+                // let results = [];
+                // validation(results, 'securityRules[0]', 'priority', 'NOT_A_VALID_PRIORITY', null);
+                // expect(results.length).toEqual(1);
+                // expect(results[0].name).toEqual('securityRules[0].priority');
+                // expect(results[0].message).toEqual(validationMessages.networkSecurityGroup.securityRules.InvalidPriority);
             });
 
             it('valid', () => {
-                let results = [];
-                validation(results, 'securityRules[0]', 'priority', '100', null);
-                expect(results.length).toEqual(0);
+                let result = validation('100', null);
+                expect(result).toEqual(true);
+                // let results = [];
+                // validation(results, 'securityRules[0]', 'priority', '100', null);
+                // expect(results.length).toEqual(0);
             });
         });
 
         describe('access', () => {
             let validation = nsgSettings.__get__('networkSecurityGroupSettingsSecurityRulesValidations').access;
             it('invalid', () => {
-                let results = [];
-                validation(results, 'securityRules[0]', 'access', 'NOT_A_VALID_ACCESS', null);
-                expect(results.length).toEqual(1);
-                expect(results[0].name).toEqual('securityRules[0].access');
-                expect(results[0].message).toEqual(validationMessages.networkSecurityGroup.securityRules.InvalidAccess);
+                let result = validation('NOT_A_VALID_ACCESS', null);
+                expect(result.result).toEqual(false);
+                // let results = [];
+                // validation(results, 'securityRules[0]', 'access', 'NOT_A_VALID_ACCESS', null);
+                // expect(results.length).toEqual(1);
+                // expect(results[0].name).toEqual('securityRules[0].access');
+                // expect(results[0].message).toEqual(validationMessages.networkSecurityGroup.securityRules.InvalidAccess);
             });
 
             it('valid', () => {
-                let results = [];
-                validation(results, 'securityRules[0]', 'access', 'Allow', null);
-                expect(results.length).toEqual(0);
+                let result = validation('Allow', null);
+                expect(result.result).toEqual(true);
+                // let results = [];
+                // validation(results, 'securityRules[0]', 'access', 'Allow', null);
+                // expect(results.length).toEqual(0);
             });
         });
     });

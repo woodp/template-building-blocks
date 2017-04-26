@@ -19,40 +19,32 @@ function merge(settings, key) {
 }
 
 let storageValidations = {
-    count: (result, parentKey, key, value, parent) => {
-        if (!parent.managed && (!_.isNumber(value) || value < 1)) {
-            result.push({
-                name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-                message: "Value should be greater than 1."
-            })
-        }
+    count: (value, parent) => {
+        return {
+            result: (parent.managed) || ((_.isFinite(value)) && value > 0),
+            message: 'Value must be greater than 0'
+        };
     }
 };
 
 let diagonisticValidations = {
-    managed: (result, parentKey, key, value, parent) => {
-        if (parent.managed) {
-            result.push({
-                name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-                message: "Diagonistic storage cannot be managed."
-            })
+    managed: (value, parent) => {
+        return {
+            result: !parent.managed,
+            message: 'Diagonistic storage cannot be managed.'
+        };
+    },
+    skuType: (value, parent) => {
+        return {
+            result: !_.includes(_.toLower(value), "premium"),
+            message: 'Diagonistic storage cannot use premium storage.'
         }
     },
-    skuType: (result, parentKey, key, value, parent) => {
-        if (_.includes(_.toLower(value), "premium")) {
-            result.push({
-                name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-                message: "Diagonistic storage cannot use premium storage."
-            })
-        }
-    },
-    count: (result, parentKey, key, value, parent) => {
-        if (!_.isNumber(value) || value < 1) {
-            result.push({
-                name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-                message: "Value should be greater than 1."
-            })
-        }
+    count: (value, parent) => {
+        return {
+            result: ((_.isFinite(value)) && value > 0),
+            message: 'Value must be greater than 0'
+        };
     }
 };
 
@@ -103,7 +95,7 @@ function process(settings, parent) {
         let instance = {
             name: `vm${getUniqueString(parent)}${n.nameSuffix}${index + 1}`,
             kind: 'Storage',
-            "sku": {
+            sku: {
                 name: n.skuType
             }
         };
