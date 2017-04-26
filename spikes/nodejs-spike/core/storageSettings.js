@@ -5,7 +5,7 @@ let v = require('./validation.js');
 var murmurHash = require('murmurhash-native').murmurHash64
 
 const storageDefaultsFile = './defaults/storageSettings.json';
-const diagDefaultsFile = './defaults/diagonisticStorageSettings.json';
+const diagDefaultsFile = './defaults/diagnosticStorageSettings.json';
 
 function merge(settings, key) {
     let defaults;
@@ -27,17 +27,17 @@ let storageValidations = {
     }
 };
 
-let diagonisticValidations = {
+let diagnosticValidations = {
     managed: (value, parent) => {
         return {
             result: !parent.managed,
-            message: 'Diagonistic storage cannot be managed.'
+            message: 'Diagnostic storage cannot be managed.'
         };
     },
     skuType: (value, parent) => {
         return {
             result: !_.includes(_.toLower(value), "premium"),
-            message: 'Diagonistic storage cannot use premium storage.'
+            message: 'Diagnostic storage cannot use premium storage.'
         }
     },
     count: (value, parent) => {
@@ -107,4 +107,4 @@ function process(settings, parent) {
 exports.processStorageSettings = process;
 exports.mergeWithDefaults = merge;
 exports.storageValidations = storageValidations;
-exports.diagonisticValidations = diagonisticValidations;
+exports.diagnosticValidations = diagnosticValidations;

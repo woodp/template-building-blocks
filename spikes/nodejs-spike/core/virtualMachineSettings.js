@@ -64,8 +64,8 @@ function defaultsCustomizer(objValue, srcValue, key) {
         if (srcValue) {
             srcValue.forEach((extension) => {
                 if (_.toLower(extension.type) === 'iaasdiagnostics' || _.toLower(extension.type) === 'linuxdiagnostic') {
-                    // if user provided the diagonistic extension, then use that instead of the default one
-                    // Through VM building block only the diagonistic extension can be specified. IGNORE the rest of the extensions. 
+                    // if user provided the diagnostic extension, then use that instead of the default one
+                    // Through VM building block only the diagnostic extension can be specified. IGNORE the rest of the extensions. 
                     objValue.splice(0, 1);
                     objValue.push(extension);
                 }
@@ -149,14 +149,14 @@ let virtualMachineValidations = {
         return result;
     },
     storageAccounts: storageSettings.storageValidations,
-    diagonisticStorageAccounts: storageSettings.diagonisticValidations,
+    diagnosticStorageAccounts: storageSettings.diagnosticValidations,
     nics: nicSettings.validations,
     availabilitySet: avSetSettings.validations
 };
 
 let childResourceToMerge = {
     storageAccounts: storageSettings.mergeWithDefaults,
-    diagonisticStorageAccounts: storageSettings.mergeWithDefaults,
+    diagnosticStorageAccounts: storageSettings.mergeWithDefaults,
     nics: nicSettings.mergeWithDefaults,
     availabilitySet: avSetSettings.mergeWithDefaults
 }
@@ -302,14 +302,14 @@ let processorProperties = {
             }
         }
     },
-    diagonisticStorageAccounts: (value, key, index, parent) => {
+    diagnosticStorageAccounts: (value, key, index, parent) => {
         // get the diagonstic account name for the VM
-        let diagonisticAccounts = parent.diagonisticStorageAccounts.accounts;
-        output.diagonisticStorageAccounts.forEach((account) => {
-            diagonisticAccounts.push(account.name);
+        let diagnosticAccounts = parent.diagnosticStorageAccounts.accounts;
+        output.diagnosticStorageAccounts.forEach((account) => {
+            diagnosticAccounts.push(account.name);
         });
-        let diagonisticAccountToUse = index % diagonisticAccounts.length;
-        let diagnosticAccountName = diagonisticAccounts[diagonisticAccountToUse];
+        let diagnosticAccountToUse = index % diagnosticAccounts.length;
+        let diagnosticAccountName = diagnosticAccounts[diagnosticAccountToUse];
 
         return {
             diagnosticsProfile: {
@@ -336,21 +336,21 @@ let processorProperties = {
                 let vmId = resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Compute/virtualMachines', parent.name);
 
                 // get the diagonstic account name for the VM
-                let diagonisticAccounts = parent.diagonisticStorageAccounts.accounts;
-                output.diagonisticStorageAccounts.forEach((account) => {
-                    diagonisticAccounts.push(account.name);
+                let diagnosticAccounts = parent.diagnosticStorageAccounts.accounts;
+                output.diagnosticStorageAccounts.forEach((account) => {
+                    diagnosticAccounts.push(account.name);
                 });
-                let diagonisticAccountToUse = index % diagonisticAccounts.length;
-                let diagnosticAccountName = diagonisticAccounts[diagonisticAccountToUse];
-                let accountResourceId = resources.resourceId(parent.diagonisticStorageAccounts.subscriptionId, parent.diagonisticStorageAccounts.resourceGroupName, 'Microsoft.Storage/storageAccounts', diagnosticAccountName);
+                let diagnosticAccountToUse = index % diagnosticAccounts.length;
+                let diagnosticAccountName = diagnosticAccounts[diagnosticAccountToUse];
+                let accountResourceId = resources.resourceId(parent.diagnosticStorageAccounts.subscriptionId, parent.diagnosticStorageAccounts.resourceGroupName, 'Microsoft.Storage/storageAccounts', diagnosticAccountName);
                 let xmlCfg = extension.settingsConfig.metricsstart.concat(extension.settingsConfig.metricscounters, extension.settingsConfig.metricsclosing1, vmId, extension.settingsConfig.metricsclosing2);
                 let base64XmlCfg = new Buffer(xmlCfg).toString('base64');
 
-                // build settings property for diagonistic extension
+                // build settings property for diagnostic extension
                 temp.settings.StorageAccount = diagnosticAccountName;
                 temp.settings.xmlCfg = base64XmlCfg.toString();
 
-                // build protectedSettings property for diagonistic extension
+                // build protectedSettings property for diagnostic extension
                 temp.protectedSettings.storageAccountName = diagnosticAccountName;
                 temp.protectedSettings.storageAccountEndPoint = "https://core.windows.net/";
                 temp.protectedSettings.storageAccountKey1 = `[listKeys('${accountResourceId}', '2015-06-15').key1]`;
@@ -394,7 +394,7 @@ let processorProperties = {
 
 let storageAccountsProcessed = false;
 let availabilitySetProcessed = false;
-let diagonisticStorageAccountsProcessed = false;
+let diagnosticStorageAccountsProcessed = false;
 let processChildResources = {
     storageAccounts: (value, key, index, parent) => {
         if (!storageAccountsProcessed) {
@@ -403,11 +403,11 @@ let processChildResources = {
             storageAccountsProcessed = true;
         }
     },
-    diagonisticStorageAccounts: (value, key, index, parent) => {
-        if (!diagonisticStorageAccountsProcessed) {
-            let mergedCol = (output["diagonisticStorageAccounts"] || (output["diagonisticStorageAccounts"] = [])).concat(storageSettings.processStorageSettings(value, parent));
-            output.diagonisticStorageAccounts = mergedCol;
-            diagonisticStorageAccountsProcessed = true;
+    diagnosticStorageAccounts: (value, key, index, parent) => {
+        if (!diagnosticStorageAccountsProcessed) {
+            let mergedCol = (output["diagnosticStorageAccounts"] || (output["diagnosticStorageAccounts"] = [])).concat(storageSettings.processStorageSettings(value, parent));
+            output.diagnosticStorageAccounts = mergedCol;
+            diagnosticStorageAccountsProcessed = true;
         }
     },
     nics: (value, key, index, parent) => {
@@ -439,7 +439,7 @@ function processVMStamps(param, buildingBlockSettings) {
     let vmCount = param.vmCount;
     param = resources.setupResources(param, buildingBlockSettings, (parentKey) => {
         return ((parentKey === null) || (parentKey === "virtualNetwork") || (parentKey === "availabilitySet") ||
-            (parentKey === "nics") || (parentKey === "diagonisticStorageAccounts") || (parentKey === "storageAccounts") || (parentKey === "encryptionSettings"));
+            (parentKey === "nics") || (parentKey === "diagnosticStorageAccounts") || (parentKey === "storageAccounts") || (parentKey === "encryptionSettings"));
     });
     // deep clone settings for the number of VMs required (vmCount)  
     return _.transform(_.castArray(param), (result, n) => {
