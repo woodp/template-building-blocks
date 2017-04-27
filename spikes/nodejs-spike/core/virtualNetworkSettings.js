@@ -20,25 +20,36 @@ let virtualNetworkPeeringsSettingsDefaults = {
     useRemoteGateways: false
 }
 
-let virtualNetworkSettingsValidations = {
-    name: v.validationUtilities.isNullOrWhitespace,
-    addressPrefixes: v.validationUtilities.networking.isValidCidr,
-    subnets: (result, parentKey, key, value, parent) => {
-        v.reduce({
-            name: v.validationUtilities.isNullOrWhitespace,
-            addressPrefix: v.validationUtilities.networking.isValidCidr
-        }, value, parentKey, parent, result);
+let virtualNetworkSettingsSubnetsValidations = {
+    name: v.utilities.isNotNullOrWhitespace,
+    addressPrefix: v.utilities.networking.isValidCidr
+};
+
+let virtualNetworkSettingsPeeringValidations = {
+    remoteVirtualNetwork: {
+        name: v.utilities.isNotNullOrWhitespace
     },
-    dnsServers: v.validationUtilities.isNullOrWhitespace,
-    virtualNetworkPeerings: (result, parentKey, key, value, parent) => {
-        v.reduce({
-            remoteVirtualNetwork: (result, parentKey, key, value, parent) => {
-                v.reduce({
-                    name: v.validationUtilities.isNullOrWhitespace
-                }, value, parentKey, parent, result);
-            }
-        }, value, parentKey, parent, result);
-    }
+    allowForwardedTraffic: _.isBoolean,
+    allowGatewayTransit: _.isBoolean,
+    useRemoteGateways: _.isBoolean
+};
+
+let virtualNetworkSettingsValidations = {
+    name: v.utilities.isNotNullOrWhitespace,
+    addressPrefixes: v.utilities.networking.isValidCidr,
+    subnets: virtualNetworkSettingsSubnetsValidations,
+    dnsServers: v.utilities.isNotNullOrWhitespace,
+    virtualNetworkPeerings: virtualNetworkSettingsPeeringValidations
+    //WORKS! addressPrefixes: (value, parent) => {
+    //     return { result: v.utilities.networking.isValidCidr(value), message: "Invalid CIDR" };
+    // }
+    // addressPrefixes: (value, parent) => {
+    //     return {
+    //         result: v.utilities.networking.isValidCidr(value),
+    //         message: "Another invalid CIDR",
+    //         name: "not-a-real-field-name"
+    //     }
+    // }
 };
 
 function transform(settings) {
@@ -87,6 +98,12 @@ let mergeCustomizer = function (objValue, srcValue, key, object, source, stack) 
             return srcValue;
         }
     }
+
+    if (key === "virtualNetworkPeerings") {
+        if ((srcValue) && (_.isArray(srcValue)) && (srcValue.length > 0)) {
+            return _.map(srcValue, (value) => v.merge(value, virtualNetworkPeeringsSettingsDefaults));
+        }
+    }
 };
 
 exports.transform = function ({ settings, buildingBlockSettings }) {
@@ -96,24 +113,25 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
 
     let results = _.transform(settings, (result, setting, index) => {
         let merged = v.merge(setting, virtualNetworkSettingsDefaults, mergeCustomizer);
-        let errors = v.validate(merged, virtualNetworkSettingsValidations, merged);
+        let errors = v.validate({
+            settings: merged,
+            validations: virtualNetworkSettingsValidations
+        });
+
         if (errors.length > 0) {
           throw new Error(JSON.stringify(errors));
-        }
-        if (merged.validationErrors) {
-            let name = v.utilities.nameOf({settings});
-            _.each(merged.validationErrors, (error) => {
-                error.name = `${name}[${index}]${error.name}`;
-            });
         }
 
         result.push(merged);
     }, []);
 
-    buildingBlockErrors = v.validate(buildingBlockSettings, {
-        subscriptionId: v.validationUtilities.isNullOrWhitespace,
-        resourceGroupName: v.validationUtilities.isNullOrWhitespace,
-    }, buildingBlockSettings);
+    buildingBlockErrors = v.validate({
+        settings: buildingBlockSettings,
+        validations: {
+            subscriptionId: v.utilities.isNotNullOrWhitespace,
+            resourceGroupName: v.utilities.isNotNullOrWhitespace
+        }
+    });
 
     if (buildingBlockErrors.length > 0) {
         throw new Error(JSON.stringify(buildingBlockErrors));

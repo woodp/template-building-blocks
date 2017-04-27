@@ -17,7 +17,7 @@
                 "storageAccounts": {
                     "count": 2
                 },
-                "diagonisticStorageAccounts": {
+                "diagnosticStorageAccounts": {
                     "count": 2
                 },
                 "nics": [

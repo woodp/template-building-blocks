@@ -8,13 +8,19 @@ let routeTableSettingsDefaults = {
     routes: []
 };
 
+let validNextHopTypes = ['VirtualNetworkGateway', 'VnetLocal', 'Internet', 'HyperNetGateway', 'None', 'VirtualAppliance'];
+
 let isValidNextHopType = (nextHopType) => {
-    return v.utilities.isStringInArray(nextHopType, ['VirtualNetworkGateway', 'VnetLocal', 'Internet', 'HyperNetGateway', 'None', 'VirtualAppliance']);
+    return v.utilities.isStringInArray(nextHopType, validNextHopTypes);
 };
 
 let validate = (settings) => {
     // Validate each setting
-    let errors = v.validate(settings, routeTableSettingsValidations);
+    let errors = v.validate({
+        settings: settings,
+        validations: routeTableSettingsValidations
+    });
+
     // Validate route names
     let names = _.reduce(settings.routes, (accumulator, value, index, collection) => {
         if (!accumulator[value.name]) {
@@ -43,27 +49,47 @@ let validate = (settings) => {
 }
 
 let routeTableSettingsValidations = {
-    name: v.validationUtilities.isNullOrWhitespace,
+    name: v.utilities.isNotNullOrWhitespace,
     routes: {
-        name: v.validationUtilities.isNullOrWhitespace,
-        addressPrefix: v.validationUtilities.networking.isValidCidr,
-        nextHopType: (result, parentKey, key, value, parent) => {
-            if (!isValidNextHopType(value)) {
-                result.push({
-                    name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-                    message: validationMessages.routeTable.routes.InvalidNextHopType
-                });
-            }
+        name: v.utilities.isNotNullOrWhitespace,
+        addressPrefix: v.utilities.networking.isValidCidr,
+        nextHopType: (value, parent) => {
+            return {
+                result: isValidNextHopType(value),
+                message: `Valid values are ${validNextHopTypes.join(',')}`
+            };
+            // if (!isValidNextHopType(value)) {
+            //     result.push({
+            //         name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
+            //         message: validationMessages.routeTable.routes.InvalidNextHopType
+            //     });
+            // }
         },
-        nextHopIpAddress: (result, parentKey, key, value, parent) => {
-            if ((parent.nextHopType === 'VirtualAppliance') && (!v.utilities.networking.isValidIpAddress(value))) {
-                result.push({
-                    name: _.join((parentKey ? [parentKey, 'nextHopIpAddress'] : ['nextHopIpAddress']), '.'),
-                    message: validationMessages.InvalidIpAddress
-                });
-            }
+        nextHopIpAddress: (value, parent) => {
+            return (parent.nextHopType !== 'VirtualAppliance') || ((parent.nextHopType === 'VirtualAppliance') && (v.utilities.networking.isValidIpAddress(value)));
         }
     }
+    // name: v.validationUtilities.isNullOrWhitespace,
+    // routes: {
+    //     name: v.validationUtilities.isNullOrWhitespace,
+    //     addressPrefix: v.validationUtilities.networking.isValidCidr,
+    //     nextHopType: (result, parentKey, key, value, parent) => {
+    //         if (!isValidNextHopType(value)) {
+    //             result.push({
+    //                 name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
+    //                 message: validationMessages.routeTable.routes.InvalidNextHopType
+    //             });
+    //         }
+    //     },
+    //     nextHopIpAddress: (result, parentKey, key, value, parent) => {
+    //         if ((parent.nextHopType === 'VirtualAppliance') && (!v.utilities.networking.isValidIpAddress(value))) {
+    //             result.push({
+    //                 name: _.join((parentKey ? [parentKey, 'nextHopIpAddress'] : ['nextHopIpAddress']), '.'),
+    //                 message: validationMessages.InvalidIpAddress
+    //             });
+    //         }
+    //     }
+    // }
 };
 
 function transform(settings) {
@@ -113,31 +139,34 @@ exports.transform = function ({settings, buildingBlockSettings}) {
         result.push(merged);
     }, []);
 
-    buildingBlockErrors = v.validate(buildingBlockSettings, {
-        subscriptionId: v.validationUtilities.isNullOrWhitespace,
-        resourceGroupName: v.validationUtilities.isNullOrWhitespace,
-    }, buildingBlockSettings);
+    buildingBlockErrors = v.validate({
+        settings: buildingBlockSettings,
+        validations: {
+            subscriptionId: v.utilities.isNotNullOrWhitespace,
+            resourceGroupName: v.utilities.isNotNullOrWhitespace,
+        }
+    });
 
     if (buildingBlockErrors.length > 0) {
         throw new Error(JSON.stringify(buildingBlockErrors));
     }
 
-    if (buildingBlockSettings.validationErrors) {
-        _.each(buildingBlockSettings.validationErrors, (error) => {
-            error.name = `buildingBlockSettings${error.name}`;
-        });
-    }
+    // if (buildingBlockSettings.validationErrors) {
+    //     _.each(buildingBlockSettings.validationErrors, (error) => {
+    //         error.name = `buildingBlockSettings${error.name}`;
+    //     });
+    // }
 
-    if (_.some(results, 'validationErrors') || (buildingBlockSettings.validationErrors)) {
-        results.push(buildingBlockSettings);
-        return {
-            validationErrors: _.transform(_.compact(results), (result, value) => {
-                if (value.validationErrors) {
-                    result.validationErrors.push(value.validationErrors);
-                }
-            }, { validationErrors: [] })
-        };
-    }
+    // if (_.some(results, 'validationErrors') || (buildingBlockSettings.validationErrors)) {
+    //     results.push(buildingBlockSettings);
+    //     return {
+    //         validationErrors: _.transform(_.compact(results), (result, value) => {
+    //             if (value.validationErrors) {
+    //                 result.validationErrors.push(value.validationErrors);
+    //             }
+    //         }, { validationErrors: [] })
+    //     };
+    // }
 
     results = _.transform(results, (result, setting) => {
         setting = r.setupResources(setting, buildingBlockSettings, (parentKey) => {

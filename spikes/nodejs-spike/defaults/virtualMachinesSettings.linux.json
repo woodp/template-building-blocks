@@ -15,7 +15,7 @@
     "caching": "ReadWrite",
     "createOption": "FromImage"
   },
-  "diagonisticStorageAccounts": {
+  "diagnosticStorageAccounts": {
     "count": 1,
     "skuType": "Standard_LRS",
     "accounts": []

@@ -12,12 +12,16 @@ function merge(settings, defaultSettings, mergeCustomizer, childResources) {
     return mergedSettings;
 }
 
-function validate(settings, validations) { 
+let toString = (value) => {
+    return _.isUndefined(value) ? '<undefined>' : _.isNull(value) ? '<null>' : _.isString(value) ? `'${value}'` : _.toString(value);
+};
+
+function validate({settings, validations, parentKey = '', parentValue = null}) { 
     return reduce({
         validations: validations,
         value: settings,
-        parentKey: '',
-        parentValue: null,
+        parentKey: parentKey,
+        parentValue: parentValue,
         accumulator: []
     });
 }
@@ -25,7 +29,12 @@ function validate(settings, validations) {
 function reduce({validations, value, parentKey, parentValue, accumulator}) {
     if (_.isPlainObject(validations)) {
         // We are working with a validation OBJECT, so we need to iterate the keys
-        if (_.isArray(value)) {
+        if (_.isNil(value)) { 
+            accumulator.push({ 
+                name: `${parentKey}`,
+                message: validationMessages.ValueCannotBeNull
+            });
+        } else if (_.isArray(value)) {
             // The value is an array, so we need to iterate it and then reduce
             _.reduce(value, (accumulator, item, index) => {
                 reduce({
@@ -55,18 +64,59 @@ function reduce({validations, value, parentKey, parentValue, accumulator}) {
         // Otherwise, just call the validation
         if (_.isArray(value)) {
             _.reduce(value, (accumulator, item, index) => {
-                validations(accumulator, `${parentKey}[${index}]`, index, item, parentValue);
+                let result = validationWrapper(validations, item, parentValue);
+                // We can either get a boolean, an object with the error, or an array of objects with errors.
+                // We may be able to wrap this later, but let's brute force it for now
+                if ((_.isArray(result)) && (result.length > 0)) {
+                    // An array of already materialized errors, so just add them.
+                    _.forEach(result, (value) => {
+                        accumulator.push(value);
+                    });
+                } else if (((_.isBoolean(result)) && (!result)) || (!result.result)) {
+                    let {message, name} = result;
+                    accumulator.push({
+                        name: name ? name : `${parentKey}[${index}]`,
+                        message: `Invalid value: ${toString(item)}.` + (message ? '  ' + message : '')
+                    });
+                }
+
                 return accumulator;
             }, accumulator);
         } else {
             // We're just a value
-            validations(accumulator, `${parentKey}`, '', value, parentValue);
+            let result = validationWrapper(validations, value, parentValue);
+            if (_.isArray(result)) {
+                if (result.length > 0) {
+                    // An array of already materialized errors, so just add them.
+                    _.forEach(result, (value) => {
+                        accumulator.push(value);
+                    });
+                }
+            } else if (((_.isBoolean(result)) && (!result)) || (!result.result)) {
+                let {message, name} = result;
+                accumulator.push({
+                    name: name ? name : `${parentKey}`,
+                    message: `Invalid value: ${toString(value)}.` + (message ? '  ' + message : '')
+                });
+            }
         }
     }
 
     return accumulator;
 }
 
+let validationWrapper = (validation, value, parent) => {
+    let r = validation(value, parent);
+    // We need to check the result and mutate accordingly.
+    // If the result is just a boolean, this was a true/false function, so we need to wrap the result in an object with a default message so we can destructure
+    // If the result is an object, this is likely a user-defined function so it could return custom messages.
+    if (_.isBoolean(r)) {
+        return { result: r };
+    } else {
+        // Hopefully it's the right shape!
+        return r;
+    }
+}
 let cidrRegex = /^(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(?:\/([0-9]|[1-2][0-9]|3[0-2]))$/;
 let ipAddressRegex = /^(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/;
 
@@ -76,6 +126,7 @@ let utilities = {
     nameOf: varObj => Object.keys(varObj)[0],
     isGuid: (guid) => guidRegex.test(guid),
     isStringInArray: (value, array) => _.indexOf(array, value) > -1,
+    isNotNullOrWhitespace: (value) => !_.isNullOrWhitespace(value),
     networking: {
         isValidIpAddress: function (value) {
             return ipAddressRegex.test(value);

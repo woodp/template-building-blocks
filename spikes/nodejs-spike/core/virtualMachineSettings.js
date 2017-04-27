@@ -17,8 +17,40 @@ function merge(settings) {
     return v.merge(settings, defaults, defaultsCustomizer, childResourceToMerge);
 }
 
+let validOSAuthenticationTypes = ['ssh', 'password'];
+let validOSTypes = ['linux', 'windows'];
+
+let isValidOSAuthenticationType = (osAuthenticationType) => {
+    return v.utilities.isStringInArray(osAuthenticationType, validOSAuthenticationTypes);
+};
+
+let isValidOSType = (osType) => {
+    return v.utilities.isStringInArray(osType, validOSTypes);
+};
+
 function validate(settings) {
-    return v.validate(settings, virtualMachineValidations, settings)
+    let errors = v.validate({
+        settings: settings,
+        validations: virtualMachineValidations
+    });
+
+    // Make sure only one network interface is primary
+    let primaryNicCount = _.reduce(settings.nics, (accumulator, value, index, collection) => {
+        if (value.isPrimary) {
+            accumulator++;
+        }
+
+        return accumulator;
+    }, 0);
+
+    if (primaryNicCount !== 1) {
+        errors.push({
+            name: '.nics',
+            message: "Virtual machine can have only 1 primary NetworkInterface."
+        });
+    }
+
+    return errors;
 }
 
 // if nics and extensions are not specified in the parameters, use from defaults, else ignore defaults
@@ -32,8 +64,8 @@ function defaultsCustomizer(objValue, srcValue, key) {
         if (srcValue) {
             srcValue.forEach((extension) => {
                 if (_.toLower(extension.type) === 'iaasdiagnostics' || _.toLower(extension.type) === 'linuxdiagnostic') {
-                    // if user provided the diagonistic extension, then use that instead of the default one
-                    // Through VM building block only the diagonistic extension can be specified. IGNORE the rest of the extensions. 
+                    // if user provided the diagnostic extension, then use that instead of the default one
+                    // Through VM building block only the diagnostic extension can be specified. IGNORE the rest of the extensions. 
                     objValue.splice(0, 1);
                     objValue.push(extension);
                 }
@@ -44,149 +76,87 @@ function defaultsCustomizer(objValue, srcValue, key) {
     }
 }
 
+let encryptionSettingsValidations = {
+    enabled: _.isBoolean,
+    diskEncryptionKey: {
+        secretUrl: v.utilities.isNotNullOrWhitespace,
+        sourceVaultName: v.utilities.isNotNullOrWhitespace
+    },
+    keyEncryptionKey: {
+        keyUrl: v.utilities.isNotNullOrWhitespace,
+        sourceVaultName: v.utilities.isNotNullOrWhitespace
+    }
+};
+
 let virtualMachineValidations = {
-    virtualNetwork: (result, parentKey, key, value, parent) => {
-        if (_.isNullOrWhitespace(value.name)) {
-            result.push({
-                name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-                message: "VirtualNetwork name cannot be null"
-            })
-        }
-    },
-    vmCount: (result, parentKey, key, value, parent) => {
-        if (!_.isNumber(value) || value < 1) {
-            result.push({
-                name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-                message: "Value should be greater than 1."
-            })
-        }
-    },
-    namePrefix: v.validationUtilities.isNullOrWhitespace,
-    computerNamePrefix: (result, parentKey, key, value, parent) => {
-        if (_.isNullOrWhitespace(value) || value.length >= 6) {
-            result.push({
-                name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-                message: "Valid should not be more than 6 char long."
-            })
-        }
-    },
-    size: v.validationUtilities.isNullOrWhitespace,
-    osDisk: (result, parentKey, key, value, parent) => {
-        if (_.isNullOrWhitespace(value.osType) || (_.toLower(value.osType) !== 'linux' && _.toLower(value.osType) !== 'windows')) {
-            result.push({
-                name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-                message: "Valid values are: 'linux', 'windows'."
-            })
+    virtualNetwork: v.utilities.isNotNullOrWhitespace,
+    vmCount: (value, parent) => {
+        return {
+            result: _.isFinite(value) && (value > 0),
+            message: 'Value must be greater than 0'
         };
-        if (value.encryptionSettings) {
-            if (!_.isBoolean(value.encryptionSettings.enabled)) {
-                result.push({
-                    name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-                    message: "Valid values for 'osDisk.encryptionSettings.enabled' are: true, false"
-                });
+    },
+    namePrefix: v.utilities.isNotNullOrWhitespace,
+    computerNamePrefix: (value, parent) => {
+        return {
+            result: v.utilities.isNotNullOrWhitespace(value) && (value.length < 7),
+            message: 'Value cannot be longer than 6 characters'
+        };
+    },
+    size: v.utilities.isNotNullOrWhitespace,
+    osDisk: {
+        osType: (value, parent) => {
+            return result = {
+                result: isValidOSType(value),
+                message: `Valid values are ${validOSTypes.join(',')}`
             };
-            if (_.isNullOrWhitespace(value.encryptionSettings.diskEncryptionKey)) {
-                result.push({
-                    name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-                    message: "encryptionSettings.diskEncryptionKey cannot be null or empty"
-                });
-            };
-            if (_.isNullOrWhitespace(value.encryptionSettings.diskEncryptionKey.secretUrl)) {
-                result.push({
-                    name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-                    message: "encryptionSettings.diskEncryptionKey.secretUrl cannot be null or empty"
-                });
-            };
-            if (_.isNullOrWhitespace(value.encryptionSettings.diskEncryptionKey.sourceVaultName)) {
-                result.push({
-                    name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-                    message: "encryptionSettings.diskEncryptionKey.sourceVaultName cannot be null or empty"
-                });
-            };
-            if (_.isNullOrWhitespace(value.encryptionSettings.keyEncryptionKey)) {
-                result.push({
-                    name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-                    message: "encryptionSettings.keyEncryptionKey cannot be null or empty"
-                });
-            };
-            if (_.isNullOrWhitespace(value.encryptionSettings.keyEncryptionKey.keyUrl)) {
-                result.push({
-                    name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-                    message: "encryptionSettings.keyEncryptionKey.secretUrl cannot be null or empty"
-                });
-            };
-            if (_.isNullOrWhitespace(value.encryptionSettings.keyEncryptionKey.sourceVaultName)) {
-                result.push({
-                    name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-                    message: "encryptionSettings.keyEncryptionKey.sourceVaultName cannot be null or empty"
-                });
-            };
+        },
+        encryptionSettings: (value, parent) => {
+            return _.isNil(value) ? {
+                result: true
+            } : v.validate({
+                settings: value,
+                validations: encryptionSettingsValidations,
+                parentKey: '.osDisk',
+                parentValue: parent
+            });
         }
     },
-    existingWindowsServerlicense: v.validationUtilities.isBoolean,
-    adminUsername: v.validationUtilities.isNullOrWhitespace,
-    osAuthenticationType: (result, parentKey, key, value, parent) => {
-        if (_.isNullOrWhitespace(value) || (_.toLower(value) !== 'ssh' && _.toLower(value) !== 'password')) {
-            result.push({
-                name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-                message: "Valid values are: 'ssh', 'password'."
-            })
+    existingWindowsServerlicense: _.isBoolean,
+    adminUsername: v.utilities.isNotNullOrWhitespace,
+    osAuthenticationType: (value, parent) => {
+        let result = {
+            result: true
+        };
+
+        if (!isValidOSAuthenticationType(value)) {
+            result = {
+                result: false,
+                message: `Valid values are ${validOSAuthenticationTypes.join(',')}`
+            };
+        } else if ((value === 'ssh') && (_.isNullOrWhitespace(parent.sshPublicKey))) {
+            result = {
+                result: false,
+                message: 'sshPublicKey cannot be null, empty, or only whitespace if osAuthenticationType is ssh'
+            };
+        } else if ((value === 'password') && (_.isNullOrWhitespace(parent.adminPassword))) {
+            result = {
+                result: false,
+                message: 'adminPassword cannot be null, empty, or only whitespace if osAuthenticationType is password'
+            };
         }
-        if (_.toLower(value) === 'ssh' && (!parent.hasOwnProperty('sshPublicKey') || _.isNullOrWhitespace(parent.sshPublicKey))) {
-            result.push({
-                name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-                message: "'sshPublicKey' cannot be null, if osAuthenticationType is 'ssh'"
-            })
-        }
-        if (_.toLower(value) === 'password' && (!parent.hasOwnProperty('adminPassword') || _.isNullOrWhitespace(parent.adminPassword))) {
-            result.push({
-                name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-                message: "'adminPassword' cannot be null, if osAuthenticationType is 'password'"
-            })
-        }
+
+        return result;
     },
     storageAccounts: storageSettings.storageValidations,
-    diagonisticStorageAccounts: storageSettings.diagonisticValidations,
-    nics: (result, parentKey, key, value, parent) => {
-        // Validate the network interfaces individually
-        v.reduce({
-            validations: nicSettings.validations,
-            value: value,
-            parentKey: parentKey,
-            parentValue: parent,
-            accumulator: result
-        });
-
-        // Make sure only one network interface is primary
-        let primaryNicCount = _.reduce(parent.nics, (accumulator, value, index, collection) => {
-            if (value.isPrimary) {
-                accumulator++;
-            }
-
-            return accumulator;
-        }, 0);
-
-        if (primaryNicCount !== 1) {
-            result.push({
-                name: '.nics',
-                message: "Virtual machine can have only 1 primary NetworkInterface."
-            })
-        }
-    },
-    availabilitySet: (result, parentKey, key, value, parent) => {
-        v.reduce({
-            validations: avSetSettings.validations,
-            value: value,
-            parentKey: parentKey,
-            parentValue: parent,
-            accumulator: result
-        });
-    }
+    diagnosticStorageAccounts: storageSettings.diagnosticValidations,
+    nics: nicSettings.validations,
+    availabilitySet: avSetSettings.validations
 };
 
 let childResourceToMerge = {
     storageAccounts: storageSettings.mergeWithDefaults,
-    diagonisticStorageAccounts: storageSettings.mergeWithDefaults,
+    diagnosticStorageAccounts: storageSettings.mergeWithDefaults,
     nics: nicSettings.mergeWithDefaults,
     availabilitySet: avSetSettings.mergeWithDefaults
 }
@@ -332,14 +302,14 @@ let processorProperties = {
             }
         }
     },
-    diagonisticStorageAccounts: (value, key, index, parent) => {
+    diagnosticStorageAccounts: (value, key, index, parent) => {
         // get the diagonstic account name for the VM
-        let diagonisticAccounts = parent.diagonisticStorageAccounts.accounts;
-        output.diagonisticStorageAccounts.forEach((account) => {
-            diagonisticAccounts.push(account.name);
+        let diagnosticAccounts = parent.diagnosticStorageAccounts.accounts;
+        output.diagnosticStorageAccounts.forEach((account) => {
+            diagnosticAccounts.push(account.name);
         });
-        let diagonisticAccountToUse = index % diagonisticAccounts.length;
-        let diagnosticAccountName = diagonisticAccounts[diagonisticAccountToUse];
+        let diagnosticAccountToUse = index % diagnosticAccounts.length;
+        let diagnosticAccountName = diagnosticAccounts[diagnosticAccountToUse];
 
         return {
             diagnosticsProfile: {
@@ -366,21 +336,21 @@ let processorProperties = {
                 let vmId = resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Compute/virtualMachines', parent.name);
 
                 // get the diagonstic account name for the VM
-                let diagonisticAccounts = parent.diagonisticStorageAccounts.accounts;
-                output.diagonisticStorageAccounts.forEach((account) => {
-                    diagonisticAccounts.push(account.name);
+                let diagnosticAccounts = parent.diagnosticStorageAccounts.accounts;
+                output.diagnosticStorageAccounts.forEach((account) => {
+                    diagnosticAccounts.push(account.name);
                 });
-                let diagonisticAccountToUse = index % diagonisticAccounts.length;
-                let diagnosticAccountName = diagonisticAccounts[diagonisticAccountToUse];
-                let accountResourceId = resources.resourceId(parent.diagonisticStorageAccounts.subscriptionId, parent.diagonisticStorageAccounts.resourceGroupName, 'Microsoft.Storage/storageAccounts', diagnosticAccountName);
+                let diagnosticAccountToUse = index % diagnosticAccounts.length;
+                let diagnosticAccountName = diagnosticAccounts[diagnosticAccountToUse];
+                let accountResourceId = resources.resourceId(parent.diagnosticStorageAccounts.subscriptionId, parent.diagnosticStorageAccounts.resourceGroupName, 'Microsoft.Storage/storageAccounts', diagnosticAccountName);
                 let xmlCfg = extension.settingsConfig.metricsstart.concat(extension.settingsConfig.metricscounters, extension.settingsConfig.metricsclosing1, vmId, extension.settingsConfig.metricsclosing2);
                 let base64XmlCfg = new Buffer(xmlCfg).toString('base64');
 
-                // build settings property for diagonistic extension
+                // build settings property for diagnostic extension
                 temp.settings.StorageAccount = diagnosticAccountName;
                 temp.settings.xmlCfg = base64XmlCfg.toString();
 
-                // build protectedSettings property for diagonistic extension
+                // build protectedSettings property for diagnostic extension
                 temp.protectedSettings.storageAccountName = diagnosticAccountName;
                 temp.protectedSettings.storageAccountEndPoint = "https://core.windows.net/";
                 temp.protectedSettings.storageAccountKey1 = `[listKeys('${accountResourceId}', '2015-06-15').key1]`;
@@ -424,7 +394,7 @@ let processorProperties = {
 
 let storageAccountsProcessed = false;
 let availabilitySetProcessed = false;
-let diagonisticStorageAccountsProcessed = false;
+let diagnosticStorageAccountsProcessed = false;
 let processChildResources = {
     storageAccounts: (value, key, index, parent) => {
         if (!storageAccountsProcessed) {
@@ -433,11 +403,11 @@ let processChildResources = {
             storageAccountsProcessed = true;
         }
     },
-    diagonisticStorageAccounts: (value, key, index, parent) => {
-        if (!diagonisticStorageAccountsProcessed) {
-            let mergedCol = (output["diagonisticStorageAccounts"] || (output["diagonisticStorageAccounts"] = [])).concat(storageSettings.processStorageSettings(value, parent));
-            output.diagonisticStorageAccounts = mergedCol;
-            diagonisticStorageAccountsProcessed = true;
+    diagnosticStorageAccounts: (value, key, index, parent) => {
+        if (!diagnosticStorageAccountsProcessed) {
+            let mergedCol = (output["diagnosticStorageAccounts"] || (output["diagnosticStorageAccounts"] = [])).concat(storageSettings.processStorageSettings(value, parent));
+            output.diagnosticStorageAccounts = mergedCol;
+            diagnosticStorageAccountsProcessed = true;
         }
     },
     nics: (value, key, index, parent) => {
@@ -469,7 +439,7 @@ function processVMStamps(param, buildingBlockSettings) {
     let vmCount = param.vmCount;
     param = resources.setupResources(param, buildingBlockSettings, (parentKey) => {
         return ((parentKey === null) || (parentKey === "virtualNetwork") || (parentKey === "availabilitySet") ||
-            (parentKey === "nics") || (parentKey === "diagonisticStorageAccounts") || (parentKey === "storageAccounts") || (parentKey === "encryptionSettings"));
+            (parentKey === "nics") || (parentKey === "diagnosticStorageAccounts") || (parentKey === "storageAccounts") || (parentKey === "encryptionSettings"));
     });
     // deep clone settings for the number of VMs required (vmCount)  
     return _.transform(_.castArray(param), (result, n) => {

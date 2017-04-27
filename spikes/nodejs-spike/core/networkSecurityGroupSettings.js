@@ -10,18 +10,23 @@ let networkSecurityGroupSettingsDefaults = {
     securityRules: []
 };
 
+let validProtocols = ['TCP', 'UDP', '*'];
+let validDefaultTags = ['VirtualNetwork', 'AzureLoadBalancer', 'Internet', '*'];
+let validDirections = ['Inbound', 'Outbound'];
+let validAccesses = ['Allow', 'Deny'];
+
 let isValidProtocol = (protocol) => {
-    return v.utilities.isStringInArray(protocol, ['TCP', 'UDP', '*']);
+    return v.utilities.isStringInArray(protocol, validProtocols);
 };
 
 let isValidAddressPrefix = (addressPrefix) => {
     return ((v.utilities.networking.isValidIpAddress(addressPrefix)) ||
         (v.utilities.networking.isValidCidr(addressPrefix)) ||
-        (v.utilities.isStringInArray(addressPrefix, ['VirtualNetwork', 'AzureLoadBalancer', 'Internet', '*'])));
+        (v.utilities.isStringInArray(addressPrefix, validDefaultTags)));
 };
 
 let isValidDirection = (direction) => {
-    return v.utilities.isStringInArray(direction, ['Inbound', 'Outbound']);
+    return v.utilities.isStringInArray(direction, validDirections);
 };
 
 let isValidPriority = (priority) => {
@@ -30,79 +35,48 @@ let isValidPriority = (priority) => {
 };
 
 let isValidAccess = (access) => {
-    return v.utilities.isStringInArray(access, ['Allow', 'Deny']);
+    return v.utilities.isStringInArray(access, validAccesses);
 };
 
 let networkSecurityGroupSettingsSecurityRulesValidations = {
-    name: v.validationUtilities.isNullOrWhitespace,
-    protocol: (result, parentKey, key, value, parent) => {
-        if (!isValidProtocol(value)) {
-            result.push({
-                name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-                message: validationMessages.networkSecurityGroup.securityRules.InvalidProtocol
-            });
-        }
+    name: v.utilities.isNotNullOrWhitespace,
+    protocol: (value, parent) => {
+        return {
+            result: isValidProtocol(value),
+            message: `Valid values are ${validProtocols.join(',')}`
+        };
     },
-    sourcePortRange: (result, parentKey, key, value, parent) => {
-        if (!v.utilities.networking.isValidPortRange(value)) {
-            result.push({
-                name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-                message: validationMessages.networkSecurityGroup.securityRules.InvalidPortRange
-            });
-        }
+    sourcePortRange: v.utilities.networking.isValidPortRange,
+    destinationPortRange: v.utilities.networking.isValidPortRange,
+    sourceAddressPrefix: (value, parent) => {
+        return {
+            result: isValidAddressPrefix(value),
+            message: `Valid values are an IPAddress, a CIDR, or one of the following values: ${validDefaultTags.join(',')}`
+        };
     },
-    destinationPortRange: (result, parentKey, key, value, parent) => {
-        if (!v.utilities.networking.isValidPortRange(value)) {
-            result.push({
-                name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-                message: validationMessages.networkSecurityGroup.securityRules.InvalidPortRange
-            });
-        }
+    destinationAddressPrefix: (value, parent) => {
+        return {
+            result: isValidAddressPrefix(value),
+            message: `Valid values are an IPAddress, a CIDR, or one of the following values: ${validDefaultTags.join(',')}`
+        };
     },
-    sourceAddressPrefix: (result, parentKey, key, value, parent) => {
-        if (!isValidAddressPrefix(value)) {
-            result.push({
-                name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-                message: validationMessages.networkSecurityGroup.securityRules.InvalidAddressPrefix
-            });
-        }
+    direction: (value, parent) => {
+        return {
+            result: isValidDirection(value),
+            message: `Valid values are ${validDirections.join(',')}`
+        };
     },
-    destinationAddressPrefix: (result, parentKey, key, value, parent) => {
-        if (!isValidAddressPrefix(value)) {
-            result.push({
-                name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-                message: validationMessages.networkSecurityGroup.securityRules.InvalidAddressPrefix
-            });
-        }                
-    },
-    direction: (result, parentKey, key, value, parent) => {
-        if (!isValidDirection(value)) {
-            result.push({
-                name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-                message: validationMessages.networkSecurityGroup.securityRules.InvalidDirection
-            });
-        }
-    },
-    priority: (result, parentKey, key, value, parent) => {
-        if (!isValidPriority(value)) {
-            result.push({
-                name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-                message: validationMessages.networkSecurityGroup.securityRules.InvalidPriority
-            });
-        }
-    },
-    access: (result, parentKey, key, value, parent) => {
-        if (!isValidAccess(value)) {
-            result.push({
-                name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-                message: validationMessages.networkSecurityGroup.securityRules.InvalidAccess
-            });
-        }
+    priority: isValidPriority,
+    access: (value, parent) => {
+        return {
+            result: isValidAccess(value),
+            message: `Valid values are ${validAccesses.join(',')}`
+        };
     }
 };
 
 let networkSecurityGroupSettingsValidations = {
-    name: v.validationUtilities.isNullOrWhitespace,
+    name: v.utilities.isNotNullOrWhitespace,
     securityRules: networkSecurityGroupSettingsSecurityRulesValidations
 };
 
@@ -151,7 +125,10 @@ exports.transform = function ({settings, buildingBlockSettings}) {
 
     let results = _.transform(settings, (result, setting, index) => {
         let merged = v.merge(setting, networkSecurityGroupSettingsDefaults);
-        let errors = v.validate(merged, networkSecurityGroupSettingsValidations);
+        let errors = v.validate({
+            settings: merged,
+            validations: networkSecurityGroupSettingsValidations
+        });
         if (errors.length > 0) {
           throw new Error(JSON.stringify(errors));
         }
@@ -159,10 +136,13 @@ exports.transform = function ({settings, buildingBlockSettings}) {
         result.push(merged);
     }, []);
 
-    buildingBlockErrors = v.validate(buildingBlockSettings, {
-        subscriptionId: v.validationUtilities.isNullOrWhitespace,
-        resourceGroupName: v.validationUtilities.isNullOrWhitespace,
-    }, buildingBlockSettings);
+    buildingBlockErrors = v.validate({
+        settings: buildingBlockSettings,
+        validations: {
+            subscriptionId: v.utilities.isNotNullOrWhitespace,
+            resourceGroupName: v.utilities.isNotNullOrWhitespace,
+        }
+    });
 
     if (buildingBlockErrors.length > 0) {
         throw new Error(JSON.stringify(buildingBlockErrors));
