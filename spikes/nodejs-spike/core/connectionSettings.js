@@ -83,12 +83,9 @@ let connectionSettingsValidations = {
                     message: 'Value cannot be null or undefined if connectionType is IPsec'
                 };
             } else {
-                result = v.validate({
-                    settings: value,
-                    validations: localNetworkGatewayValidations,
-                    parentKey: '.localNetworkGateway',
-                    parentValue: parent
-                });
+                result = {
+                    validations: localNetworkGatewayValidations
+                };
             }
         } else if (!_.isNil(value)) {
             result = {
@@ -112,12 +109,9 @@ let connectionSettingsValidations = {
                 };
             }
         } else {
-            result = v.validate({
-                settings: value,
-                validations: expressRouteCircuitValidations,
-                parentKey: '.expressRouteCircuit',
-                parentValue: parent
-            });
+            result = {
+                validations: expressRouteCircuitValidations
+            };
         }
 
         return result;
@@ -134,12 +128,9 @@ let connectionSettingsValidations = {
                     message: 'Value cannot be null or undefined if connectionType is Vnet2Vnet'
                 };
             } else {
-                result = v.validate({
-                    settings: value,
-                    validations: virtualNetworkGatewayValidations,
-                    parentKey: '.virtualNetworkGateway1',
-                    parentValue: parent
-                });
+                result = {
+                    validations: virtualNetworkGatewayValidations
+                };
             }
         } else {
             if ((!_.isNil(value))) {
@@ -164,12 +155,9 @@ let connectionSettingsValidations = {
                     message: 'Value cannot be null or undefined if connectionType is Vnet2Vnet'
                 };
             } else {
-                result = v.validate({
-                    settings: value,
-                    validations: virtualNetworkGatewayValidations,
-                    parentKey: '.virtualNetworkGateway2',
-                    parentValue: parent
-                });
+                result = {
+                    validations: virtualNetworkGatewayValidations
+                };
             }
         } else {
             if ((!_.isNil(value))) {
