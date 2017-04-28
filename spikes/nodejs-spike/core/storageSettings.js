@@ -24,13 +24,22 @@ let storageValidations = {
             result: (parent.managed) || ((_.isFinite(value)) && value > 0),
             message: 'Value must be greater than 0'
         };
-    }
+    },
+    managed:  v.validationUtilities.isBoolean,
+    nameSuffix: v.utilities.isNotNullOrWhitespace,
+    skuType: v.utilities.isNotNullOrWhitespace
 };
 
 let diagnosticValidations = {
     managed: (value, parent) => {
+        if (!_.isBoolean(value)) {
+            return {
+                result: false,
+                message: 'Value must be Boolean'
+            }
+        }
         return {
-            result: !parent.managed,
+            result: !value,
             message: 'Diagnostic storage cannot be managed.'
         };
     },
@@ -45,7 +54,8 @@ let diagnosticValidations = {
             result: ((_.isFinite(value)) && value > 0),
             message: 'Value must be greater than 0'
         };
-    }
+    },
+    nameSuffix: v.utilities.isNotNullOrWhitespace
 };
 
 function convertToBase32(carryOverValue, carryOverBits, buffer) {
@@ -88,7 +98,7 @@ function createStamps(settings, parent) {
 }
 
 function process(settings, parent) {
-    if(settings.managed){
+    if (settings.managed) {
         return [];
     }
     return _.transform(createStamps(settings, parent), (result, n, index) => {

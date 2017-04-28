@@ -23,7 +23,7 @@ let isValidIPAllocationMethod = (ipAllocationMethod) => {
 };
 
 let networkInterfaceValidations = {
-    enableIPForwarding: _.isBoolean,
+    enableIPForwarding: v.validationUtilities.isBoolean,
     subnetName: v.utilities.isNotNullOrWhitespace,
     privateIPAllocationMethod: (value, parent) => {
         let result = {
@@ -50,8 +50,9 @@ let networkInterfaceValidations = {
             message: `Valid values are ${validIPAllocationMethods.join(',')}`
         };
     },
-    isPrimary: _.isBoolean,
-    isPublic: _.isBoolean
+    isPrimary: v.validationUtilities.isBoolean,
+    isPublic: v.validationUtilities.isBoolean,
+    dnsServers: v.utilities.networking.isValidIpAddress
 };
 
 function intToIP(int) {

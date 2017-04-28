@@ -11,6 +11,17 @@ const defaultsPath = './defaults/virtualMachinesSettings.';
 let output = {};
 
 function merge(settings) {
+    if (!settings.osDisk) {
+        throw new Error(JSON.stringify({
+            name: ".osDisk",
+            message: `Invalid value: ${settings.osDisk}`
+        }));
+    } else if (!isValidOSType(settings.osDisk.osType)) {
+        throw new Error(JSON.stringify({
+            name: ".osDisk.osType",
+            message: `Invalid value: ${settings.osDisk.osType}. Valid values for 'osType' are: ${validOSTypes.join(', ')}`
+        }));
+    }
     let defaultsFile = defaultsPath.concat(settings.osDisk.osType, '.json');
     let defaults = JSON.parse(fs.readFileSync(defaultsFile, 'UTF-8'));
 
@@ -19,6 +30,8 @@ function merge(settings) {
 
 let validOSAuthenticationTypes = ['ssh', 'password'];
 let validOSTypes = ['linux', 'windows'];
+let validCachingType = ['None', 'ReadOnly', 'ReadWrite'];
+let validCreateOptions = ['fromImage', 'empty', 'attach'];
 
 let isValidOSAuthenticationType = (osAuthenticationType) => {
     return v.utilities.isStringInArray(osAuthenticationType, validOSAuthenticationTypes);
@@ -26,6 +39,14 @@ let isValidOSAuthenticationType = (osAuthenticationType) => {
 
 let isValidOSType = (osType) => {
     return v.utilities.isStringInArray(osType, validOSTypes);
+};
+
+let isValidCachingType = (caching) => {
+    return v.utilities.isStringInArray(caching, validCachingType);
+};
+
+let isValidCreateOptions = (option) => {
+    return v.utilities.isStringInArray(option, validCreateOptions);
 };
 
 function validate(settings) {
@@ -43,7 +64,7 @@ function validate(settings) {
         return accumulator;
     }, 0);
 
-    if (primaryNicCount !== 1) {
+    if (settings.nics && primaryNicCount !== 1) {
         errors.push({
             name: '.nics',
             message: "Virtual machine can have only 1 primary NetworkInterface."
@@ -105,10 +126,37 @@ let virtualMachineValidations = {
     },
     size: v.utilities.isNotNullOrWhitespace,
     osDisk: {
+        caching: (value, parent) => {
+            return {
+                result: isValidCachingType(value),
+                message: `Valid values are ${validCachingType.join(', ')}`
+            };
+        },
+        createOption: (value, parent) => {
+            return {
+                result: isValidCreateOptions(value),
+                message: `Valid values are ${validCreateOptions.join(', ')}`
+            };
+        },
+        image: (value, parent) => {
+            if (parent.createOption === 'attach' && _.isNullOrWhitespace(value)) {
+                return {
+                    result: false,
+                    message: `Value of 'image' cannot be null or empty, if value of '.osDisk.createOption' is 'attach'}`
+                };
+            };
+            return { result: true };
+        },
         osType: (value, parent) => {
-            return result = {
+            return {
                 result: isValidOSType(value),
-                message: `Valid values are ${validOSTypes.join(',')}`
+                message: `Valid values are ${validOSTypes.join(', ')}`
+            };
+        },
+        diskSizeGB: (value, parent) => {
+            return {
+                result: ((_.isFinite(value)) && value > 0),
+                message: 'Value must be greater than 0'
             };
         },
         encryptionSettings: (value, parent) => {
@@ -122,7 +170,44 @@ let virtualMachineValidations = {
             });
         }
     },
-    existingWindowsServerlicense: _.isBoolean,
+    dataDisks: {
+        properties: {
+            caching: (value, parent) => {
+                return {
+                    result: isValidCachingType(value),
+                    message: `Valid values are ${validCachingType.join(', ')}`
+                };
+            },
+            createOption: (value, parent) => {
+                return {
+                    result: isValidCreateOptions(value),
+                    message: `Valid values are ${validCreateOptions.join(', ')}`
+                };
+            },
+            image: (value, parent) => {
+                if (parent.createOption === 'attach' && _.isNullOrWhitespace(value)) {
+                    return {
+                        result: false,
+                        message: `Value of 'image' cannot be null or empty, if value of '.dataDisks.createOption' is 'attach'}`
+                    };
+                };
+                return { result: true };
+            },
+            diskSizeGB: (value, parent) => {
+                return {
+                    result: ((_.isFinite(value)) && value > 0),
+                    message: 'Value must be greater than 0'
+                };
+            }
+        },
+        count: (value, parent) => {
+            return {
+                result: ((_.isFinite(value)) && value > 0),
+                message: 'Value must be greater than 0'
+            };
+        }
+    },
+    existingWindowsServerlicense: v.validationUtilities.isBoolean,
     adminUsername: v.utilities.isNotNullOrWhitespace,
     osAuthenticationType: (value, parent) => {
         let result = {
@@ -132,22 +217,37 @@ let virtualMachineValidations = {
         if (!isValidOSAuthenticationType(value)) {
             result = {
                 result: false,
-                message: `Valid values are ${validOSAuthenticationTypes.join(',')}`
+                message: "Valid values for 'osAuthenticationType' are: 'ssh', 'password'"
             };
-        } else if ((value === 'ssh') && (_.isNullOrWhitespace(parent.sshPublicKey))) {
-            result = {
-                result: false,
-                message: 'sshPublicKey cannot be null, empty, or only whitespace if osAuthenticationType is ssh'
-            };
-        } else if ((value === 'password') && (_.isNullOrWhitespace(parent.adminPassword))) {
+        }
+        return result;
+    },
+    adminPassword: (value, parent) => {
+        let result = {
+            result: true
+        };
+        if ((parent.osAuthenticationType === 'password') && (_.isNullOrWhitespace(value))) {
             result = {
                 result: false,
                 message: 'adminPassword cannot be null, empty, or only whitespace if osAuthenticationType is password'
             };
         }
-
         return result;
     },
+    sshPublicKey: (value, parent) => {
+        let result = {
+            result: true
+        };
+
+        if (parent.osAuthenticationType === 'ssh' && (_.isNullOrWhitespace(value))) {
+            result = {
+                result: false,
+                message: 'sshPublicKey cannot be null, empty, or only whitespace if osAuthenticationType is ssh'
+            };
+        }
+        return result;
+    },
+
     storageAccounts: storageSettings.storageValidations,
     diagnosticStorageAccounts: storageSettings.diagnosticValidations,
     nics: nicSettings.validations,
@@ -167,7 +267,7 @@ let processorProperties = {
             return {
                 licenseType: "Windows_Server"
             }
-        }else {
+        } else {
             return {
                 licenseType: ""
             }
@@ -202,7 +302,8 @@ let processorProperties = {
         let instance = {
             name: parent.name.concat('-os.vhd'),
             createOption: value.createOption,
-            caching: value.caching
+            caching: value.caching,
+            diskSizeGB: value.diskSizeGB
         }
         if (value.image) {
             instance.image = {
@@ -376,7 +477,7 @@ let processorProperties = {
                 }
             }
         } else {
-             return {
+            return {
                 linuxConfiguration: null
             }
         }
