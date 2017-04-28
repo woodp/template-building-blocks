@@ -32,6 +32,10 @@ let isValidIPAllocationMethod = (ipAllocationMethod) => {
     return v.utilities.isStringInArray(ipAllocationMethod, validIPAllocationMethods);
 };
 
+let publicIpAddressValidations = {
+    name: v.utilities.isNotNullOrWhitespace
+};
+
 let bgpSettingsValidations = {
     asn: (value, parent) => {
         return _.isNil(value) ? {
@@ -83,12 +87,9 @@ let virtualNetworkGatewaySettingsValidations = {
     bgpSettings: (value, parent) => {
         return _.isNil(value) ? {
             result: true
-        } : v.validate({
-            settings: value,
-            validations: bgpSettingsValidations,
-            parentKey: '.bgpSettings',
-            parentValue: parent
-        });
+        } : {
+                validations: bgpSettingsValidations
+        };
     },
     virtualNetwork: {
         name: v.utilities.isNotNullOrWhitespace
@@ -96,14 +97,9 @@ let virtualNetworkGatewaySettingsValidations = {
     publicIpAddress: (value, parent) => {
         return _.isNil(value) ? {
             result: true
-        } : v.validate({
-            settings: value,
-            validations: {
-                name: v.utilities.isNotNullOrWhitespace
-            },
-            parentKey: '.publicIpAddress',
-            parentValue: parent
-        });
+        } : {
+            validations: publicIpAddressValidations
+        };
     }
 };
 
