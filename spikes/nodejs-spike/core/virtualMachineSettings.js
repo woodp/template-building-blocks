@@ -8,8 +8,6 @@ let v = require('./validation.js');
 
 const defaultsPath = './defaults/virtualMachinesSettings.';
 
-let output = {};
-
 function merge(settings) {
     if (!settings.osDisk) {
         throw new Error(JSON.stringify({
@@ -133,10 +131,19 @@ let virtualMachineValidations = {
             };
         },
         createOption: (value, parent) => {
-            return {
-                result: isValidCreateOptions(value),
-                message: `Valid values are ${validCreateOptions.join(', ')}`
+            if (!isValidCreateOptions(value)) {
+                return {
+                    result: false,
+                    message: `Valid values are ${validCreateOptions.join(', ')}`
+                };
             };
+            // if (parent.storageAccounts.managed && value === 'attach') {
+            //     return {
+            //         result: false,
+            //         message: `Value cannot be 'attach' with managed disks`
+            //     };
+            // }
+            return { result: true };
         },
         image: (value, parent) => {
             if (parent.createOption === 'attach' && _.isNullOrWhitespace(value)) {
@@ -179,10 +186,19 @@ let virtualMachineValidations = {
                 };
             },
             createOption: (value, parent) => {
-                return {
-                    result: isValidCreateOptions(value),
-                    message: `Valid values are ${validCreateOptions.join(', ')}`
+                if (!isValidCreateOptions(value)) {
+                    return {
+                        result: false,
+                        message: `Valid values are ${validCreateOptions.join(', ')}`
+                    };
                 };
+                // if (parent.storageAccounts.managed && value === 'attach') {
+                //     return {
+                //         result: false,
+                //         message: `Value cannot be 'attach' with managed disks`
+                //     };
+                // }
+                return { result: true };
             },
             image: (value, parent) => {
                 if (parent.createOption === 'attach' && _.isNullOrWhitespace(value)) {
@@ -207,7 +223,21 @@ let virtualMachineValidations = {
             };
         }
     },
-    existingWindowsServerlicense: v.validationUtilities.isBoolean,
+    existingWindowsServerlicense: (value, parent) => {
+        if (!_.isBoolean(value)) {
+            return {
+                result: false,
+                message: 'Value must be Boolean'
+            };
+        };
+        if (parent.osDisk.osType !== "windows" && value) {
+            return {
+                result: false,
+                message: 'Value cannot be true, if the osType is windows'
+            };
+        }
+        return { result: true };
+    },
     adminUsername: v.utilities.isNotNullOrWhitespace,
     osAuthenticationType: (value, parent) => {
         let result = {
@@ -298,18 +328,14 @@ let processorProperties = {
             }
         }
     },
-    osDisk: (value, key, index, parent) => {
+    osDisk: (value, key, index, parent, parentAccumulator) => {
         let instance = {
             name: parent.name.concat('-os.vhd'),
             createOption: value.createOption,
             caching: value.caching,
             diskSizeGB: value.diskSizeGB
         }
-        if (value.image) {
-            instance.image = {
-                uri: value.image
-            }
-        }
+
         if (value.encryptionSettings) {
             instance.encryptionSettings = {
                 diskEncryptionKey: {
@@ -328,13 +354,17 @@ let processorProperties = {
             }
         }
 
-        if (parent.storageAccounts.managed) {
+        if (value.createOption === 'attach') {
+            instance.image = {
+                uri: value.image
+            }
+        } else if (parent.storageAccounts.managed) {
             instance.managedDisk = {
                 storageAccountType: parent.storageAccounts.skuType
             }
         } else {
             let storageAccounts = parent.storageAccounts.accounts;
-            output.storageAccounts.forEach((account) => {
+            parentAccumulator.storageAccounts.forEach((account) => {
                 storageAccounts.push(account.name);
             });
             let stroageAccountToUse = index % storageAccounts.length;
@@ -350,7 +380,7 @@ let processorProperties = {
             }
         }
     },
-    dataDisks: (value, key, index, parent) => {
+    dataDisks: (value, key, index, parent, parentAccumulator) => {
         let disks = [];
         for (let i = 0; i < value.count; i++) {
             let instance = {
@@ -360,14 +390,17 @@ let processorProperties = {
                 caching: value.properties.caching,
                 createOption: value.properties.createOption
             };
-
-            if (parent.storageAccounts.managed) {
+            if (value.properties.createOption === 'attach') {
+                instance.image = {
+                    uri: value.image
+                }
+            } else if (parent.storageAccounts.managed) {
                 instance.managedDisk = {
                     storageAccountType: parent.storageAccounts.skuType
                 }
             } else {
                 let storageAccounts = parent.storageAccounts.accounts;
-                output.storageAccounts.forEach((account) => {
+                parentAccumulator.storageAccounts.forEach((account) => {
                     storageAccounts.push(account.name);
                 });
                 let stroageAccountToUse = index % storageAccounts.length;
@@ -384,8 +417,8 @@ let processorProperties = {
             }
         }
     },
-    nics: (value, key, index, parent) => {
-        let ntwkInterfaces = _.transform(output.nics, (result, n) => {
+    nics: (value, key, index, parent, parentAccumulator) => {
+        let ntwkInterfaces = _.transform(parentAccumulator.nics, (result, n) => {
             if (_.includes(n.name, parent.name)) {
                 let nicRef = {
                     id: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/networkInterfaces', n.name),
@@ -403,10 +436,10 @@ let processorProperties = {
             }
         }
     },
-    diagnosticStorageAccounts: (value, key, index, parent) => {
+    diagnosticStorageAccounts: (value, key, index, parent, parentAccumulator) => {
         // get the diagonstic account name for the VM
         let diagnosticAccounts = parent.diagnosticStorageAccounts.accounts;
-        output.diagnosticStorageAccounts.forEach((account) => {
+        parentAccumulator.diagnosticStorageAccounts.forEach((account) => {
             diagnosticAccounts.push(account.name);
         });
         let diagnosticAccountToUse = index % diagnosticAccounts.length;
@@ -421,7 +454,7 @@ let processorProperties = {
             }
         };
     },
-    extensions: (value, key, index, parent) => {
+    extensions: (value, key, index, parent, parentAccumulator) => {
         let processedExtensions = { "extensions": [] };
         value.forEach((extension) => {
             let temp = {};
@@ -438,7 +471,7 @@ let processorProperties = {
 
                 // get the diagonstic account name for the VM
                 let diagnosticAccounts = parent.diagnosticStorageAccounts.accounts;
-                output.diagnosticStorageAccounts.forEach((account) => {
+                parentAccumulator.diagnosticStorageAccounts.forEach((account) => {
                     diagnosticAccounts.push(account.name);
                 });
                 let diagnosticAccountToUse = index % diagnosticAccounts.length;
@@ -497,40 +530,40 @@ let storageAccountsProcessed = false;
 let availabilitySetProcessed = false;
 let diagnosticStorageAccountsProcessed = false;
 let processChildResources = {
-    storageAccounts: (value, key, index, parent) => {
+    storageAccounts: (value, key, index, parent, accumulator) => {
         if (!storageAccountsProcessed) {
-            let mergedCol = (output["storageAccounts"] || (output["storageAccounts"] = [])).concat(storageSettings.processStorageSettings(value, parent));
-            output.storageAccounts = mergedCol;
+            let mergedCol = (accumulator["storageAccounts"] || (accumulator["storageAccounts"] = [])).concat(storageSettings.processStorageSettings(value, parent));
+            accumulator.storageAccounts = mergedCol;
             storageAccountsProcessed = true;
         }
     },
-    diagnosticStorageAccounts: (value, key, index, parent) => {
+    diagnosticStorageAccounts: (value, key, index, parent, accumulator) => {
         if (!diagnosticStorageAccountsProcessed) {
-            let mergedCol = (output["diagnosticStorageAccounts"] || (output["diagnosticStorageAccounts"] = [])).concat(storageSettings.processStorageSettings(value, parent));
-            output.diagnosticStorageAccounts = mergedCol;
+            let mergedCol = (accumulator["diagnosticStorageAccounts"] || (accumulator["diagnosticStorageAccounts"] = [])).concat(storageSettings.processStorageSettings(value, parent));
+            accumulator.diagnosticStorageAccounts = mergedCol;
             diagnosticStorageAccountsProcessed = true;
         }
     },
-    nics: (value, key, index, parent) => {
+    nics: (value, key, index, parent, accumulator) => {
         let col = nicSettings.processNetworkInterfaceSettings(value, parent, index);
 
-        let mergedCol = (output["nics"] || (output["nics"] = [])).concat(col.nics);
-        output["nics"] = mergedCol;
-        mergedCol = (output["pips"] || (output["pips"] = [])).concat(col.pips);
-        output["pips"] = mergedCol;
+        let mergedCol = (accumulator["nics"] || (accumulator["nics"] = [])).concat(col.nics);
+        accumulator["nics"] = mergedCol;
+        mergedCol = (accumulator["pips"] || (accumulator["pips"] = [])).concat(col.pips);
+        accumulator["pips"] = mergedCol;
     },
-    availabilitySet: (value, key, index, parent) => {
+    availabilitySet: (value, key, index, parent, accumulator) => {
         if (_.toLower(value.useExistingAvailabilitySet) === "no" && parent.vmCount === 1) {
-            output["availabilitySet"] = [];
+            accumulator["availabilitySet"] = [];
         } else if (!availabilitySetProcessed) {
-            output["availabilitySet"] = avSetSettings.processAvSetSettings(value, parent);
+            accumulator["availabilitySet"] = avSetSettings.processAvSetSettings(value, parent);
         }
     },
-    osDisk: (value, key, index, parent) => {
+    osDisk: (value, key, index, parent, accumulator) => {
         if (_.toLower(value.osType) === "linux" && _.toLower(parent.osAuthenticationType) === "ssh") {
-            output["secret"] = parent.sshPublicKey;
+            accumulator["secret"] = parent.sshPublicKey;
         } else {
-            output["secret"] = parent.adminPassword;
+            accumulator["secret"] = parent.adminPassword;
         }
     },
 }
@@ -557,20 +590,20 @@ function processVMStamps(param, buildingBlockSettings) {
 }
 
 function process(param, buildingBlockSettings) {
-    output.virtualMachines = _.transform(processVMStamps(param, buildingBlockSettings), (result, n, index, parent) => {
+    let processedParams = _.transform(processVMStamps(param, buildingBlockSettings), (result, n, index, parent) => {
         for (let prop in n) {
             if (typeof processChildResources[prop] === 'function') {
-                processChildResources[prop](n[prop], prop, index, n);
+                processChildResources[prop](n[prop], prop, index, n, result);
             }
         }
-        result.push(_.transform(n, (inner, value, key, obj) => {
-            _.merge(inner, (typeof processorProperties[key] === 'function') ? processorProperties[key](value, key, index, obj) : processorProperties["passThrough"](value, key, index, obj));
+        result.virtualMachines.push(_.transform(n, (inner, value, key, obj) => {
+            _.merge(inner, (typeof processorProperties[key] === 'function') ? processorProperties[key](value, key, index, obj, _.cloneDeep(result)) : processorProperties["passThrough"](value, key, index, obj, _.cloneDeep(result)));
             return inner;
         }, {}));
         return result;
-    }, [])
+    }, {virtualMachines: []})
 
-    return createTemplateParameters(output);
+    return createTemplateParameters(processedParams);
 };
 
 function createTemplateParameters(resources) {
