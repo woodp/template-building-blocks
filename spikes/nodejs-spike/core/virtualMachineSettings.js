@@ -123,61 +123,10 @@ let virtualMachineValidations = {
         };
     },
     size: v.utilities.isNotNullOrWhitespace,
-    osDisk: {
-        caching: (value, parent) => {
-            return {
-                result: isValidCachingType(value),
-                message: `Valid values are ${validCachingType.join(', ')}`
-            };
-        },
-        createOption: (value, parent) => {
-            if (!isValidCreateOptions(value)) {
-                return {
-                    result: false,
-                    message: `Valid values are ${validCreateOptions.join(', ')}`
-                };
-            };
-            // if (parent.storageAccounts.managed && value === 'attach') {
-            //     return {
-            //         result: false,
-            //         message: `Value cannot be 'attach' with managed disks`
-            //     };
-            // }
-            return { result: true };
-        },
-        image: (value, parent) => {
-            if (parent.createOption === 'attach' && _.isNullOrWhitespace(value)) {
-                return {
-                    result: false,
-                    message: `Value of 'image' cannot be null or empty, if value of '.osDisk.createOption' is 'attach'}`
-                };
-            };
-            return { result: true };
-        },
-        osType: (value, parent) => {
-            return {
-                result: isValidOSType(value),
-                message: `Valid values are ${validOSTypes.join(', ')}`
-            };
-        },
-        diskSizeGB: (value, parent) => {
-            return _.isNil(value) ? {
-                result: true
-            } : {
-                result: ((_.isFinite(value)) && value > 0),
-                message: 'Value must be greater than 0'
-            };
-        },
-        encryptionSettings: (value, parent) => {
-            return _.isNil(value) ? {
-                result: true
-            } : {
-                    validations: encryptionSettingsValidations
-            };
-        }
-    },
-    dataDisks: {
-        properties: {
+    osDisk: (value, parent) => {
+        // We will need this, so we'll capture here.
+        let isManagedStorageAccounts = parent.storageAccounts.managed;
+        let osDiskValidations = {
             caching: (value, parent) => {
                 return {
                     result: isValidCachingType(value),
@@ -191,36 +140,103 @@ let virtualMachineValidations = {
                         message: `Valid values are ${validCreateOptions.join(', ')}`
                     };
                 };
-                // if (parent.storageAccounts.managed && value === 'attach') {
-                //     return {
-                //         result: false,
-                //         message: `Value cannot be 'attach' with managed disks`
-                //     };
-                // }
+                if (isManagedStorageAccounts && value === 'attach') {
+                    return {
+                        result: false,
+                        message: `Value cannot be 'attach' with managed disks`
+                    };
+                }
                 return { result: true };
             },
             image: (value, parent) => {
                 if (parent.createOption === 'attach' && _.isNullOrWhitespace(value)) {
                     return {
                         result: false,
-                        message: `Value of 'image' cannot be null or empty, if value of '.dataDisks.createOption' is 'attach'}`
+                        message: `Value of 'image' cannot be null or empty, if value of '.osDisk.createOption' is 'attach'}`
                     };
                 };
                 return { result: true };
             },
+            osType: (value, parent) => {
+                return {
+                    result: isValidOSType(value),
+                    message: `Valid values are ${validOSTypes.join(', ')}`
+                };
+            },
             diskSizeGB: (value, parent) => {
+                return _.isNil(value) ? {
+                    result: true
+                } : {
+                    result: ((_.isFinite(value)) && value > 0),
+                    message: 'Value must be greater than 0'
+                };
+            },
+            encryptionSettings: (value, parent) => {
+                return _.isNil(value) ? {
+                    result: true
+                } : {
+                        validations: encryptionSettingsValidations
+                };
+            }
+        }
+
+        return {
+            validations: osDiskValidations
+        };
+    },
+    dataDisks: (value, parent) => {
+        // We will need this, so we'll capture here.
+        let isManagedStorageAccounts = parent.storageAccounts.managed;
+        let dataDiskValidations = {
+            properties: {
+                caching: (value, parent) => {
+                    return {
+                        result: isValidCachingType(value),
+                        message: `Valid values are ${validCachingType.join(', ')}`
+                    };
+                },
+                createOption: (value, parent) => {
+                    if (!isValidCreateOptions(value)) {
+                        return {
+                            result: false,
+                            message: `Valid values are ${validCreateOptions.join(', ')}`
+                        };
+                    };
+                    if (isManagedStorageAccounts && value === 'attach') {
+                        return {
+                            result: false,
+                            message: `Value cannot be 'attach' with managed disks`
+                        };
+                    }
+                    return { result: true };
+                },
+                image: (value, parent) => {
+                    if (parent.createOption === 'attach' && _.isNullOrWhitespace(value)) {
+                        return {
+                            result: false,
+                            message: `Value of 'image' cannot be null or empty, if value of '.dataDisks.createOption' is 'attach'}`
+                        };
+                    };
+                    return { result: true };
+                },
+                diskSizeGB: (value, parent) => {
+                    return {
+                        result: ((_.isFinite(value)) && value > 0),
+                        message: 'Value must be greater than 0'
+                    };
+                }
+            },
+            count: (value, parent) => {
                 return {
                     result: ((_.isFinite(value)) && value > 0),
                     message: 'Value must be greater than 0'
                 };
             }
-        },
-        count: (value, parent) => {
-            return {
-                result: ((_.isFinite(value)) && value > 0),
-                message: 'Value must be greater than 0'
-            };
-        }
+        };
+
+        return {
+            validations: dataDiskValidations
+        };
     },
     existingWindowsServerlicense: (value, parent) => {
         if (!_.isBoolean(value)) {
