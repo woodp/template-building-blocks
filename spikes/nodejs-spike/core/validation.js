@@ -72,11 +72,21 @@ function reduce({validations, value, parentKey, parentValue, accumulator}) {
                     _.forEach(result, (value) => {
                         accumulator.push(value);
                     });
-                } else if (((_.isBoolean(result)) && (!result)) || (!result.result)) {
+                //} else if (((_.isBoolean(result)) && (!result)) || ((_.isBoolean(result.result)) && (!result.result))) {
+                } else if ((_.isBoolean(result.result)) && (!result.result)) {
                     let {message, name} = result;
                     accumulator.push({
                         name: name ? name : `${parentKey}[${index}]`,
                         message: `Invalid value: ${toString(item)}.` + (message ? '  ' + message : '')
+                    });
+                } else if (result.validations) {
+                    // We got back more validations to run
+                    reduce({
+                        validations: result.validations,
+                        value: value,
+                        parentKey: `${parentKey}[${index}]`,
+                        parentValue: parentValue,
+                        accumulator: accumulator
                     });
                 }
 
@@ -92,11 +102,21 @@ function reduce({validations, value, parentKey, parentValue, accumulator}) {
                         accumulator.push(value);
                     });
                 }
-            } else if (((_.isBoolean(result)) && (!result)) || (!result.result)) {
+            // } else if (((_.isBoolean(result)) && (!result)) || ((_.isBoolean(result.result)) && (!result.result))) {
+            } else if ((_.isBoolean(result.result)) && (!result.result)) {
                 let {message, name} = result;
                 accumulator.push({
                     name: name ? name : `${parentKey}`,
                     message: `Invalid value: ${toString(value)}.` + (message ? '  ' + message : '')
+                });
+            } else if (result.validations) {
+                // We got back more validations to run
+                reduce({
+                    validations: result.validations,
+                    value: value,
+                    parentKey: `${parentKey}`,
+                    parentValue: parentValue,
+                    accumulator: accumulator
                 });
             }
         }
