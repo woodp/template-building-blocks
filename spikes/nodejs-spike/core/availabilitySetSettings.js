@@ -14,18 +14,28 @@ function merge(settings) {
 let validUseExistingAvailabilitySetValues = ['yes', 'no'];
 
 let isValidUseExistingAvailabilitySet = (useExistingAvailabilitySet) => {
-    return v.utilities.isStringInArray(useExistingAvailabilitySet, validUseExistingAvailabilitySetValues);
+  return v.utilities.isStringInArray(useExistingAvailabilitySet, validUseExistingAvailabilitySetValues);
 };
 
 let availabilitySetValidations = {
   useExistingAvailabilitySet: (value, parent) => {
     return {
-        result: isValidUseExistingAvailabilitySet(value),
-        message: `Valid values are ${validUseExistingAvailabilitySetValues.join(',')}`
+      result: isValidUseExistingAvailabilitySet(value),
+      message: `Valid values are ${validUseExistingAvailabilitySetValues.join(', ')}`
     };
   },
-  platformFaultDomainCount: _.isFinite,
-  platformUpdateDomainCount: _.isFinite,
+  platformFaultDomainCount: (value, parent) => {
+    return {
+      result: ((_.isFinite(value)) && value > 0),
+      message: 'Value must be greater than 0'
+    };
+  },
+  platformUpdateDomainCount: (value, parent) => {
+    return {
+      result: ((_.isFinite(value)) && value > 0),
+      message: 'Value must be greater than 0'
+    };
+  },
   name: v.utilities.isNotNullOrWhitespace,
 };
 
@@ -42,7 +52,7 @@ function process(settings, parent) {
     }
   };
 
-  if(parent.storageAccounts.managed){
+  if (parent.storageAccounts.managed) {
     instance.properties.managed = true;
   }
 

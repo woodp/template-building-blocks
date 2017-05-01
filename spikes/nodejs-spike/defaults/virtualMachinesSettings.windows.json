@@ -6,7 +6,8 @@
   "osDisk": {
     "osType": "windows",
     "caching": "ReadWrite",
-    "createOption": "FromImage"
+    "createOption": "FromImage",
+    "diskSizeGB": 127
   },
   "adminUsername": "adminUser",
   "adminPassword": "",
@@ -48,7 +49,7 @@
     "properties": {
       "diskSizeGB": 127,
       "caching": "None",
-      "createOption": "Empty"
+      "createOption": "empty"
     }
   },
   "existingWindowsServerlicense": false,

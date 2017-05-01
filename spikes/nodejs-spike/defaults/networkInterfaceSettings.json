@@ -1,5 +1,6 @@
 {
     "isPublic": false,
+    "subnetName": "default",
     "privateIPAllocationMethod": "Dynamic",
     "publicIPAllocationMethod": "Dynamic",
     "enableIPForwarding": false,

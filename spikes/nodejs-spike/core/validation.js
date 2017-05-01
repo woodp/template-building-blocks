@@ -189,13 +189,11 @@ let validationUtilities = {
 
         return retVal;
     },
-    isBoolean: function (result, parentKey, key, value, parent) {
-        let retVal = _.isBoolean(value);
-        if (!retVal) {
-            result.push(_.join((parentKey ? [parentKey, key] : [key]), '.'));
-        }
-
-        return retVal;
+    isBoolean: (value, parent) => {
+        return {
+            result: _.isBoolean(value),
+            message: 'Value must be Boolean'
+        };
     }
 };
 
