@@ -34,7 +34,7 @@
                     },
                     {
                         "isPrimary": false,
-                        "subnetName": "default",
+                        "subnetName": "biz",
                         "privateIPAllocationMethod": "Dynamic",
                         "publicIPAllocationMethod": "Dynamic",
                         "startingIPAddress": "",
@@ -82,7 +82,7 @@
         },
         "buildingBlockSettings": {
             "value": {
-                "resourceGroupName": "rs-test2-rg",
+                "resourceGroupName": "rs-test6-rg",
                 "subscriptionId": "3b518fac-e5c8-4f59-8ed5-d70b626f8e10"
             }
         }

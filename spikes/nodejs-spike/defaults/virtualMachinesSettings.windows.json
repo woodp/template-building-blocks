@@ -6,8 +6,7 @@
   "osDisk": {
     "osType": "windows",
     "caching": "ReadWrite",
-    "createOption": "fromImage",
-    "diskSizeGB": 127
+    "createOption": "fromImage"
   },
   "adminUsername": "adminUser",
   "adminPassword": "",

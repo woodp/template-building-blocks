@@ -26,7 +26,7 @@
                     "computerName": "[parameters('source').computerName]",
                     "adminUsername": "[parameters('source').adminUsername]",
                     "adminPassword": null,
-                    "[concat(toLower(parameters('source').osType), 'Configuration')]": {
+                    "[concat(toLower(parameters('source').storageProfile.osDisk.osType), 'Configuration')]": {
                         "disablePasswordAuthentication": "true",
                         "ssh": {
                             "publicKeys": [
