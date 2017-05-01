@@ -299,13 +299,15 @@ let processorProperties = {
             }
         } else {
             return {
-                licenseType: ""
+                licenseType: null
             }
         }
     },
     availabilitySet: (value, key, index, parent) => {
         if (_.toLower(value.useExistingAvailabilitySet) === "no" && parent.vmCount < 2) {
-            return;
+            return {
+                availabilitySet: null
+            };
         }
 
         return {
@@ -601,7 +603,7 @@ function process(param, buildingBlockSettings) {
             return inner;
         }, {}));
         return result;
-    }, {virtualMachines: []})
+    }, { virtualMachines: [] })
 
     return createTemplateParameters(processedParams);
 };

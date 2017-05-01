@@ -15,18 +15,11 @@
     "variables": {
         "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('source'))))]",
         "vmTemplates": [
-            [
-                "[uri(deployment().properties.templateLink.uri, 'virtualMachine-ssh-no-avSet.json')]",
-                "[uri(deployment().properties.templateLink.uri, 'virtualMachine-ssh-avSet.json')]"
-            ],
-            [
-                "[uri(deployment().properties.templateLink.uri, 'virtualMachine-no-avSet.json')]",
-                "[uri(deployment().properties.templateLink.uri, 'virtualMachine-avSet.json')]"
-            ]
+            "[uri(deployment().properties.templateLink.uri, 'virtualMachine-ssh.json')]",
+            "[uri(deployment().properties.templateLink.uri, 'virtualMachine-password.json')]"
         ],
         "authTypeLength": "[sub(length(parameters('source')[0].osAuthenticationType), length('ssh'))]",
-        "avSetLength": "[length(parameters('source')[0].availabilitySet.id)]",
-        "templateToInvoke": "[variables('vmTemplates')[mod(add(variables('authTypeLength'), 2), add(variables('authTypeLength'), 1))][mod(add(variables('avSetLength'), 2), add(variables('avSetLength'), 1))]]"
+        "templateToInvoke": "[variables('vmTemplates')[mod(add(variables('authTypeLength'), 2), add(variables('authTypeLength'), 1))]]"
     },
     "resources": [
         {

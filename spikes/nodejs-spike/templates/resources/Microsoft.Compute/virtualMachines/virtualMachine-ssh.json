@@ -20,6 +20,7 @@
                 "displayName": "VM"
             },
             "properties": {
+                "availabilitySet": "[parameters('source').availabilitySet]",
                 "hardwareProfile": "[parameters('source').hardwareProfile]",
                 "osProfile": {
                     "computerName": "[parameters('source').computerName]",
@@ -39,7 +40,8 @@
                 },
                 "storageProfile": "[parameters('source').storageProfile]",
                 "networkProfile": "[parameters('source').networkProfile]",
-                "diagnosticsProfile": "[parameters('source').diagnosticsProfile]"
+                "diagnosticsProfile": "[parameters('source').diagnosticsProfile]",
+                "licenseType": "[parameters('source').licenseType]"
             }
         },
         {

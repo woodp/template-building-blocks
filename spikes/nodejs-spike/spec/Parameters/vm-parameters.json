@@ -5,22 +5,20 @@
         "virtualMachinesSettings": {
             "value": {
                 "virtualNetwork": {
-                    "subscriptionId": "22222222-e5c8-4f59-8ed5-222222222222",
-                    "name": "ra-2222-vnet"
+                    "name": "ra-vnet"
                 },
                 "vmCount": 2,
-                "namePrefix": "test111",
-                "computerNamePrefix": "test1",
+                "namePrefix": "test",
+                "computerNamePrefix": "test",
                 "adminUsername": "testadminuser",
-                "adminPassword": "sssssssssssssssssss",
+                "adminPassword": "Passw0rd1111",
                 "osAuthenticationType": "password",
                 "storageAccounts": {
                     "count": 2,
-                    "managed": true
+                    "managed": false
                 },
                 "diagnosticStorageAccounts": {
-                    "count": 2,
-                    "managed": false
+                    "count": 2
                 },
                 "nics": [
                     {
@@ -66,20 +64,7 @@
                 "existingWindowsServerlicense": true,
                 "osDisk": {
                     "osType": "windows",
-                    "caching": "ReadWrite",
-                    "createOption": "empty",
-                    "diskSizeGB": 10,
-                    "encryptionSettings": {
-                        "diskEncryptionKey": {
-                            "secretUrl": "string",
-                            "sourceVaultName": "string"
-                        },
-                        "keyEncryptionKey": {
-                            "keyUrl": "string",
-                            "sourceVaultName": "string"
-                        },
-                        "enabled": true
-                    }
+                    "caching": "ReadWrite"
                 },
                 "dataDisks": {
                     "count": 2,
@@ -97,7 +82,7 @@
         },
         "buildingBlockSettings": {
             "value": {
-                "resourceGroupName": "rs-test7-rg",
+                "resourceGroupName": "rs-test2-rg",
                 "subscriptionId": "3b518fac-e5c8-4f59-8ed5-d70b626f8e10"
             }
         }
