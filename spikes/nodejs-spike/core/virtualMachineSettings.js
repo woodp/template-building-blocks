@@ -161,7 +161,9 @@ let virtualMachineValidations = {
             };
         },
         diskSizeGB: (value, parent) => {
-            return {
+            return _.isNil(value) ? {
+                result: true
+            } : {
                 result: ((_.isFinite(value)) && value > 0),
                 message: 'Value must be greater than 0'
             };
@@ -290,19 +292,21 @@ let childResourceToMerge = {
 
 let processorProperties = {
     existingWindowsServerlicense: (value, key, index, parent) => {
-        if (_.toLower(parent.osType) === "windows" && value) {
+        if (parent.osDisk.osType === "windows" && value) {
             return {
                 licenseType: "Windows_Server"
             }
         } else {
             return {
-                licenseType: ""
+                licenseType: null
             }
         }
     },
     availabilitySet: (value, key, index, parent) => {
         if (_.toLower(value.useExistingAvailabilitySet) === "no" && parent.vmCount < 2) {
-            return;
+            return {
+                availabilitySet: null
+            };
         }
 
         return {
@@ -330,7 +334,8 @@ let processorProperties = {
             name: parent.name.concat('-os.vhd'),
             createOption: value.createOption,
             caching: value.caching,
-            diskSizeGB: value.diskSizeGB
+            diskSizeGB: value.diskSizeGB,
+            osType: value.osType
         }
 
         if (value.encryptionSettings) {
@@ -371,7 +376,6 @@ let processorProperties = {
         }
 
         return {
-            osType: _.toLower(value.osType),
             storageProfile: {
                 osDisk: instance
             }
@@ -500,7 +504,7 @@ let processorProperties = {
         }
     },
     adminPassword: (value, key, index, parent) => {
-        if (_.toLower(parent.osAuthenticationType) === "password" && _.toLower(parent.osDisk.osType) === "windows") {
+        if (_.toLower(parent.osAuthenticationType) === "password" && parent.osDisk.osType === "windows") {
             return {
                 windowsConfiguration: {
                     "provisionVmAgent": "true"
@@ -557,7 +561,7 @@ let processChildResources = {
         }
     },
     osDisk: (value, key, index, parent, accumulator) => {
-        if (_.toLower(value.osType) === "linux" && _.toLower(parent.osAuthenticationType) === "ssh") {
+        if (value.osType === "linux" && _.toLower(parent.osAuthenticationType) === "ssh") {
             accumulator["secret"] = parent.sshPublicKey;
         } else {
             accumulator["secret"] = parent.adminPassword;
@@ -598,7 +602,7 @@ function process(param, buildingBlockSettings) {
             return inner;
         }, {}));
         return result;
-    }, {virtualMachines: []})
+    }, { virtualMachines: [] })
 
     return createTemplateParameters(processedParams);
 };

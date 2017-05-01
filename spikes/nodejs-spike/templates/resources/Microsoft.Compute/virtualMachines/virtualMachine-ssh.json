@@ -20,12 +20,13 @@
                 "displayName": "VM"
             },
             "properties": {
+                "availabilitySet": "[parameters('source').availabilitySet]",
                 "hardwareProfile": "[parameters('source').hardwareProfile]",
                 "osProfile": {
                     "computerName": "[parameters('source').computerName]",
                     "adminUsername": "[parameters('source').adminUsername]",
                     "adminPassword": null,
-                    "[concat(toLower(parameters('source').osType), 'Configuration')]": {
+                    "[concat(toLower(parameters('source').storageProfile.osDisk.osType), 'Configuration')]": {
                         "disablePasswordAuthentication": "true",
                         "ssh": {
                             "publicKeys": [
@@ -39,7 +40,8 @@
                 },
                 "storageProfile": "[parameters('source').storageProfile]",
                 "networkProfile": "[parameters('source').networkProfile]",
-                "diagnosticsProfile": "[parameters('source').diagnosticsProfile]"
+                "diagnosticsProfile": "[parameters('source').diagnosticsProfile]",
+                "licenseType": "[parameters('source').licenseType]"
             }
         },
         {
