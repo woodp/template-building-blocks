@@ -169,12 +169,9 @@ let virtualMachineValidations = {
         encryptionSettings: (value, parent) => {
             return _.isNil(value) ? {
                 result: true
-            } : v.validate({
-                settings: value,
-                validations: encryptionSettingsValidations,
-                parentKey: '.osDisk',
-                parentValue: parent
-            });
+            } : {
+                    validations: encryptionSettingsValidations
+            };
         }
     },
     dataDisks: {
