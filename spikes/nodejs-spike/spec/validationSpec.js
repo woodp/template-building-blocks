@@ -242,4 +242,39 @@ describe('validation', () => {
             });
         });
     });
+
+    describe('validationUtilities', () => {
+        describe('isBoolean', () => {
+            let isBoolean = validation.validationUtilities.isBoolean;
+            it('undefined', () => {
+                let validationResult = isBoolean();
+                expect(validationResult.result).toEqual(false);
+            });
+
+            it('null', () => {
+                let validationResult = isBoolean(null);
+                expect(validationResult.result).toEqual(false);
+            });
+
+            it('empty', () => {
+                let validationResult = isBoolean('');
+                expect(validationResult.result).toEqual(false);
+            });
+
+            it('whitespace', () => {
+                let validationResult = isBoolean(' ');
+                expect(validationResult.result).toEqual(false);
+            });
+
+            it('string', () => {
+                let validationResult = isBoolean('true');
+                expect(validationResult.result).toEqual(false);
+            });
+
+            it('valid', () => {
+                let validationResult = isBoolean(true);
+                expect(validationResult.result).toEqual(true);
+            });
+        });
+    });
 });
