@@ -183,32 +183,6 @@ let utilities = {
 };
 
 let validationUtilities = {
-    isNullOrWhitespace: function (result, parentKey, key, value, parent) {
-        let retVal = !_.isNullOrWhitespace(value);
-        if (!retVal) {
-            result.push(_.join((parentKey ? [parentKey, key] : [key]), '.'));
-        }
-
-        return retVal;
-    },
-    networking: {
-        isValidCidr: function (result, parentKey, key, value, parent) {
-            if (!utilities.networking.isValidCidr(value)) {
-                result.push({
-                    name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-                    message: validationMessages.InvalidCidr
-                })
-            }
-        }
-    },
-    isNumber: function (result, parentKey, key, value, parent) {
-        let retVal = _.isNumber(value);
-        if (!retVal) {
-            result.push(_.join((parentKey ? [parentKey, key] : [key]), '.'));
-        }
-
-        return retVal;
-    },
     isBoolean: (value, parent) => {
         return {
             result: _.isBoolean(value),
