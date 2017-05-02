@@ -58,38 +58,11 @@ let routeTableSettingsValidations = {
                 result: isValidNextHopType(value),
                 message: `Valid values are ${validNextHopTypes.join(',')}`
             };
-            // if (!isValidNextHopType(value)) {
-            //     result.push({
-            //         name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-            //         message: validationMessages.routeTable.routes.InvalidNextHopType
-            //     });
-            // }
         },
         nextHopIpAddress: (value, parent) => {
             return (parent.nextHopType !== 'VirtualAppliance') || ((parent.nextHopType === 'VirtualAppliance') && (v.utilities.networking.isValidIpAddress(value)));
         }
     }
-    // name: v.validationUtilities.isNullOrWhitespace,
-    // routes: {
-    //     name: v.validationUtilities.isNullOrWhitespace,
-    //     addressPrefix: v.validationUtilities.networking.isValidCidr,
-    //     nextHopType: (result, parentKey, key, value, parent) => {
-    //         if (!isValidNextHopType(value)) {
-    //             result.push({
-    //                 name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-    //                 message: validationMessages.routeTable.routes.InvalidNextHopType
-    //             });
-    //         }
-    //     },
-    //     nextHopIpAddress: (result, parentKey, key, value, parent) => {
-    //         if ((parent.nextHopType === 'VirtualAppliance') && (!v.utilities.networking.isValidIpAddress(value))) {
-    //             result.push({
-    //                 name: _.join((parentKey ? [parentKey, 'nextHopIpAddress'] : ['nextHopIpAddress']), '.'),
-    //                 message: validationMessages.InvalidIpAddress
-    //             });
-    //         }
-    //     }
-    // }
 };
 
 function transform(settings) {
@@ -150,23 +123,6 @@ exports.transform = function ({settings, buildingBlockSettings}) {
     if (buildingBlockErrors.length > 0) {
         throw new Error(JSON.stringify(buildingBlockErrors));
     }
-
-    // if (buildingBlockSettings.validationErrors) {
-    //     _.each(buildingBlockSettings.validationErrors, (error) => {
-    //         error.name = `buildingBlockSettings${error.name}`;
-    //     });
-    // }
-
-    // if (_.some(results, 'validationErrors') || (buildingBlockSettings.validationErrors)) {
-    //     results.push(buildingBlockSettings);
-    //     return {
-    //         validationErrors: _.transform(_.compact(results), (result, value) => {
-    //             if (value.validationErrors) {
-    //                 result.validationErrors.push(value.validationErrors);
-    //             }
-    //         }, { validationErrors: [] })
-    //     };
-    // }
 
     results = _.transform(results, (result, setting) => {
         setting = r.setupResources(setting, buildingBlockSettings, (parentKey) => {

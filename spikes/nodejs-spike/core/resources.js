@@ -4,16 +4,13 @@ let validationMessages = require('./validationMessages.js');
 
 function getObject(collection, parentKey, stack, callback) {
   if (_.isPlainObject(collection)) {
-    // if ((parentKey === null) || (parentKey === "virtualNetworks") || (parentKey === "subnets")) {
-    //   collection.subscriptionId = stack[stack.length - 1].subscriptionId;
-    //   collection.resourceGroup = stack[stack.length - 1].resourceGroup;
-    // }
     // See if we need to add the information
     if (callback(parentKey)) {
       collection.subscriptionId = stack[stack.length - 1].subscriptionId;
       collection.resourceGroupName = stack[stack.length - 1].resourceGroupName;
     }
   }
+
   return _.each(collection, (item, keyOrIndex) => {
     let hasPushed = false;
     if (_.isPlainObject(item)) {
@@ -22,7 +19,7 @@ function getObject(collection, parentKey, stack, callback) {
         hasPushed = true;
       }
 
-      item = getObject(item, _.isNumber(keyOrIndex) ? parentKey : keyOrIndex, stack, callback);
+      item = getObject(item, _.isFinite(keyOrIndex) ? parentKey : keyOrIndex, stack, callback);
 
       if (hasPushed) {
         stack.pop();
