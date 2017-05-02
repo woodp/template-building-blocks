@@ -34,6 +34,62 @@ describe('routeTableSettings', () => {
         ]
     };
 
+    describe('isValidNextHopType', () => {
+        let isValidNextHopType = routeTableSettings.__get__("isValidNextHopType");
+        
+            it('undefined', () => {
+                expect(isValidNextHopType()).toEqual(false);
+            });
+
+            it('null', () => {
+                expect(isValidNextHopType(null)).toEqual(false);
+            });
+
+            it('empty', () => {
+                expect(isValidNextHopType('')).toEqual(false);
+            });
+
+            it('whitespace', () => {
+                expect(isValidNextHopType(' ')).toEqual(false);
+            });
+
+            it('invalid spacing', () => {
+                expect(isValidNextHopType(' VirtualNetworkGateway ')).toEqual(false);
+            });
+
+            it('invalid casing', () => {
+                expect(isValidNextHopType('virtualnetworkgateway')).toEqual(false);
+            });
+
+            it('invalid value', () => {
+                expect(isValidNextHopType('NOT_A_VALID_NEXT_HOP_TYPE')).toEqual(false);
+            });
+
+            it('VirtualNetworkGateway', () => {
+                expect(isValidNextHopType('VirtualNetworkGateway')).toEqual(true);
+            });
+
+            it('VnetLocal', () => {
+                expect(isValidNextHopType('VnetLocal')).toEqual(true);
+            });
+
+            it('Internet', () => {
+                expect(isValidNextHopType('Internet')).toEqual(true);
+            });
+
+            it('HyperNetGateway', () => {
+                expect(isValidNextHopType('HyperNetGateway')).toEqual(true);
+            });
+
+            it('None', () => {
+                expect(isValidNextHopType('None')).toEqual(true);
+            });
+
+            it('VirtualAppliance', () => {
+                expect(isValidNextHopType('VirtualAppliance')).toEqual(true);
+            });
+    });
+
     it('test valid specs', () => {
         let returnValue = transform(validSettings);
         expect(returnValue.subscriptionId).toBe(validSettings.subscriptionId);

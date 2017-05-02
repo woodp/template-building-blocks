@@ -8,178 +8,238 @@ describe('validation', () => {
     // let subnetsResourceType = `${virtualNetworksResourceType}/subnets`;
     // let resourceName = 'my-virtual-network';
     // let subresourceName = 'my-subnet';
-
-    describe('networking', () => {
-        describe('isValidPortRange', () => {
-            let isValidPortRange = require('../core/validation.js').utilities.networking.isValidPortRange;
-            it('Port 0', () => {
-                expect(isValidPortRange(0)).toEqual(false);
+    describe('utilities', () => {
+        describe('isGuid', () => {
+            let isGuid = validation.utilities.isGuid;
+            it('undefined', () => {
+                expect(isGuid()).toEqual(false);
             });
 
-            it('Port 65536', () => {
-                expect(isValidPortRange(65536)).toEqual(false);
+            it('null', () => {
+                expect(isGuid(null)).toEqual(false);
             });
 
-            it('Port 1', () => {
-                expect(isValidPortRange(1)).toEqual(true);
+            it('empty', () => {
+                expect(isGuid('')).toEqual(false);
             });
 
-            it('Port 65535', () => {
-                expect(isValidPortRange(65535)).toEqual(true);
+            it('whitespace', () => {
+                expect(isGuid(' ')).toEqual(false);
             });
 
-            it('Port *', () => {
-                expect(isValidPortRange('*')).toEqual(true);
+            it('invalid spacing', () => {
+                expect(isGuid(' 00000000-0000-0000-0000-000000000000 ')).toEqual(false);
             });
 
-            it('Port 0-65535', () => {
-                expect(isValidPortRange('0-65535')).toEqual(false);
+            it('invalid value', () => {
+                expect(isGuid('NOT_A_VALID_IP_ADDRESS')).toEqual(false);
             });
 
-            it('Port 1-65536', () => {
-                expect(isValidPortRange('1-65536')).toEqual(false);
+            it('too many parts', () => {
+                expect(isGuid('00000000-0000-0000-0000-000000000000-0000')).toEqual(false);
             });
 
-            it('Port 1-65535', () => {
-                expect(isValidPortRange('1-65535')).toEqual(true);
+            it('not enough parts', () => {
+                expect(isGuid('00000000-0000-0000-0000')).toEqual(false);
             });
 
-            it('Port 1-10-20', () => {
-                expect(isValidPortRange('1-10-20')).toEqual(false);
+            it('valid', () => {
+                expect(isGuid('00000000-0000-1000-8000-000000000000')).toEqual(true);
             });
         });
-        // it('null subscriptionId', () => {
-        //     expect(() => {
-        //         resources.resourceId(null, null, null, null, null);
-        //     }).toThrow(`subscriptionId: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`);
-        // });
 
-        // it('empty subscriptionId', () => {
-        //     expect(() => {
-        //         resources.resourceId('', null, null, null, null);
-        //     }).toThrow(`subscriptionId: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`);
-        // });
+        describe('isStringInArray', () => {
+            let isStringInArray = validation.utilities.isStringInArray;
+            let validValues = ['value1', 'value2', 'value3'];
+            it('undefined', () => {
+                expect(isStringInArray(undefined, validValues)).toEqual(false);
+            });
 
-        // it('whitespace subscriptionId', () => {
-        //     expect(() => {
-        //         resources.resourceId(' ', null, null, null, null);
-        //     }).toThrow(`subscriptionId: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`);
-        // });
+            it('null', () => {
+                expect(isStringInArray(null, validValues)).toEqual(false);
+            });
 
-        // it('invalid subscriptionId', () => {
-        //     expect(() => {
-        //         resources.resourceId("not-a-valid-guid", null, null, null, null);
-        //     }).toThrow(`subscriptionId: ${validationMessages.StringIsNotAValidGuid}`);
-        // });
+            it('empty', () => {
+                expect(isStringInArray('', validValues)).toEqual(false);
+            });
+
+            it('whitespace', () => {
+                expect(isStringInArray(' ', validValues)).toEqual(false);
+            });
+
+            it('invalid spacing', () => {
+                expect(isStringInArray(' value1 ', validValues)).toEqual(false);
+            });
+
+            it('invalid value', () => {
+                expect(isStringInArray('NOT_A_VALID_VALUE', validValues)).toEqual(false);
+            });
+
+            it('valid', () => {
+                expect(isStringInArray('value1', validValues)).toEqual(true);
+            });
+        });
+
+        describe('isNotNullOrWhitespace', () => {
+            let isNotNullOrWhitespace = validation.utilities.isNotNullOrWhitespace;
+            it('undefined', () => {
+                expect(isNotNullOrWhitespace()).toEqual(false);
+            });
+
+            it('null', () => {
+                expect(isNotNullOrWhitespace(null)).toEqual(false);
+            });
+
+            it('empty', () => {
+                expect(isNotNullOrWhitespace('')).toEqual(false);
+            });
+
+            it('whitespace', () => {
+                expect(isNotNullOrWhitespace(' ')).toEqual(false);
+            });
+
+            it('valid', () => {
+                expect(isNotNullOrWhitespace('valid')).toEqual(true);
+            });
+        });
+
+        describe('networking', () => {
+            describe('isValidIpAddress', () => {
+                let isValidIpAddress = validation.utilities.networking.isValidIpAddress;
+                it('undefined', () => {
+                    expect(isValidIpAddress()).toEqual(false);
+                });
+
+                it('null', () => {
+                    expect(isValidIpAddress(null)).toEqual(false);
+                });
+
+                it('empty', () => {
+                    expect(isValidIpAddress('')).toEqual(false);
+                });
+
+                it('whitespace', () => {
+                    expect(isValidIpAddress(' ')).toEqual(false);
+                });
+
+                it('invalid spacing', () => {
+                    expect(isValidIpAddress(' 10.0.0.1 ')).toEqual(false);
+                });
+
+                it('invalid value', () => {
+                    expect(isValidIpAddress('NOT_A_VALID_IP_ADDRESS')).toEqual(false);
+                });
+
+                it('too many parts', () => {
+                    expect(isValidIpAddress('10.0.0.0.1')).toEqual(false);
+                });
+
+                it('not enough parts', () => {
+                    expect(isValidIpAddress('10.0.0')).toEqual(false);
+                });
+
+                it('valid', () => {
+                    expect(isValidIpAddress('10.0.0.1')).toEqual(true);
+                });
+            });
+
+            describe('isValidCidr', () => {
+                let isValidCidr = validation.utilities.networking.isValidCidr;
+                it('undefined', () => {
+                    expect(isValidCidr()).toEqual(false);
+                });
+
+                it('null', () => {
+                    expect(isValidCidr(null)).toEqual(false);
+                });
+
+                it('empty', () => {
+                    expect(isValidCidr('')).toEqual(false);
+                });
+
+                it('whitespace', () => {
+                    expect(isValidCidr(' ')).toEqual(false);
+                });
+
+                it('invalid spacing', () => {
+                    expect(isValidCidr(' 10.0.0.1/24 ')).toEqual(false);
+                });
+
+                it('invalid value', () => {
+                    expect(isValidCidr('NOT_A_VALID_IP_ADDRESS')).toEqual(false);
+                });
+
+                it('no mask', () => {
+                    expect(isValidCidr('10.0.0.1/')).toEqual(false);
+                });
+
+                it('mask too big', () => {
+                    expect(isValidCidr('10.0.0.1/33')).toEqual(false);
+                });
+
+                it('mask too small', () => {
+                    expect(isValidCidr('10.0.0.1/-1')).toEqual(false);
+                });
+
+                it('valid', () => {
+                    expect(isValidCidr('10.0.0.1/24')).toEqual(true);
+                });
+            });
+
+            describe('isValidPortRange', () => {
+                let isValidPortRange = validation.utilities.networking.isValidPortRange;
+                it('undefined', () => {
+                    expect(isValidPortRange()).toEqual(false);
+                });
+
+                it('null', () => {
+                    expect(isValidPortRange(null)).toEqual(false);
+                });
+
+                it('empty', () => {
+                    expect(isValidPortRange('')).toEqual(false);
+                });
+
+                it('whitespace', () => {
+                    expect(isValidPortRange(' ')).toEqual(false);
+                });
+
+                it('Port 0', () => {
+                    expect(isValidPortRange(0)).toEqual(false);
+                });
+
+                it('Port 65536', () => {
+                    expect(isValidPortRange(65536)).toEqual(false);
+                });
+
+                it('Port 1', () => {
+                    expect(isValidPortRange(1)).toEqual(true);
+                });
+
+                it('Port 65535', () => {
+                    expect(isValidPortRange(65535)).toEqual(true);
+                });
+
+                it('Port *', () => {
+                    expect(isValidPortRange('*')).toEqual(true);
+                });
+
+                it('Port 0-65535', () => {
+                    expect(isValidPortRange('0-65535')).toEqual(false);
+                });
+
+                it('Port 1-65536', () => {
+                    expect(isValidPortRange('1-65536')).toEqual(false);
+                });
+
+                it('Port 1-65535', () => {
+                    expect(isValidPortRange('1-65535')).toEqual(true);
+                });
+
+                it('Port 1-10-20', () => {
+                    expect(isValidPortRange('1-10-20')).toEqual(false);
+                });
+            });
+        });
     });
-
-    // describe('resourceGroupName validations', () => {
-    //     it('null resourceGroupName', () => {
-    //         expect(() => {
-    //             resources.resourceId(subscriptionId, null, null, null, null);
-    //         }).toThrow(`resourceGroupName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`);
-    //     });
-
-    //     it('empty resourceGroupName', () => {
-    //         expect(() => {
-    //             resources.resourceId(subscriptionId, '', null, null, null);
-    //         }).toThrow(`resourceGroupName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`);
-    //     });
-
-    //     it('whitespace resourceGroupName', () => {
-    //         expect(() => {
-    //             resources.resourceId(subscriptionId, ' ', null, null, null);
-    //         }).toThrow(`resourceGroupName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`);
-    //     });
-    // });
-
-    // describe('resourceType validations', () => {
-    //     it('null resourceType', () => {
-    //         expect(() => {
-    //             resources.resourceId(subscriptionId, resourceGroupName, null, null, null);
-    //         }).toThrow(`resourceType: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`);
-    //     });
-
-    //     it('empty resourceType', () => {
-    //         expect(() => {
-    //             resources.resourceId(subscriptionId, resourceGroupName, '', null, null);
-    //         }).toThrow(`resourceType: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`);
-    //     });
-
-    //     it('whitespace resourceType', () => {
-    //         expect(() => {
-    //             resources.resourceId(subscriptionId, resourceGroupName, ' ', null, null);
-    //         }).toThrow(`resourceType: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`);
-    //     });
-
-    //     it('resourceType parts less than 2', () => {
-    //         expect(() => {
-    //             resources.resourceId(subscriptionId, resourceGroupName, 'Microsoft.Network', null, null);
-    //         }).toThrow(`resourceType: Invalid length 1`);
-    //     });
-
-    //     it('resourceType parts greater than 3', () => {
-    //         expect(() => {
-    //             resources.resourceId(subscriptionId, resourceGroupName, 'Microsoft.Network/virtualNetworks/subnets/extra', null, null);
-    //         }).toThrow(`resourceType: Invalid length 4`);
-    //     });
-    // });
-
-    // describe('resourceName validations', () => {
-    //     it('null resourceName', () => {
-    //         expect(() => {
-    //             resources.resourceId(subscriptionId, resourceGroupName, virtualNetworksResourceType, null, null);
-    //         }).toThrow(`resourceName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`);
-    //     });
-
-    //     it('empty resourceName', () => {
-    //         expect(() => {
-    //             resources.resourceId(subscriptionId, resourceGroupName, virtualNetworksResourceType, '', null);
-    //         }).toThrow(`resourceName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`);
-    //     });
-
-    //     it('whitespace resourceName', () => {
-    //         expect(() => {
-    //             resources.resourceId(subscriptionId, resourceGroupName, virtualNetworksResourceType, ' ', null);
-    //         }).toThrow(`resourceName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`);
-    //     });
-    // });
-
-    // describe('subresourceName validations', () => {
-    //     it('null subresourceName', () => {
-    //         expect(() => {
-    //             resources.resourceId(subscriptionId, resourceGroupName, subnetsResourceType, resourceName, null);
-    //         }).toThrow(`subresourceName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`);
-    //     });
-
-    //     it('empty subresourceName', () => {
-    //         expect(() => {
-    //             resources.resourceId(subscriptionId, resourceGroupName, subnetsResourceType, resourceName, '');
-    //         }).toThrow(`subresourceName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`);
-    //     });
-
-    //     it('whitespace subresourceName', () => {
-    //         expect(() => {
-    //             resources.resourceId(subscriptionId, resourceGroupName, subnetsResourceType, resourceName, ' ');
-    //         }).toThrow(`subresourceName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`);
-    //     });
-
-    //     it('invalid resource type for subresourceName', () => {
-    //         expect(() => {
-    //             resources.resourceId(subscriptionId, resourceGroupName, virtualNetworksResourceType, resourceName, subresourceName);
-    //         }).toThrow(`subresourceName: ${validationMessages.resources.SubresourceNameShouldNotBeSpecifiedForTopLevelResourceType}`);
-    //     });
-    // });
-
-    // describe('valid resourceId parameters', () => {
-    //     it('valid resource', () => {
-    //         let returnValue = resources.resourceId(subscriptionId, resourceGroupName, virtualNetworksResourceType, resourceName);
-    //         expect(returnValue).toBe(`/subscriptions/${subscriptionId}/resourceGroups/${resourceGroupName}/providers/Microsoft.Network/virtualNetworks/${resourceName}`);
-    //     });
-
-    //     it('valid subresource', () => {
-    //         let returnValue = resources.resourceId(subscriptionId, resourceGroupName, subnetsResourceType, resourceName,subresourceName);
-    //         expect(returnValue).toBe(`/subscriptions/${subscriptionId}/resourceGroups/${resourceGroupName}/providers/Microsoft.Network/virtualNetworks/${resourceName}/subnets/${subresourceName}`);
-    //     });
-    // });
 });
