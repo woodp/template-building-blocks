@@ -27,7 +27,12 @@ let storageValidations = {
     },
     managed:  v.validationUtilities.isBoolean,
     nameSuffix: v.utilities.isNotNullOrWhitespace,
-    skuType: v.utilities.isNotNullOrWhitespace
+    skuType: (value, parent) => {
+        return {
+            result: (parent.managed) || v.utilities.isNotNullOrWhitespace(value),
+            message: 'Value cannot be null or empty string if managed is set to false'
+        };
+    }
 };
 
 let diagnosticValidations = {
@@ -45,7 +50,7 @@ let diagnosticValidations = {
     },
     skuType: (value, parent) => {
         return {
-            result: !_.includes(_.toLower(value), "premium"),
+            result: (v.utilities.isNotNullOrWhitespace(value)) && !_.includes(_.toLower(value), "premium"),
             message: 'Diagnostic storage cannot use premium storage.'
         }
     },

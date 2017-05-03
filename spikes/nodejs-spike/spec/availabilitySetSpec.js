@@ -1,6 +1,6 @@
 describe('availabilitySetSettings:', () => {
     let rewire = require('rewire');
-    let availabilitySetSettings = require('../core/availabilitySetSettings.js');
+    let availabilitySetSettings = rewire('../core/availabilitySetSettings.js');
     let _ = require('../lodashMixins.js');
 
     describe('merge:', () => {
@@ -50,24 +50,106 @@ describe('availabilitySetSettings:', () => {
         });
     });
     describe('validations:', () => {
+        let testAvSetSettings = {
+            useExistingAvailabilitySet: "no",
+            platformFaultDomainCount: 3,
+            platformUpdateDomainCount: 5,
+            name: "test-as"
+        };
         describe('useExistingAvailabilitySet:', () => {
-            it("validate mixed case.", () => {
-                // let validations = availabilitySetSettings.__get__("availabilitySetValidations");
-                // let settings = {
-                //     "useExistingAvailabilitySet": "yes",
-                //     "platformFaultDomainCount": 10,
-                //     "platformUpdateDomainCount": 11,
-                //     "name": "test-as"
-                // };
-                // let value = "yEs";
-                // let result = [];
-                // let mergedValue = validations.useExistingAvailabilitySet([], "", value, )
-                
-                // expect(_.toLower(mergedValue.useExistingAvailabilitySet)).toBe("no");
-                // expect(mergedValue.platformFaultDomainCount).toBe(3);
-                // expect(mergedValue.platformUpdateDomainCount).toBe(5);
-                // expect(mergedValue.name).toBe("default-as");
+            let validation = availabilitySetSettings.__get__("availabilitySetValidations").useExistingAvailabilitySet;
+            it("validate only 'yes' & 'no' are valid values.", () => {
+                let result = validation("yEs", testAvSetSettings)
+                expect(result.result).toEqual(false);
+
+                result = validation("yes", testAvSetSettings)
+                expect(result.result).toEqual(true);
+
+                result = validation("no", testAvSetSettings)
+                expect(result.result).toEqual(true);
+            });
+        });
+        describe('platformFaultDomainCount:', () => {
+            let validation = availabilitySetSettings.__get__("availabilitySetValidations").platformFaultDomainCount;
+            it("validate platformFaultDomainCount values can be between 1-3.", () => {
+                let result = validation(0, testAvSetSettings)
+                expect(result.result).toEqual(false);
+
+                result = validation(3, testAvSetSettings)
+                expect(result.result).toEqual(true);
+
+                result = validation(5, testAvSetSettings)
+                expect(result.result).toEqual(false);
+
+                result = validation("5", testAvSetSettings)
+                expect(result.result).toEqual(false);
+            });
+        });
+        describe('platformUpdateDomainCount:', () => {
+            let validation = availabilitySetSettings.__get__("availabilitySetValidations").platformUpdateDomainCount;
+            it("validate platformUpdateDomainCount values can be between 1-20.", () => {
+                let result = validation(0, testAvSetSettings)
+                expect(result.result).toEqual(false);
+
+                result = validation(20, testAvSetSettings)
+                expect(result.result).toEqual(true);
+
+                result = validation(50, testAvSetSettings)
+                expect(result.result).toEqual(false);
+
+                result = validation("5", testAvSetSettings)
+                expect(result.result).toEqual(false);
+            });
+        });
+        describe('name:', () => {
+            let validation = availabilitySetSettings.__get__("availabilitySetValidations").name;
+            it("validate name canot be an empty string.", () => {
+                let result = validation("", testAvSetSettings)
+                expect(result).toEqual(false);
+
+                result = validation("test", testAvSetSettings)
+                expect(result).toEqual(true);
+
+                result = validation(null, testAvSetSettings)
+                expect(result).toEqual(false);
             });
         });
     });
-});
+    describe('transform:', () => {
+        let settings = {
+            storageAccounts: {
+                count: 2,
+                managed: false
+            },
+            availabilitySet: {
+                useExistingAvailabilitySet: "no",
+                platformFaultDomainCount: 3,
+                platformUpdateDomainCount: 5,
+                name: "test-as"
+            }
+        };
+        it('returns empty array if useExistingAvailabilitySet is yes:', () => {
+            let param = _.cloneDeep(settings);
+            param.availabilitySet.useExistingAvailabilitySet = "yes";
+
+            let result = availabilitySetSettings.processAvSetSettings(param.availabilitySet, param);
+            expect(result.length).toEqual(0);
+        });
+        it('converts settings to RP shape', () => {
+            let result = availabilitySetSettings.processAvSetSettings(settings.availabilitySet, settings);
+            expect(result[0].name).toEqual("test-as");
+            expect(result[0].properties.platformFaultDomainCount).toEqual(3);
+            expect(result[0].properties.platformUpdateDomainCount).toEqual(5);
+        });
+        it(`adds a 'managed' property to properties only if storage accounts are managed`, () => {
+            let result = availabilitySetSettings.processAvSetSettings(settings.availabilitySet, settings);
+            expect(result[0].properties.hasOwnProperty("managed")).toEqual(false);
+
+            let param = _.cloneDeep(settings);
+            param.storageAccounts.managed = true;
+
+            result = availabilitySetSettings.processAvSetSettings(param.availabilitySet, param);
+            expect(result[0].properties.hasOwnProperty("managed")).toEqual(true);
+        });
+    });
+})
