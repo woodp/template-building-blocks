@@ -219,6 +219,42 @@ describe('connectionSettings', () => {
                     expect(errors[0].name).toEqual('.sharedKey');
                 });
 
+                it('sharedKey null', () => {
+                    let settings = _.cloneDeep(connectionSettings);
+                    settings.sharedKey = null;
+                    let errors = validation.validate({
+                        settings: settings,
+                        validations: connectionSettingsValidations
+                    });
+                    
+                    expect(errors.length).toEqual(1);
+                    expect(errors[0].name).toEqual('.sharedKey');
+                });
+
+                it('sharedKey empty', () => {
+                    let settings = _.cloneDeep(connectionSettings);
+                    settings.sharedKey = '';
+                    let errors = validation.validate({
+                        settings: settings,
+                        validations: connectionSettingsValidations
+                    });
+                    
+                    expect(errors.length).toEqual(1);
+                    expect(errors[0].name).toEqual('.sharedKey');
+                });
+
+                it('sharedKey whitespace', () => {
+                    let settings = _.cloneDeep(connectionSettings);
+                    settings.sharedKey = '   ';
+                    let errors = validation.validate({
+                        settings: settings,
+                        validations: connectionSettingsValidations
+                    });
+                    
+                    expect(errors.length).toEqual(1);
+                    expect(errors[0].name).toEqual('.sharedKey');
+                });
+
                 it('virtualNetworkGateway undefined', () => {
                     let errors = v(connectionSettings, 'virtualNetworkGateway');
                     expect(errors.length).toEqual(1);
@@ -388,6 +424,42 @@ describe('connectionSettings', () => {
 
                 it('sharedKey undefined', () => {
                     let errors = v(connectionSettings, 'sharedKey');
+                    expect(errors.length).toEqual(1);
+                    expect(errors[0].name).toEqual('.sharedKey');
+                });
+
+                it('sharedKey null', () => {
+                    let settings = _.cloneDeep(connectionSettings);
+                    settings.sharedKey = null;
+                    let errors = validation.validate({
+                        settings: settings,
+                        validations: connectionSettingsValidations
+                    });
+                    
+                    expect(errors.length).toEqual(1);
+                    expect(errors[0].name).toEqual('.sharedKey');
+                });
+
+                it('sharedKey empty', () => {
+                    let settings = _.cloneDeep(connectionSettings);
+                    settings.sharedKey = '';
+                    let errors = validation.validate({
+                        settings: settings,
+                        validations: connectionSettingsValidations
+                    });
+                    
+                    expect(errors.length).toEqual(1);
+                    expect(errors[0].name).toEqual('.sharedKey');
+                });
+
+                it('sharedKey whitespace', () => {
+                    let settings = _.cloneDeep(connectionSettings);
+                    settings.sharedKey = '   ';
+                    let errors = validation.validate({
+                        settings: settings,
+                        validations: connectionSettingsValidations
+                    });
+                    
                     expect(errors.length).toEqual(1);
                     expect(errors[0].name).toEqual('.sharedKey');
                 });

@@ -53,7 +53,7 @@ let connectionSettingsValidations = {
                 }
             } else {
                 result = {
-                    result: !_.isUndefined(value),
+                    result: v.utilities.isNotNullOrWhitespace(value),
                     message: 'sharedKey cannot be null, empty, or only whitespace'
                 };
             }
