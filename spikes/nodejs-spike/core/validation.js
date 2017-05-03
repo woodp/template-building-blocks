@@ -13,7 +13,7 @@ function merge(settings, defaultSettings, mergeCustomizer, childResources) {
 }
 
 let toString = (value) => {
-    return _.isUndefined(value) ? '<undefined>' : _.isNull(value) ? '<null>' : _.isString(value) ? `'${value}'` : _.toString(value);
+    return _.isUndefined(value) ? '<undefined>' : _.isNull(value) ? '<null>' : _.isString(value) ? `'${value}'` : _.isArray(value) ? '[array Array]' : _.toString(value);
 };
 
 function validate({settings, validations, parentKey = '', parentValue = null}) { 
@@ -36,16 +36,24 @@ function reduce({validations, value, parentKey, parentValue, accumulator}) {
             });
         } else if (_.isArray(value)) {
             // The value is an array, so we need to iterate it and then reduce
-            _.reduce(value, (accumulator, item, index) => {
-                reduce({
-                    validations: validations,
-                    value: item,
-                    parentKey: `${parentKey}[${index}]`,
-                    parentValue: parentValue,
-                    accumulator: accumulator
+            // By default, we will not allow undefined or empty arrays.  The null or undefined check will be caught by the earlier check, but we need to check this here.
+            if (value.length === 0) {
+                accumulator.push({
+                    name: `${parentKey}`,
+                    message: validationMessages.ArrayCannotBeEmpty
                 });
-                return accumulator;
-            }, accumulator);
+            } else {
+                _.reduce(value, (accumulator, item, index) => {
+                    reduce({
+                        validations: validations,
+                        value: item,
+                        parentKey: `${parentKey}[${index}]`,
+                        parentValue: parentValue,
+                        accumulator: accumulator
+                    });
+                    return accumulator;
+                }, accumulator);
+            }
         } else {
             // The value is a plain object, so iterate the validations and run them against value[key]
             _.reduce(validations, (accumulator, validation, key) => {
@@ -63,35 +71,56 @@ function reduce({validations, value, parentKey, parentValue, accumulator}) {
         // If the value is an array, reduce, then call validation inside
         // Otherwise, just call the validation
         if (_.isArray(value)) {
-            _.reduce(value, (accumulator, item, index) => {
-                let result = validationWrapper(validations, item, parentValue);
-                // We can either get a boolean, an object with the error, or an array of objects with errors.
-                // We may be able to wrap this later, but let's brute force it for now
-                if ((_.isArray(result)) && (result.length > 0)) {
-                    // An array of already materialized errors, so just add them.
-                    _.forEach(result, (value) => {
-                        accumulator.push(value);
-                    });
-                //} else if (((_.isBoolean(result)) && (!result)) || ((_.isBoolean(result.result)) && (!result.result))) {
-                } else if ((_.isBoolean(result.result)) && (!result.result)) {
-                    let {message, name} = result;
-                    accumulator.push({
-                        name: name ? name : `${parentKey}[${index}]`,
-                        message: `Invalid value: ${toString(item)}.` + (message ? '  ' + message : '')
-                    });
-                } else if (result.validations) {
-                    // We got back more validations to run
+            // Since we don't know if this is a function for the array as a whole, or the individual elements, we need to do a check here.
+            let result = validationWrapper(validations, value, parentValue);
+            if ((_.isBoolean(result.result)) && (!result.result)) {
+                let {message, name} = result;
+                accumulator.push({
+                    name: name ? name : `${parentKey}`,
+                    message: `Invalid value: ${toString(value)}.` + (message ? '  ' + message : '')
+                });
+            } else {
+                if (result.validations) {
+                    // We got back more validations to run.  Since we are in an array, we'll replace the one we have with this one.
                     reduce({
                         validations: result.validations,
                         value: value,
-                        parentKey: `${parentKey}[${index}]`,
+                        parentKey: `${parentKey}`,
                         parentValue: parentValue,
                         accumulator: accumulator
                     });
-                }
+                } else {
+                    _.reduce(value, (accumulator, item, index) => {
+                        let result = validationWrapper(validations, item, parentValue);
+                        // We can either get a boolean, an object with the error, or an array of objects with errors.
+                        // We may be able to wrap this later, but let's brute force it for now
+                        if ((_.isArray(result)) && (result.length > 0)) {
+                            // An array of already materialized errors, so just add them.
+                            _.forEach(result, (value) => {
+                                accumulator.push(value);
+                            });
+                        //} else if (((_.isBoolean(result)) && (!result)) || ((_.isBoolean(result.result)) && (!result.result))) {
+                        } else if ((_.isBoolean(result.result)) && (!result.result)) {
+                            let {message, name} = result;
+                            accumulator.push({
+                                name: name ? name : `${parentKey}[${index}]`,
+                                message: `Invalid value: ${toString(item)}.` + (message ? '  ' + message : '')
+                            });
+                        } else if (result.validations) {
+                            // We got back more validations to run
+                            reduce({
+                                validations: result.validations,
+                                value: value,
+                                parentKey: `${parentKey}[${index}]`,
+                                parentValue: parentValue,
+                                accumulator: accumulator
+                            });
+                        }
 
-                return accumulator;
-            }, accumulator);
+                        return accumulator;
+                    }, accumulator);
+                }
+            }
         } else {
             // We're just a value
             let result = validationWrapper(validations, value, parentValue);

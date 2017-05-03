@@ -270,7 +270,7 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
     }
 
     let results = _.transform(settings, (result, setting, index) => {
-        let merged = merge({setting: setting});
+        let merged = merge({settings: setting});
         let errors = validate({settings: merged});
         if (errors.length > 0) {
             throw new Error(JSON.stringify(errors));

@@ -5,6 +5,7 @@ let r = require('./resources.js');
 let validationMessages = require('./validationMessages.js');
 
 let routeTableSettingsDefaults = {
+    virtualNetworks: [],
     routes: []
 };
 
@@ -14,54 +15,92 @@ let isValidNextHopType = (nextHopType) => {
     return v.utilities.isStringInArray(nextHopType, validNextHopTypes);
 };
 
-let validate = (settings) => {
-    // Validate each setting
-    let errors = v.validate({
-        settings: settings,
-        validations: routeTableSettingsValidations
-    });
-
-    // Validate route names
-    let names = _.reduce(settings.routes, (accumulator, value, index, collection) => {
-        if (!accumulator[value.name]) {
-            accumulator[value.name] = 0;
-        }
-        accumulator[value.name] = accumulator[value.name] + 1;
-        return accumulator;
-    }, {});
-
-    let duplicates = _.reduce(names, (accumulator, value, key, collection) => {
-        if (value > 1) {
-            accumulator.push(key);
-        }
-
-        return accumulator;
-    }, []);
-
-    if (duplicates.length > 0) {
-        errors.push({
-            name: '.routes',
-            message: `Duplicate route names: ${duplicates.join(',')}`
-        });
+let routeValidations = {
+    name: v.utilities.isNotNullOrWhitespace,
+    addressPrefix: v.utilities.networking.isValidCidr,
+    nextHopType: (value, parent) => {
+        return {
+            result: isValidNextHopType(value),
+            message: `Valid values are ${validNextHopTypes.join(',')}`
+        };
+    },
+    nextHopIpAddress: (value, parent) => {
+        return (parent.nextHopType !== 'VirtualAppliance') || ((parent.nextHopType === 'VirtualAppliance') && (v.utilities.networking.isValidIpAddress(value)));
     }
+};
 
-    return errors;
-}
+let virtualNetworkValidations = {
+    name: v.utilities.isNotNullOrWhitespace,
+    subnets: (value, parent) => {
+       if ((_.isNil(value)) || (value.length === 0)) {
+            return {
+                result: false,
+                message: 'Value cannot be null, undefined, or an empty array'
+            };
+        } else {
+            return {
+                validations: v.utilities.isNotNullOrWhitespace
+            };
+        }
+    }
+};
 
 let routeTableSettingsValidations = {
     name: v.utilities.isNotNullOrWhitespace,
-    routes: {
-        name: v.utilities.isNotNullOrWhitespace,
-        addressPrefix: v.utilities.networking.isValidCidr,
-        nextHopType: (value, parent) => {
+    //routes: routeValidations,
+    routes: (value, parent) => {
+        if ((_.isNil(value)) || (value.length === 0)) {
             return {
-                result: isValidNextHopType(value),
-                message: `Valid values are ${validNextHopTypes.join(',')}`
+                result: false,
+                message: 'Value cannot be null, undefined, or an empty array'
             };
-        },
-        nextHopIpAddress: (value, parent) => {
-            return (parent.nextHopType !== 'VirtualAppliance') || ((parent.nextHopType === 'VirtualAppliance') && (v.utilities.networking.isValidIpAddress(value)));
         }
+
+        // Validate route names
+        let names = _.reduce(value, (accumulator, value, index, collection) => {
+            if (v.utilities.isNotNullOrWhitespace(value.name)) {
+                if (!accumulator[value.name]) {
+                    accumulator[value.name] = 0;
+                }
+                accumulator[value.name] = accumulator[value.name] + 1;
+            }
+
+            return accumulator;
+        }, {});
+
+        let duplicates = _.reduce(names, (accumulator, value, key, collection) => {
+            if (value > 1) {
+                accumulator.push(key);
+            }
+
+            return accumulator;
+        }, []);
+
+        if (duplicates.length > 0) {
+            return {
+                result: false,
+                message: `Duplicate route names: ${duplicates.join(',')}`
+            };
+        }
+
+        return {
+            validations: routeValidations
+        };
+    },
+    virtualNetworks: (value, parent) => {
+        // We allow empty arrays
+        let result = {
+            result: true
+        };
+
+        if (value.length > 0) {
+            // We need to validate if the array isn't empty
+            result = {
+                validations: virtualNetworkValidations
+            };
+        }
+
+        return result;
     }
 };
 
@@ -104,7 +143,11 @@ exports.transform = function ({settings, buildingBlockSettings}) {
 
     let results = _.transform(settings, (result, setting, index) => {
         let merged = v.merge(setting, routeTableSettingsDefaults);
-        let errors = validate(merged);
+        let errors = v.validate({
+            settings: merged,
+            validations: routeTableSettingsValidations
+        });
+
         if (errors.length > 0) {
           throw new Error(JSON.stringify(errors));
         }

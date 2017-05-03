@@ -38,8 +38,45 @@ let virtualNetworkSettingsValidations = {
     name: v.utilities.isNotNullOrWhitespace,
     addressPrefixes: v.utilities.networking.isValidCidr,
     subnets: virtualNetworkSettingsSubnetsValidations,
-    dnsServers: v.utilities.isNotNullOrWhitespace,
-    virtualNetworkPeerings: virtualNetworkSettingsPeeringValidations
+    //dnsServers: v.utilities.isNotNullOrWhitespace,
+    dnsServers: (value, parent) => {
+        // An empty array is okay
+        let result = {
+            result: true
+        };
+
+        if (_.isNil(value)) {
+            result = {
+                result: false,
+                message: validationMessages.ValueCannotBeNull
+            };
+        } else if (value.length > 0) {
+            result = {
+                validations: v.utilities.isNotNullOrWhitespace
+            };
+        }
+        
+        return result;
+    },
+    virtualNetworkPeerings: (value, parent) => {
+        // An empty array is okay
+        let result = {
+            result: true
+        };
+
+        if (_.isNil(value)) {
+            result = {
+                result: false,
+                message: validationMessages.ValueCannotBeNull
+            };
+        } else if (value.length > 0) {
+            result = {
+                validations: virtualNetworkSettingsPeeringValidations
+            };
+        }
+
+        return result;
+    }
     //WORKS! addressPrefixes: (value, parent) => {
     //     return { result: v.utilities.networking.isValidCidr(value), message: "Invalid CIDR" };
     // }
