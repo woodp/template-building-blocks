@@ -26,14 +26,14 @@ let availabilitySetValidations = {
   },
   platformFaultDomainCount: (value, parent) => {
     return {
-      result: ((_.isFinite(value)) && value > 0),
-      message: 'Value must be greater than 0'
+      result: ((_.isFinite(value)) && value > 0 && value <= 3),
+      message: 'Value must be greater than 0 and less than 3'
     };
   },
   platformUpdateDomainCount: (value, parent) => {
     return {
-      result: ((_.isFinite(value)) && value > 0),
-      message: 'Value must be greater than 0'
+      result: ((_.isFinite(value)) && value > 0 && value <= 20),
+      message: 'Value must be greater than 0 and less tham 20'
     };
   },
   name: v.utilities.isNotNullOrWhitespace,
