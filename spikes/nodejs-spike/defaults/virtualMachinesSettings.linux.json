@@ -1,5 +1,7 @@
 {
   "vmCount": 1,
+  "namePrefix": "test",
+  "computerNamePrefix": "test",
   "size": "Standard_DS2_v2",
   "osType": "linux",
   "adminUsername": "adminUser",

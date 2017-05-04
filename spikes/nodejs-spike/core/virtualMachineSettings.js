@@ -645,4 +645,4 @@ function createTemplateParameters(resources) {
 
 exports.processVirtualMachineSettings = process;
 exports.mergeWithDefaults = merge;
-exports.validateSettings = validate;
+exports.validations = validate;

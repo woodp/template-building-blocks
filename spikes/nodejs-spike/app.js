@@ -35,7 +35,7 @@ function processParameters(parametersFilePath) {
     switch (key) {
       case 'virtualMachinesSettings':
         let mergedSettings = vm.mergeWithDefaults(parameters[key]);
-        let errors = vm.validateSettings(mergedSettings);
+        let errors = vm.validations(mergedSettings);
         if (errors.length > 0) {
           throw new Error(JSON.stringify(errors));
         }
