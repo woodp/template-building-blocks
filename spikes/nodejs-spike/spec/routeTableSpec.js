@@ -131,7 +131,7 @@ describe('routeTableSettings', () => {
                 });
 
                 expect(errors.length).toEqual(1);
-                expect(errors[0].name).toEqual('[0].subnets');
+                expect(errors[0].name).toEqual('[0].subnets[0]');
             });
         });
 

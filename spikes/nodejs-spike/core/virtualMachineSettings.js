@@ -48,28 +48,10 @@ let isValidCreateOptions = (option) => {
 };
 
 function validate(settings) {
-    let errors = v.validate({
+    return v.validate({
         settings: settings,
         validations: virtualMachineValidations
     });
-
-    // Make sure only one network interface is primary
-    let primaryNicCount = _.reduce(settings.nics, (accumulator, value, index, collection) => {
-        if (value.isPrimary) {
-            accumulator++;
-        }
-
-        return accumulator;
-    }, 0);
-
-    if (settings.nics && primaryNicCount !== 1) {
-        errors.push({
-            name: '.nics',
-            message: "Virtual machine can have only 1 primary NetworkInterface."
-        });
-    }
-
-    return errors;
 }
 
 function defaultsCustomizer(objValue, srcValue, key) {
@@ -280,7 +262,28 @@ let virtualMachineValidations = {
 
     storageAccounts: storageSettings.storageValidations,
     diagnosticStorageAccounts: storageSettings.diagnosticValidations,
-    nics: nicSettings.validations,
+    nics: (value, parent) => {
+        if ((!_.isNil(value)) && (value.length > 0)) {
+            let primaryNicCount = _.reduce(value, (accumulator, value, index, collection) => {
+                if (value.isPrimary) {
+                    accumulator++;
+                }
+
+                return accumulator;
+            }, 0);
+
+            if (primaryNicCount !== 1) {
+                return {
+                    result: false,
+                    message: "Virtual machine can have only 1 primary NetworkInterface."
+                };
+            }
+        }
+
+        return {
+            validations: nicSettings.validations
+        };
+    },
     availabilitySet: avSetSettings.validations
 };
 
