@@ -26,6 +26,7 @@ let virtualNetworkSettingsSubnetsValidations = {
 };
 
 let virtualNetworkSettingsPeeringValidations = {
+    name: v.utilities.isNotNullOrWhitespace,
     remoteVirtualNetwork: {
         name: v.utilities.isNotNullOrWhitespace
     },
@@ -52,7 +53,7 @@ let virtualNetworkSettingsValidations = {
             };
         } else if (value.length > 0) {
             result = {
-                validations: v.utilities.isNotNullOrWhitespace
+                validations: v.utilities.networking.isValidIpAddress
             };
         }
         
