@@ -9,7 +9,7 @@
   "resources": [
     {
       "type": "Microsoft.Compute/availabilitySets",
-      "apiVersion": "2015-06-15",
+      "apiVersion": "2017-03-30",
       "name": "[parameters('source').name]",
       "location": "[resourceGroup().location]",
       "properties": "[parameters('source').properties]"
