@@ -6,7 +6,8 @@ let nyc = require('nyc');
 
 // Workaround to make sure gulp exits on successful test run.
 gulp.doneCallback = (err) => {
-    process.exit(err ? 1 : 0);
+    //process.exit(err ? 1 : 0);
+    process.kill(process.pid);
 }
 // Run tests
 gulp.task('run-tests', () => {
