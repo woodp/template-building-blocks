@@ -1,8 +1,10 @@
 {
     "isPublic": false,
+    "isPrimary": false,
     "subnetName": "default",
     "privateIPAllocationMethod": "Dynamic",
     "publicIPAllocationMethod": "Dynamic",
+    "startingIPAddress": "",
     "enableIPForwarding": false,
     "domainNameLabelPrefix": "",
     "dnsServers": []

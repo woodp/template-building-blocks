@@ -72,25 +72,10 @@ function validate(settings) {
     return errors;
 }
 
-// if nics and extensions are not specified in the parameters, use from defaults, else ignore defaults
 function defaultsCustomizer(objValue, srcValue, key) {
     if (objValue && key === "nics") {
         if (srcValue && _.isArray(srcValue) && srcValue.length > 0) {
             objValue.splice(0, 1);
-        }
-    }
-    if (objValue && key === "extensions") {
-        if (srcValue) {
-            srcValue.forEach((extension) => {
-                if (_.toLower(extension.type) === 'iaasdiagnostics' || _.toLower(extension.type) === 'linuxdiagnostic') {
-                    // if user provided the diagnostic extension, then use that instead of the default one
-                    // Through VM building block only the diagnostic extension can be specified. IGNORE the rest of the extensions. 
-                    objValue.splice(0, 1);
-                    objValue.push(extension);
-                }
-            });
-            // we have processed all extensions from parameters file. 
-            srcValue.splice(0, srcValue.length);
         }
     }
 }
@@ -167,16 +152,16 @@ let virtualMachineValidations = {
                 return _.isNil(value) ? {
                     result: true
                 } : {
-                    result: ((_.isFinite(value)) && value > 0),
-                    message: 'Value must be greater than 0'
-                };
+                        result: ((_.isFinite(value)) && value > 0),
+                        message: 'Value must be greater than 0'
+                    };
             },
             encryptionSettings: (value, parent) => {
                 return _.isNil(value) ? {
                     result: true
                 } : {
                         validations: encryptionSettingsValidations
-                };
+                    };
             }
         }
 
@@ -471,75 +456,60 @@ let processorProperties = {
             }
         };
     },
-    extensions: (value, key, index, parent, parentAccumulator) => {
-        let processedExtensions = { "extensions": [] };
-        value.forEach((extension) => {
-            let temp = {};
-            temp.name = parent.name.concat('/', extension.name);
-            temp.publisher = extension.publisher;
-            temp.type = extension.type;
-            temp.typeHandlerVersion = extension.typeHandlerVersion;
-            temp.autoUpgradeMinorVersion = extension.autoUpgradeMinorVersion;
-
-            if ((_.toLower(extension.type) === 'iaasdiagnostics' || _.toLower(extension.type) === 'linuxdiagnostic') && extension.settingsConfig.hasOwnProperty('metricsclosing1')) {
-                temp.settings = {};
-                temp.protectedSettings = {};
-                let vmId = resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Compute/virtualMachines', parent.name);
-
-                // get the diagonstic account name for the VM
-                let diagnosticAccounts = parent.diagnosticStorageAccounts.accounts;
-                parentAccumulator.diagnosticStorageAccounts.forEach((account) => {
-                    diagnosticAccounts.push(account.name);
-                });
-                let diagnosticAccountToUse = index % diagnosticAccounts.length;
-                let diagnosticAccountName = diagnosticAccounts[diagnosticAccountToUse];
-                let accountResourceId = resources.resourceId(parent.diagnosticStorageAccounts.subscriptionId, parent.diagnosticStorageAccounts.resourceGroupName, 'Microsoft.Storage/storageAccounts', diagnosticAccountName);
-                let xmlCfg = extension.settingsConfig.metricsstart.concat(extension.settingsConfig.metricscounters, extension.settingsConfig.metricsclosing1, vmId, extension.settingsConfig.metricsclosing2);
-                let base64XmlCfg = new Buffer(xmlCfg).toString('base64');
-
-                // build settings property for diagnostic extension
-                temp.settings.StorageAccount = diagnosticAccountName;
-                temp.settings.xmlCfg = base64XmlCfg.toString();
-
-                // build protectedSettings property for diagnostic extension
-                temp.protectedSettings.storageAccountName = diagnosticAccountName;
-                temp.protectedSettings.storageAccountEndPoint = "https://core.windows.net/";
-                temp.protectedSettings.storageAccountKey1 = `[listKeys('${accountResourceId}', '2015-06-15').key1]`;
-            } else {
-                temp.settings = extension.settingsConfig;
-                temp.protectedSettings = extension.protectedSettingsConfig;
-            }
-
-            processedExtensions.extensions.push(temp);
-        })
-        return processedExtensions;
-    },
     computerNamePrefix: (value, key, index, parent) => {
         return {
-            computerName: value.concat("-vm", index + 1)
+            osProfile: {
+                computerName: value.concat("-vm", index + 1)
+            }
         }
     },
     adminPassword: (value, key, index, parent) => {
-        if (_.toLower(parent.osAuthenticationType) === "password" && parent.osDisk.osType === "windows") {
-            return {
-                windowsConfiguration: {
-                    "provisionVmAgent": "true"
+        if (_.toLower(parent.osAuthenticationType) === "password") {
+            if (parent.osDisk.osType === "windows") {
+                return {
+                    osProfile: {
+                        adminPassword: '$SECRET$',
+                        windowsConfiguration: {
+                            "provisionVmAgent": "true"
+                        }
+                    }
+                }
+            } else {
+                return {
+                    osProfile: {
+                        adminPassword: '$SECRET$',
+                        linuxConfiguration: null
+                    }
                 }
             }
-        } else {
-            return {
-                linuxConfiguration: null
-            }
         }
-
     },
     sshPublicKey: (value, key, index, parent) => {
-        return;
+        if (_.toLower(parent.osAuthenticationType) === "ssh") {
+            return {
+                osProfile: {
+                    adminPassword: null,
+                    linuxConfiguration: {
+                        disablePasswordAuthentication: true,
+                        ssh: {
+                            publicKeys: [
+                                {
+                                    path: `/home/${parent.adminUsername}/.ssh/authorized_keys`,
+                                    keyData: '$SECRET$'
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        }
     },
-    passThrough: (value, key, index) => {
-        let temp = {};
-        temp[key] = value;
-        return temp;
+    adminUsername: (value, key, index, parent) => {
+        return {
+            osProfile: {
+                adminUsername: value
+            }
+        }
     }
 }
 
@@ -614,9 +584,14 @@ function process(param, buildingBlockSettings) {
             }
         }
         result.virtualMachines.push(_.transform(n, (inner, value, key, obj) => {
-            _.merge(inner, (typeof processorProperties[key] === 'function') ? processorProperties[key](value, key, index, obj, _.cloneDeep(result)) : processorProperties["passThrough"](value, key, index, obj, _.cloneDeep(result)));
+            if (typeof processorProperties[key] === 'function') {
+                _.merge(inner.properties, processorProperties[key](value, key, index, obj, _.cloneDeep(result)));
+            } else if (key === 'name') {
+                inner[key] = value;
+            }
+            //_.merge(inner, (typeof processorProperties[key] === 'function') ? processorProperties[key](value, key, index, obj, _.cloneDeep(result)) : `{${key}: ${value}}`);
             return inner;
-        }, {}));
+        }, { properties: {} }));
         return result;
     }, { virtualMachines: [] })
 

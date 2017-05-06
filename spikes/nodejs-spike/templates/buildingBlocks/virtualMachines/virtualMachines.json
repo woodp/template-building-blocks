@@ -58,7 +58,7 @@
     "storageTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Storage/storageAccounts/storageAccount.json')]",
     "nicTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/networkInterfaces/networkInterface.json')]",
     "pipTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/publicIPAddresses/publicIPAddress.json')]",
-    "vmTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Compute/virtualMachines/virtualMachines.json')]",
+    "vmTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Compute/virtualMachines/virtualMachine.json')]",
     "iteratorTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/common/resources.json')]",
     "avSetDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployAvSet-', variables('templateUniqueString'))]",
     "vmStorageDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployStorage-', variables('templateUniqueString'))]",
@@ -209,7 +209,7 @@
     {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2015-01-01",
-      "name": "[variables('vmDeploymentName')]",
+      "name": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployVM', copyIndex(),'-', variables('templateUniqueString'))]",
       "dependsOn": [
         "[variables('avSetDeploymentName')]",
         "[variables('vmStorageDeploymentName')]",
@@ -218,19 +218,18 @@
         "[variables('nicDeploymentName')]",
         "[variables('pipDeploymentName')]"
       ],
+      "copy": {
+        "name": "vm-iterator",
+        "count": "[length(parameters('virtualMachines'))]"
+      },
       "properties": {
         "mode": "Incremental",
         "templateLink": {
           "uri": "[variables('vmTemplate')]"
         },
         "parameters": {
-          "deploymentContext": {
-            "value": {
-              "parentTemplateUniqueString": "[concat(variables('templateUniqueString'), '-deployVMs')]"
-            }
-          },
           "source": {
-            "value": "[parameters('virtualMachines')]"
+            "value": "[parameters('virtualMachines')[copyIndex()]]"
           },
           "secret": {
             "value": "[parameters('secret')]"

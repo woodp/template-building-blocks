@@ -4,339 +4,470 @@ describe('virtualMachineSettings:', () => {
     let _ = require('../lodashMixins.js');
 
     describe('merge:', () => {
-
         it("throws error if osDisk.osType is not provided.", () => {
             let settings = {};
             expect(() => virtualMachineSettings.mergeWithDefaults(settings)).toThrowError(Error);
             settings = { osDisk: { osType: "windows" } }
             expect(() => virtualMachineSettings.mergeWithDefaults(settings)).not.toThrowError(Error);
         });
-        it("validates that defaut properties for windows are applied", () => {
-            let settings = { osDisk: { osType: "windows" } };
+        describe('windows:', () => {
+            it("validates that properties for windows are applied", () => {
+                let settings = { osDisk: { osType: "windows" } };
 
-            let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
-            expect(mergedValue.hasOwnProperty("vmCount")).toEqual(true);
-            expect(mergedValue.hasOwnProperty("namePrefix")).toEqual(true);
-            expect(mergedValue.hasOwnProperty("computerNamePrefix")).toEqual(true);
-            expect(mergedValue.hasOwnProperty("size")).toEqual(true);
-            expect(mergedValue.hasOwnProperty("osDisk")).toEqual(true);
-            expect(mergedValue.osDisk.hasOwnProperty("osType")).toEqual(true);
-            expect(mergedValue.osDisk.hasOwnProperty("caching")).toEqual(true);
-            expect(mergedValue.osDisk.hasOwnProperty("createOption")).toEqual(true);
-            expect(mergedValue.hasOwnProperty("adminUsername")).toEqual(true);
-            expect(mergedValue.hasOwnProperty("osAuthenticationType")).toEqual(true);
-            expect(mergedValue.hasOwnProperty("storageAccounts")).toEqual(true);
-            expect(mergedValue.storageAccounts.hasOwnProperty("nameSuffix")).toEqual(true);
-            expect(mergedValue.storageAccounts.hasOwnProperty("count")).toEqual(true);
-            expect(mergedValue.storageAccounts.hasOwnProperty("skuType")).toEqual(true);
-            expect(mergedValue.storageAccounts.hasOwnProperty("accounts")).toEqual(true);
-            expect(mergedValue.storageAccounts.hasOwnProperty("managed")).toEqual(true);
-            expect(mergedValue.hasOwnProperty("diagnosticStorageAccounts")).toEqual(true);
-            expect(mergedValue.diagnosticStorageAccounts.hasOwnProperty("nameSuffix")).toEqual(true);
-            expect(mergedValue.diagnosticStorageAccounts.hasOwnProperty("count")).toEqual(true);
-            expect(mergedValue.diagnosticStorageAccounts.hasOwnProperty("skuType")).toEqual(true);
-            expect(mergedValue.diagnosticStorageAccounts.hasOwnProperty("accounts")).toEqual(true);
-            expect(mergedValue.diagnosticStorageAccounts.hasOwnProperty("managed")).toEqual(true);
-            expect(mergedValue.hasOwnProperty("nics")).toEqual(true);
-            expect(mergedValue.hasOwnProperty("imageReference")).toEqual(true);
-            expect(mergedValue.imageReference.hasOwnProperty("publisher")).toEqual(true);
-            expect(mergedValue.imageReference.hasOwnProperty("offer")).toEqual(true);
-            expect(mergedValue.imageReference.hasOwnProperty("sku")).toEqual(true);
-            expect(mergedValue.imageReference.hasOwnProperty("version")).toEqual(true);
-            expect(mergedValue.hasOwnProperty("dataDisks")).toEqual(true);
-            expect(mergedValue.dataDisks.hasOwnProperty("count")).toEqual(true);
-            expect(mergedValue.dataDisks.hasOwnProperty("properties")).toEqual(true);
-            expect(mergedValue.dataDisks.properties.hasOwnProperty("diskSizeGB")).toEqual(true);
-            expect(mergedValue.dataDisks.properties.hasOwnProperty("caching")).toEqual(true);
-            expect(mergedValue.dataDisks.properties.hasOwnProperty("createOption")).toEqual(true);
-            expect(mergedValue.hasOwnProperty("existingWindowsServerlicense")).toEqual(true);
-            expect(mergedValue.hasOwnProperty("extensions")).toEqual(true);
-            expect(mergedValue.hasOwnProperty("availabilitySet")).toEqual(true);
-            expect(mergedValue.availabilitySet.hasOwnProperty("useExistingAvailabilitySet")).toEqual(true);
-            expect(mergedValue.availabilitySet.hasOwnProperty("platformFaultDomainCount")).toEqual(true);
-            expect(mergedValue.availabilitySet.hasOwnProperty("platformUpdateDomainCount")).toEqual(true);
-            expect(mergedValue.availabilitySet.hasOwnProperty("name")).toEqual(true);
+                let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
+                expect(mergedValue.hasOwnProperty("vmCount")).toEqual(true);
+                expect(mergedValue.hasOwnProperty("namePrefix")).toEqual(true);
+                expect(mergedValue.hasOwnProperty("computerNamePrefix")).toEqual(true);
+                expect(mergedValue.hasOwnProperty("size")).toEqual(true);
+                expect(mergedValue.hasOwnProperty("osDisk")).toEqual(true);
+                expect(mergedValue.osDisk.hasOwnProperty("osType")).toEqual(true);
+                expect(mergedValue.osDisk.hasOwnProperty("caching")).toEqual(true);
+                expect(mergedValue.osDisk.hasOwnProperty("createOption")).toEqual(true);
+                expect(mergedValue.hasOwnProperty("adminUsername")).toEqual(true);
+                expect(mergedValue.hasOwnProperty("osAuthenticationType")).toEqual(true);
+                expect(mergedValue.hasOwnProperty("storageAccounts")).toEqual(true);
+                expect(mergedValue.storageAccounts.hasOwnProperty("nameSuffix")).toEqual(true);
+                expect(mergedValue.storageAccounts.hasOwnProperty("count")).toEqual(true);
+                expect(mergedValue.storageAccounts.hasOwnProperty("skuType")).toEqual(true);
+                expect(mergedValue.storageAccounts.hasOwnProperty("accounts")).toEqual(true);
+                expect(mergedValue.storageAccounts.hasOwnProperty("managed")).toEqual(true);
+                expect(mergedValue.hasOwnProperty("diagnosticStorageAccounts")).toEqual(true);
+                expect(mergedValue.diagnosticStorageAccounts.hasOwnProperty("nameSuffix")).toEqual(true);
+                expect(mergedValue.diagnosticStorageAccounts.hasOwnProperty("count")).toEqual(true);
+                expect(mergedValue.diagnosticStorageAccounts.hasOwnProperty("skuType")).toEqual(true);
+                expect(mergedValue.diagnosticStorageAccounts.hasOwnProperty("accounts")).toEqual(true);
+                expect(mergedValue.diagnosticStorageAccounts.hasOwnProperty("managed")).toEqual(true);
+                expect(mergedValue.hasOwnProperty("nics")).toEqual(true);
+                expect(mergedValue.hasOwnProperty("imageReference")).toEqual(true);
+                expect(mergedValue.imageReference.hasOwnProperty("publisher")).toEqual(true);
+                expect(mergedValue.imageReference.hasOwnProperty("offer")).toEqual(true);
+                expect(mergedValue.imageReference.hasOwnProperty("sku")).toEqual(true);
+                expect(mergedValue.imageReference.hasOwnProperty("version")).toEqual(true);
+                expect(mergedValue.hasOwnProperty("dataDisks")).toEqual(true);
+                expect(mergedValue.dataDisks.hasOwnProperty("count")).toEqual(true);
+                expect(mergedValue.dataDisks.hasOwnProperty("properties")).toEqual(true);
+                expect(mergedValue.dataDisks.properties.hasOwnProperty("diskSizeGB")).toEqual(true);
+                expect(mergedValue.dataDisks.properties.hasOwnProperty("caching")).toEqual(true);
+                expect(mergedValue.dataDisks.properties.hasOwnProperty("createOption")).toEqual(true);
+                expect(mergedValue.hasOwnProperty("existingWindowsServerlicense")).toEqual(true);
+                expect(mergedValue.hasOwnProperty("extensions")).toEqual(true);
+                expect(mergedValue.hasOwnProperty("availabilitySet")).toEqual(true);
+                expect(mergedValue.availabilitySet.hasOwnProperty("useExistingAvailabilitySet")).toEqual(true);
+                expect(mergedValue.availabilitySet.hasOwnProperty("platformFaultDomainCount")).toEqual(true);
+                expect(mergedValue.availabilitySet.hasOwnProperty("platformUpdateDomainCount")).toEqual(true);
+                expect(mergedValue.availabilitySet.hasOwnProperty("name")).toEqual(true);
 
-        });
-        it("validates that defaut properties for linux are applied", () => {
-            let settings = { osDisk: { osType: "linux" } };
+            });
+            it("validate defaults do not override settings.", () => {
+                let settings = {
+                    vmCount: 2,
+                    osDisk: { osType: "windows" }
+                };
 
-            let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
-            expect(mergedValue.hasOwnProperty("vmCount")).toEqual(true);
-            expect(mergedValue.hasOwnProperty("namePrefix")).toEqual(true);
-            expect(mergedValue.hasOwnProperty("computerNamePrefix")).toEqual(true);
-            expect(mergedValue.hasOwnProperty("size")).toEqual(true);
-            expect(mergedValue.hasOwnProperty("osDisk")).toEqual(true);
-            expect(mergedValue.osDisk.hasOwnProperty("osType")).toEqual(true);
-            expect(mergedValue.osDisk.hasOwnProperty("caching")).toEqual(true);
-            expect(mergedValue.osDisk.hasOwnProperty("createOption")).toEqual(true);
-            expect(mergedValue.hasOwnProperty("adminUsername")).toEqual(true);
-            expect(mergedValue.hasOwnProperty("osAuthenticationType")).toEqual(true);
-            expect(mergedValue.hasOwnProperty("storageAccounts")).toEqual(true);
-            expect(mergedValue.storageAccounts.hasOwnProperty("nameSuffix")).toEqual(true);
-            expect(mergedValue.storageAccounts.hasOwnProperty("count")).toEqual(true);
-            expect(mergedValue.storageAccounts.hasOwnProperty("skuType")).toEqual(true);
-            expect(mergedValue.storageAccounts.hasOwnProperty("accounts")).toEqual(true);
-            expect(mergedValue.storageAccounts.hasOwnProperty("managed")).toEqual(true);
-            expect(mergedValue.hasOwnProperty("diagnosticStorageAccounts")).toEqual(true);
-            expect(mergedValue.diagnosticStorageAccounts.hasOwnProperty("nameSuffix")).toEqual(true);
-            expect(mergedValue.diagnosticStorageAccounts.hasOwnProperty("count")).toEqual(true);
-            expect(mergedValue.diagnosticStorageAccounts.hasOwnProperty("skuType")).toEqual(true);
-            expect(mergedValue.diagnosticStorageAccounts.hasOwnProperty("accounts")).toEqual(true);
-            expect(mergedValue.diagnosticStorageAccounts.hasOwnProperty("managed")).toEqual(true);
-            expect(mergedValue.hasOwnProperty("nics")).toEqual(true);
-            expect(mergedValue.hasOwnProperty("imageReference")).toEqual(true);
-            expect(mergedValue.imageReference.hasOwnProperty("publisher")).toEqual(true);
-            expect(mergedValue.imageReference.hasOwnProperty("offer")).toEqual(true);
-            expect(mergedValue.imageReference.hasOwnProperty("sku")).toEqual(true);
-            expect(mergedValue.imageReference.hasOwnProperty("version")).toEqual(true);
-            expect(mergedValue.hasOwnProperty("dataDisks")).toEqual(true);
-            expect(mergedValue.dataDisks.hasOwnProperty("count")).toEqual(true);
-            expect(mergedValue.dataDisks.hasOwnProperty("properties")).toEqual(true);
-            expect(mergedValue.dataDisks.properties.hasOwnProperty("diskSizeGB")).toEqual(true);
-            expect(mergedValue.dataDisks.properties.hasOwnProperty("caching")).toEqual(true);
-            expect(mergedValue.dataDisks.properties.hasOwnProperty("createOption")).toEqual(true);
-            expect(mergedValue.hasOwnProperty("extensions")).toEqual(true);
-            expect(mergedValue.hasOwnProperty("availabilitySet")).toEqual(true);
-            expect(mergedValue.availabilitySet.hasOwnProperty("useExistingAvailabilitySet")).toEqual(true);
-            expect(mergedValue.availabilitySet.hasOwnProperty("platformFaultDomainCount")).toEqual(true);
-            expect(mergedValue.availabilitySet.hasOwnProperty("platformUpdateDomainCount")).toEqual(true);
-            expect(mergedValue.availabilitySet.hasOwnProperty("name")).toEqual(true);
+                let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
+                expect(mergedValue.vmCount).toEqual(2);
+            });
+            it("validate additional properties in settings are not removed.", () => {
+                let settings = {
+                    adminPassword: "test",
+                    osDisk: { osType: "windows" }
+                };
 
-        });
-        it("validate defaults do not override settings.", () => {
-            let settings = {
-                vmCount: 2,
-                osDisk: { osType: "linux" }
-            };
+                let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
+                expect(mergedValue.hasOwnProperty("adminPassword")).toEqual(true);
+                expect(mergedValue.adminPassword).toEqual("test");
+            });
+            it("validate default nics are not added if provided.", () => {
+                let settings = {
+                    nics: [
+                        {
+                            "isPublic": true,
+                            "subnetName": "web",
+                            "privateIPAllocationMethod": "Static",
+                            "publicIPAllocationMethod": "Static",
+                            "startingIPAddress": "10.0.1.240",
+                            "isPrimary": true,
+                            "dnsServers": [
+                                "10.0.1.240",
+                                "10.0.1.242"
+                            ]
+                        },
+                        {
+                            "isPrimary": false,
+                            "subnetName": "biz",
+                            "privateIPAllocationMethod": "Dynamic",
+                            "enableIPForwarding": false,
+                            "domainNameLabelPrefix": "",
+                            "dnsServers": []
+                        }
+                    ],
+                    osDisk: { osType: "windows" }
+                };
 
-            let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
-            expect(mergedValue.vmCount).toEqual(2);
-        });
-        it("validate additional properties in settings are not removed.", () => {
-            let settings = {
-                adminPassword: "test",
-                osDisk: { osType: "linux" }
-            };
+                let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
+                expect(mergedValue.nics.length).toEqual(2);
+                expect(mergedValue.nics[0].subnetName).toEqual("web");
+                expect(mergedValue.nics[1].subnetName).toEqual("biz");
+            });
+            it("validates that individual nics are merged with defaults", () => {
+                let settings = {
+                    nics: [
+                        {
+                            "isPublic": true,
+                            "subnetName": "web",
+                            "privateIPAllocationMethod": "Static",
+                            "publicIPAllocationMethod": "Static",
+                            "startingIPAddress": "10.0.1.240",
+                            "isPrimary": true,
+                            "dnsServers": [
+                                "10.0.1.240",
+                                "10.0.1.242"
+                            ]
+                        },
+                        {
+                            "isPrimary": false,
+                            "subnetName": "biz",
+                            "privateIPAllocationMethod": "Dynamic",
+                            "enableIPForwarding": false,
+                            "domainNameLabelPrefix": ""
+                        }
+                    ],
+                    osDisk: { osType: "windows" }
+                };
 
-            let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
-            expect(mergedValue.hasOwnProperty("adminPassword")).toEqual(true);
-            expect(mergedValue.adminPassword).toEqual("test");
-        });
-        it("validate default nics are not added if provided.", () => {
-            let settings = {
-                nics: [
-                    {
-                        "isPublic": true,
-                        "subnetName": "web",
-                        "privateIPAllocationMethod": "Static",
-                        "publicIPAllocationMethod": "Static",
-                        "startingIPAddress": "10.0.1.240",
-                        "isPrimary": true,
-                        "dnsServers": [
-                            "10.0.1.240",
-                            "10.0.1.242"
-                        ]
+                let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
+                expect(mergedValue.nics.length).toEqual(2);
+                expect(mergedValue.nics[0].isPublic).toEqual(true);
+                expect(mergedValue.nics[0].subnetName).toEqual("web");
+                expect(mergedValue.nics[0].privateIPAllocationMethod).toEqual("Static");
+                expect(mergedValue.nics[0].publicIPAllocationMethod).toEqual("Static");
+                expect(mergedValue.nics[0].startingIPAddress).toEqual("10.0.1.240");
+                expect(mergedValue.nics[0].enableIPForwarding).toEqual(false);
+                expect(mergedValue.nics[0].domainNameLabelPrefix).toEqual("");
+                expect(mergedValue.nics[0].dnsServers.length).toEqual(2);
+                expect(mergedValue.nics[0].isPrimary).toEqual(true);
+
+                expect(mergedValue.nics[1].isPublic).toEqual(false);
+                expect(mergedValue.nics[1].subnetName).toEqual("biz");
+                expect(mergedValue.nics[1].privateIPAllocationMethod).toEqual("Dynamic");
+                expect(mergedValue.nics[1].publicIPAllocationMethod).toEqual("Dynamic");
+                expect(mergedValue.nics[1].startingIPAddress).toEqual("");
+                expect(mergedValue.nics[1].enableIPForwarding).toEqual(false);
+                expect(mergedValue.nics[1].domainNameLabelPrefix).toEqual("");
+                expect(mergedValue.nics[1].dnsServers.length).toEqual(0);
+                expect(mergedValue.nics[1].isPrimary).toEqual(false);
+            });
+            it("validates that storage is merged with defaults", () => {
+                let settings = {
+                    storageAccounts: {
+                        count: 5,
+                        managed: true
                     },
-                    {
-                        "isPrimary": false,
-                        "subnetName": "biz",
-                        "privateIPAllocationMethod": "Dynamic",
-                        "enableIPForwarding": false,
-                        "domainNameLabelPrefix": "",
-                        "dnsServers": []
-                    }
-                ],
-                osDisk: { osType: "windows" }
-            };
-
-            let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
-            expect(mergedValue.nics.length).toEqual(2);
-            expect(mergedValue.nics[0].subnetName).toEqual("web");
-            expect(mergedValue.nics[1].subnetName).toEqual("biz");
-        });
-        it("validates that individual nics are merged with defaults", () => {
-            let settings = {
-                nics: [
-                    {
-                        "isPublic": true,
-                        "subnetName": "web",
-                        "privateIPAllocationMethod": "Static",
-                        "publicIPAllocationMethod": "Static",
-                        "startingIPAddress": "10.0.1.240",
-                        "isPrimary": true,
-                        "dnsServers": [
-                            "10.0.1.240",
-                            "10.0.1.242"
-                        ]
+                    osDisk: { osType: "windows" }
+                };
+                let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
+                expect(mergedValue.storageAccounts.nameSuffix).toEqual("st");
+                expect(mergedValue.storageAccounts.count).toEqual(5);
+                expect(mergedValue.storageAccounts.skuType).toEqual("Premium_LRS");
+                expect(mergedValue.storageAccounts.managed).toEqual(true);
+                expect(mergedValue.storageAccounts.accounts.length).toEqual(0);
+            });
+            it("validates that diagnostic storage is merged with defaults", () => {
+                let settings = {
+                    diagnosticStorageAccounts: {
+                        count: 5,
+                        managed: true
                     },
-                    {
-                        "isPrimary": false,
-                        "subnetName": "biz",
-                        "privateIPAllocationMethod": "Dynamic",
-                        "enableIPForwarding": false,
-                        "domainNameLabelPrefix": ""
-                    }
-                ],
-                osDisk: { osType: "windows" }
-            };
-
-            let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
-            expect(mergedValue.nics.length).toEqual(2);
-            expect(mergedValue.nics[0].isPublic).toEqual(true);
-            expect(mergedValue.nics[0].subnetName).toEqual("web");
-            expect(mergedValue.nics[0].privateIPAllocationMethod).toEqual("Static");
-            expect(mergedValue.nics[0].publicIPAllocationMethod).toEqual("Static");
-            expect(mergedValue.nics[0].startingIPAddress).toEqual("10.0.1.240");
-            expect(mergedValue.nics[0].enableIPForwarding).toEqual(false);
-            expect(mergedValue.nics[0].domainNameLabelPrefix).toEqual("");
-            expect(mergedValue.nics[0].dnsServers.length).toEqual(2);
-            expect(mergedValue.nics[0].isPrimary).toEqual(true);
-
-            expect(mergedValue.nics[1].isPublic).toEqual(false);
-            expect(mergedValue.nics[1].subnetName).toEqual("biz");
-            expect(mergedValue.nics[1].privateIPAllocationMethod).toEqual("Dynamic");
-            expect(mergedValue.nics[1].publicIPAllocationMethod).toEqual("Dynamic");
-            expect(mergedValue.nics[1].startingIPAddress).toEqual("");
-            expect(mergedValue.nics[1].enableIPForwarding).toEqual(false);
-            expect(mergedValue.nics[1].domainNameLabelPrefix).toEqual("");
-            expect(mergedValue.nics[1].dnsServers.length).toEqual(0);
-            expect(mergedValue.nics[1].isPrimary).toEqual(false);
-        });
-        it("validates that storage is merged with defaults", () => {
-            let settings = {
-                nics: [
-                    {
-                        "isPublic": true,
-                        "subnetName": "web",
-                        "privateIPAllocationMethod": "Static",
-                        "publicIPAllocationMethod": "Static",
-                        "startingIPAddress": "10.0.1.240",
-                        "isPrimary": true,
-                        "dnsServers": [
-                            "10.0.1.240",
-                            "10.0.1.242"
-                        ]
+                    osDisk: { osType: "windows" }
+                };
+                let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
+                expect(mergedValue.diagnosticStorageAccounts.nameSuffix).toEqual("diag");
+                expect(mergedValue.diagnosticStorageAccounts.count).toEqual(5);
+                expect(mergedValue.diagnosticStorageAccounts.skuType).toEqual("Standard_LRS");
+                expect(mergedValue.diagnosticStorageAccounts.managed).toEqual(true);
+                expect(mergedValue.diagnosticStorageAccounts.accounts.length).toEqual(0);
+            });
+            it("validates that avset is merged with defaults", () => {
+                let settings = {
+                    "availabilitySet": {
+                        "useExistingAvailabilitySet": "no",
+                        "name": "test-as"
                     },
-                    {
-                        "isPrimary": false,
-                        "subnetName": "biz",
-                        "privateIPAllocationMethod": "Dynamic",
-                        "enableIPForwarding": false,
-                        "domainNameLabelPrefix": ""
-                    }
-                ],
-                osDisk: { osType: "windows" }
-            };
-
-        });
-        it("validates that diagnostic storage is merged with defaults", () => {
-            let settings = {
-                nics: [
-                    {
-                        "isPublic": true,
-                        "subnetName": "web",
-                        "privateIPAllocationMethod": "Static",
-                        "publicIPAllocationMethod": "Static",
-                        "startingIPAddress": "10.0.1.240",
-                        "isPrimary": true,
-                        "dnsServers": [
-                            "10.0.1.240",
-                            "10.0.1.242"
-                        ]
+                    osDisk: { osType: "windows" }
+                };
+                let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
+                expect(mergedValue.availabilitySet.useExistingAvailabilitySet).toEqual("no");
+                expect(mergedValue.availabilitySet.name).toEqual("test-as");
+                expect(mergedValue.availabilitySet.platformFaultDomainCount).toEqual(3);
+                expect(mergedValue.availabilitySet.platformUpdateDomainCount).toEqual(5);
+            });
+            it("validates that osDisk is merged with defaults", () => {
+                let settings = {
+                    osDisk: { osType: "windows" }
+                };
+                let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
+                expect(mergedValue.osDisk.osType).toEqual("windows");
+                expect(mergedValue.osDisk.caching).toEqual("ReadWrite");
+                expect(mergedValue.osDisk.createOption).toEqual("fromImage");
+            });
+            it("validates that datadisk is merged with defaults", () => {
+                let settings = {
+                    dataDisks: {
+                        count: 2,
+                        properties: {
+                            diskSizeGB: 127
+                        }
                     },
-                    {
-                        "isPrimary": false,
-                        "subnetName": "biz",
-                        "privateIPAllocationMethod": "Dynamic",
-                        "enableIPForwarding": false,
-                        "domainNameLabelPrefix": ""
-                    }
-                ],
-                osDisk: { osType: "windows" }
-            };
+                    osDisk: { osType: "windows" }
+                };
+                let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
+                expect(mergedValue.dataDisks.count).toEqual(2);
+                expect(mergedValue.dataDisks.properties.caching).toEqual("ReadWrite");
+                expect(mergedValue.dataDisks.properties.createOption).toEqual("fromImage");
+                expect(mergedValue.dataDisks.properties.diskSizeGB).toEqual(127);
 
+            });
+            it("validates that imageReference is merged with defaults", () => {
+                let settings = {
+                    imageReference: {},
+                    osDisk: { osType: "windows" }
+                };
+                let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
+                expect(mergedValue.imageReference.publisher).toEqual("MicrosoftWindowsServer");
+                expect(mergedValue.imageReference.offer).toEqual("WindowsServer");
+                expect(mergedValue.imageReference.sku).toEqual("2012-R2-Datacenter");
+                expect(mergedValue.imageReference.version).toEqual("latest");
+
+            });
         });
-        it("validates that avset is merged with defaults", () => {
-            let settings = {
-                nics: [
-                    {
-                        "isPublic": true,
-                        "subnetName": "web",
-                        "privateIPAllocationMethod": "Static",
-                        "publicIPAllocationMethod": "Static",
-                        "startingIPAddress": "10.0.1.240",
-                        "isPrimary": true,
-                        "dnsServers": [
-                            "10.0.1.240",
-                            "10.0.1.242"
-                        ]
-                    },
-                    {
-                        "isPrimary": false,
-                        "subnetName": "biz",
-                        "privateIPAllocationMethod": "Dynamic",
-                        "enableIPForwarding": false,
-                        "domainNameLabelPrefix": ""
-                    }
-                ],
-                osDisk: { osType: "windows" }
-            };
+        describe('Linux:', () => {
+            it("validates that properties for linux are applied", () => {
+                let settings = { osDisk: { osType: "linux" } };
 
-        });
-        it("validates that osDisk is merged with defaults", () => {
-            let settings = {
-                nics: [
-                    {
-                        "isPublic": true,
-                        "subnetName": "web",
-                        "privateIPAllocationMethod": "Static",
-                        "publicIPAllocationMethod": "Static",
-                        "startingIPAddress": "10.0.1.240",
-                        "isPrimary": true,
-                        "dnsServers": [
-                            "10.0.1.240",
-                            "10.0.1.242"
-                        ]
-                    },
-                    {
-                        "isPrimary": false,
-                        "subnetName": "biz",
-                        "privateIPAllocationMethod": "Dynamic",
-                        "enableIPForwarding": false,
-                        "domainNameLabelPrefix": ""
-                    }
-                ],
-                osDisk: { osType: "windows" }
-            };
+                let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
+                expect(mergedValue.hasOwnProperty("vmCount")).toEqual(true);
+                expect(mergedValue.hasOwnProperty("namePrefix")).toEqual(true);
+                expect(mergedValue.hasOwnProperty("computerNamePrefix")).toEqual(true);
+                expect(mergedValue.hasOwnProperty("size")).toEqual(true);
+                expect(mergedValue.hasOwnProperty("osDisk")).toEqual(true);
+                expect(mergedValue.osDisk.hasOwnProperty("osType")).toEqual(true);
+                expect(mergedValue.osDisk.hasOwnProperty("caching")).toEqual(true);
+                expect(mergedValue.osDisk.hasOwnProperty("createOption")).toEqual(true);
+                expect(mergedValue.hasOwnProperty("adminUsername")).toEqual(true);
+                expect(mergedValue.hasOwnProperty("osAuthenticationType")).toEqual(true);
+                expect(mergedValue.hasOwnProperty("storageAccounts")).toEqual(true);
+                expect(mergedValue.storageAccounts.hasOwnProperty("nameSuffix")).toEqual(true);
+                expect(mergedValue.storageAccounts.hasOwnProperty("count")).toEqual(true);
+                expect(mergedValue.storageAccounts.hasOwnProperty("skuType")).toEqual(true);
+                expect(mergedValue.storageAccounts.hasOwnProperty("accounts")).toEqual(true);
+                expect(mergedValue.storageAccounts.hasOwnProperty("managed")).toEqual(true);
+                expect(mergedValue.hasOwnProperty("diagnosticStorageAccounts")).toEqual(true);
+                expect(mergedValue.diagnosticStorageAccounts.hasOwnProperty("nameSuffix")).toEqual(true);
+                expect(mergedValue.diagnosticStorageAccounts.hasOwnProperty("count")).toEqual(true);
+                expect(mergedValue.diagnosticStorageAccounts.hasOwnProperty("skuType")).toEqual(true);
+                expect(mergedValue.diagnosticStorageAccounts.hasOwnProperty("accounts")).toEqual(true);
+                expect(mergedValue.diagnosticStorageAccounts.hasOwnProperty("managed")).toEqual(true);
+                expect(mergedValue.hasOwnProperty("nics")).toEqual(true);
+                expect(mergedValue.hasOwnProperty("imageReference")).toEqual(true);
+                expect(mergedValue.imageReference.hasOwnProperty("publisher")).toEqual(true);
+                expect(mergedValue.imageReference.hasOwnProperty("offer")).toEqual(true);
+                expect(mergedValue.imageReference.hasOwnProperty("sku")).toEqual(true);
+                expect(mergedValue.imageReference.hasOwnProperty("version")).toEqual(true);
+                expect(mergedValue.hasOwnProperty("dataDisks")).toEqual(true);
+                expect(mergedValue.dataDisks.hasOwnProperty("count")).toEqual(true);
+                expect(mergedValue.dataDisks.hasOwnProperty("properties")).toEqual(true);
+                expect(mergedValue.dataDisks.properties.hasOwnProperty("diskSizeGB")).toEqual(true);
+                expect(mergedValue.dataDisks.properties.hasOwnProperty("caching")).toEqual(true);
+                expect(mergedValue.dataDisks.properties.hasOwnProperty("createOption")).toEqual(true);
+                expect(mergedValue.hasOwnProperty("extensions")).toEqual(true);
+                expect(mergedValue.hasOwnProperty("availabilitySet")).toEqual(true);
+                expect(mergedValue.availabilitySet.hasOwnProperty("useExistingAvailabilitySet")).toEqual(true);
+                expect(mergedValue.availabilitySet.hasOwnProperty("platformFaultDomainCount")).toEqual(true);
+                expect(mergedValue.availabilitySet.hasOwnProperty("platformUpdateDomainCount")).toEqual(true);
+                expect(mergedValue.availabilitySet.hasOwnProperty("name")).toEqual(true);
 
-        });
-        it("validates that datadisk is merged with defaults", () => {
-            let settings = {
-                nics: [
-                    {
-                        "isPublic": true,
-                        "subnetName": "web",
-                        "privateIPAllocationMethod": "Static",
-                        "publicIPAllocationMethod": "Static",
-                        "startingIPAddress": "10.0.1.240",
-                        "isPrimary": true,
-                        "dnsServers": [
-                            "10.0.1.240",
-                            "10.0.1.242"
-                        ]
-                    },
-                    {
-                        "isPrimary": false,
-                        "subnetName": "biz",
-                        "privateIPAllocationMethod": "Dynamic",
-                        "enableIPForwarding": false,
-                        "domainNameLabelPrefix": ""
-                    }
-                ],
-                osDisk: { osType: "windows" }
-            };
+            });
+            it("validate defaults do not override settings.", () => {
+                let settings = {
+                    vmCount: 2,
+                    osDisk: { osType: "linux" }
+                };
 
+                let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
+                expect(mergedValue.vmCount).toEqual(2);
+            });
+            it("validate additional properties in settings are not removed.", () => {
+                let settings = {
+                    adminPassword: "test",
+                    osDisk: { osType: "linux" }
+                };
+
+                let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
+                expect(mergedValue.hasOwnProperty("adminPassword")).toEqual(true);
+                expect(mergedValue.adminPassword).toEqual("test");
+            });
+            it("validate default nics are not added if provided.", () => {
+                let settings = {
+                    nics: [
+                        {
+                            "isPublic": true,
+                            "subnetName": "web",
+                            "privateIPAllocationMethod": "Static",
+                            "publicIPAllocationMethod": "Static",
+                            "startingIPAddress": "10.0.1.240",
+                            "isPrimary": true,
+                            "dnsServers": [
+                                "10.0.1.240",
+                                "10.0.1.242"
+                            ]
+                        },
+                        {
+                            "isPrimary": false,
+                            "subnetName": "biz",
+                            "privateIPAllocationMethod": "Dynamic",
+                            "enableIPForwarding": false,
+                            "domainNameLabelPrefix": "",
+                            "dnsServers": []
+                        }
+                    ],
+                    osDisk: { osType: "linux" }
+                };
+
+                let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
+                expect(mergedValue.nics.length).toEqual(2);
+                expect(mergedValue.nics[0].subnetName).toEqual("web");
+                expect(mergedValue.nics[1].subnetName).toEqual("biz");
+            });
+            it("validates that individual nics are merged with defaults", () => {
+                let settings = {
+                    nics: [
+                        {
+                            "isPublic": true,
+                            "subnetName": "web",
+                            "privateIPAllocationMethod": "Static",
+                            "publicIPAllocationMethod": "Static",
+                            "startingIPAddress": "10.0.1.240",
+                            "isPrimary": true,
+                            "dnsServers": [
+                                "10.0.1.240",
+                                "10.0.1.242"
+                            ]
+                        },
+                        {
+                            "isPrimary": false,
+                            "subnetName": "biz",
+                            "privateIPAllocationMethod": "Dynamic",
+                            "enableIPForwarding": false,
+                            "domainNameLabelPrefix": ""
+                        }
+                    ],
+                    osDisk: { osType: "linux" }
+                };
+
+                let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
+                expect(mergedValue.nics.length).toEqual(2);
+                expect(mergedValue.nics[0].isPublic).toEqual(true);
+                expect(mergedValue.nics[0].subnetName).toEqual("web");
+                expect(mergedValue.nics[0].privateIPAllocationMethod).toEqual("Static");
+                expect(mergedValue.nics[0].publicIPAllocationMethod).toEqual("Static");
+                expect(mergedValue.nics[0].startingIPAddress).toEqual("10.0.1.240");
+                expect(mergedValue.nics[0].enableIPForwarding).toEqual(false);
+                expect(mergedValue.nics[0].domainNameLabelPrefix).toEqual("");
+                expect(mergedValue.nics[0].dnsServers.length).toEqual(2);
+                expect(mergedValue.nics[0].isPrimary).toEqual(true);
+
+                expect(mergedValue.nics[1].isPublic).toEqual(false);
+                expect(mergedValue.nics[1].subnetName).toEqual("biz");
+                expect(mergedValue.nics[1].privateIPAllocationMethod).toEqual("Dynamic");
+                expect(mergedValue.nics[1].publicIPAllocationMethod).toEqual("Dynamic");
+                expect(mergedValue.nics[1].startingIPAddress).toEqual("");
+                expect(mergedValue.nics[1].enableIPForwarding).toEqual(false);
+                expect(mergedValue.nics[1].domainNameLabelPrefix).toEqual("");
+                expect(mergedValue.nics[1].dnsServers.length).toEqual(0);
+                expect(mergedValue.nics[1].isPrimary).toEqual(false);
+            });
+            it("validates that storage is merged with defaults", () => {
+                let settings = {
+                    storageAccounts: {
+                        count: 5,
+                        managed: true
+                    },
+                    osDisk: { osType: "linux" }
+                };
+                let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
+                expect(mergedValue.storageAccounts.nameSuffix).toEqual("st");
+                expect(mergedValue.storageAccounts.count).toEqual(5);
+                expect(mergedValue.storageAccounts.skuType).toEqual("Premium_LRS");
+                expect(mergedValue.storageAccounts.managed).toEqual(true);
+                expect(mergedValue.storageAccounts.accounts.length).toEqual(0);
+            });
+            it("validates that diagnostic storage is merged with defaults", () => {
+                let settings = {
+                    diagnosticStorageAccounts: {
+                        count: 5,
+                        managed: true
+                    },
+                    osDisk: { osType: "linux" }
+                };
+                let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
+                expect(mergedValue.diagnosticStorageAccounts.nameSuffix).toEqual("diag");
+                expect(mergedValue.diagnosticStorageAccounts.count).toEqual(5);
+                expect(mergedValue.diagnosticStorageAccounts.skuType).toEqual("Standard_LRS");
+                expect(mergedValue.diagnosticStorageAccounts.managed).toEqual(true);
+                expect(mergedValue.diagnosticStorageAccounts.accounts.length).toEqual(0);
+            });
+            it("validates that avset is merged with defaults", () => {
+                let settings = {
+                    "availabilitySet": {
+                        "useExistingAvailabilitySet": "no",
+                        "name": "test-as"
+                    },
+                    osDisk: { osType: "linux" }
+                };
+                let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
+                expect(mergedValue.availabilitySet.useExistingAvailabilitySet).toEqual("no");
+                expect(mergedValue.availabilitySet.name).toEqual("test-as");
+                expect(mergedValue.availabilitySet.platformFaultDomainCount).toEqual(3);
+                expect(mergedValue.availabilitySet.platformUpdateDomainCount).toEqual(5);
+            });
+            it("validates that osDisk is merged with defaults", () => {
+                let settings = {
+                    osDisk: { osType: "linux" }
+                };
+                let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
+                expect(mergedValue.osDisk.osType).toEqual("linux");
+                expect(mergedValue.osDisk.caching).toEqual("ReadWrite");
+                expect(mergedValue.osDisk.createOption).toEqual("fromImage");
+            });
+            it("validates that datadisk is merged with defaults", () => {
+                let settings = {
+                    dataDisks: {
+                        count: 2,
+                        properties: {
+                            diskSizeGB: 127
+                        }
+                    },
+                    osDisk: { osType: "linux" }
+                };
+                let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
+                expect(mergedValue.dataDisks.count).toEqual(2);
+                expect(mergedValue.dataDisks.properties.caching).toEqual("None");
+                expect(mergedValue.dataDisks.properties.createOption).toEqual("Empty");
+                expect(mergedValue.dataDisks.properties.diskSizeGB).toEqual(127);
+
+            });
+            it("validates that imageReference is merged with defaults", () => {
+                let settings = {
+                    imageReference: {},
+                    osDisk: { osType: "linux" }
+                };
+                let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
+                expect(mergedValue.imageReference.publisher).toEqual("Canonical");
+                expect(mergedValue.imageReference.offer).toEqual("UbuntuServer");
+                expect(mergedValue.imageReference.sku).toEqual("14.04.5-LTS");
+                expect(mergedValue.imageReference.version).toEqual("latest");
+
+            });
         });
     });
     // describe('validations:', () => {
@@ -448,146 +579,67 @@ describe('virtualMachineSettings:', () => {
     //         });
     //     });
     // });
-    // describe('transform:', () => {
-    //     let vmIndex = 0;
-    //     let settings = {
-    //         name: "testVM1",
-    //         virtualNetwork: {
-    //             "name": "test-vnet",
-    //             "subscriptionId": "00000000-0000-1000-A000-000000000000",
-    //             "resourceGroupName": "test-rg"
-    //         },
-    //         nics: [
-    //             {
-    //                 "isPublic": false,
-    //                 "subnetName": "web",
-    //                 "privateIPAllocationMethod": "Static",
-    //                 "publicIPAllocationMethod": "Dynamic",
-    //                 "startingIPAddress": "10.0.1.240",
-    //                 "enableIPForwarding": false,
-    //                 "domainNameLabelPrefix": "",
-    //                 "isPrimary": true,
-    //                 "dnsServers": [
-    //                     "10.0.1.240",
-    //                     "10.0.1.242"
-    //                 ],
-    //                 "subscriptionId": "00000000-0000-1100-AA00-000000000000",
-    //                 "resourceGroupName": "test-rg"
-    //             },
-    //             {
-    //                 "isPublic": false,
-    //                 "subnetName": "biz",
-    //                 "privateIPAllocationMethod": "Dynamic",
-    //                 "publicIPAllocationMethod": "Static",
-    //                 "enableIPForwarding": true,
-    //                 "domainNameLabelPrefix": "testDomainName",
-    //                 "isPrimary": false,
-    //                 "dnsServers": [],
-    //                 "subscriptionId": "00000000-0000-1100-AA00-000000000000",
-    //                 "resourceGroupName": "test-rg"
-    //             }
-    //         ]
-    //     };
-
-    //     it('validates that total number of nics returned equals vmCount multiplied by number of nics in stamp', () => {
-    //         let result = virtualMachineSettings.processvirtualMachineSettings(settings.nics, settings, vmIndex);
-
-    //         expect(result.nics.length).toEqual(2);
-    //     });
-    //     it('validates that nics are named appropriately for each VM', () => {
-    //         let result = virtualMachineSettings.processvirtualMachineSettings(settings.nics, settings, vmIndex);
-
-    //         expect(result.nics.length).toEqual(2);
-    //         expect(result.nics[0].name).toEqual("testVM1-nic1");
-    //         expect(result.nics[1].name).toEqual("testVM1-nic2");
-    //     });
-    //     it('validates that primary nics are correctly assigned for each VM', () => {
-    //         let result = virtualMachineSettings.processvirtualMachineSettings(settings.nics, settings, vmIndex);
-
-    //         expect(result.nics[0].primary).toEqual(true);
-    //         expect(result.nics[1].primary).toEqual(false);
-    //     });
-    //     it('validates that enableIPForwarding is correctly assigned for each VM', () => {
-    //         let result = virtualMachineSettings.processvirtualMachineSettings(settings.nics, settings, vmIndex);
-
-    //         expect(result.nics[0].enableIPForwarding).toEqual(false);
-    //         expect(result.nics[1].enableIPForwarding).toEqual(true);
-    //     });
-    //     it('validates that dnsServers are correctly assigned for each VM', () => {
-    //         let result = virtualMachineSettings.processvirtualMachineSettings(settings.nics, settings, vmIndex);
-
-    //         expect(result.nics[0].dnsSettings.dnsServers.length).toEqual(2);
-    //         expect(result.nics[0].dnsSettings.appliedDnsServers.length).toEqual(2);
-    //         expect(result.nics[0].dnsSettings.dnsServers[0]).toEqual("10.0.1.240");
-    //         expect(result.nics[0].dnsSettings.dnsServers[1]).toEqual("10.0.1.242");
-    //         expect(result.nics[0].dnsSettings.appliedDnsServers[0]).toEqual("10.0.1.240");
-    //         expect(result.nics[0].dnsSettings.appliedDnsServers[1]).toEqual("10.0.1.242");
-
-    //         expect(result.nics[1].dnsSettings.dnsServers.length).toEqual(0);
-    //         expect(result.nics[1].dnsSettings.appliedDnsServers.length).toEqual(0);
-    //     });
-    //     it('validates that privateIPAllocationMethod is correctly assigned in the Ip configuration', () => {
-    //         let result = virtualMachineSettings.processvirtualMachineSettings(settings.nics, settings, vmIndex);
-
-    //         expect(result.nics[0].ipConfigurations[0].properties.privateIPAllocationMethod).toEqual("Static");
-    //         expect(result.nics[0].ipConfigurations[0].properties.privateIPAddress).toEqual("10.0.1.240");
-    //         expect(result.nics[1].ipConfigurations[0].properties.privateIPAllocationMethod).toEqual("Dynamic");
-    //         expect(result.nics[1].ipConfigurations[0].properties.hasOwnProperty("privateIPAddress")).toEqual(false);
-    //     });
-    //     it('validates that startingIPAddress is correctly computed', () => {
-    //         let result = virtualMachineSettings.processvirtualMachineSettings(settings.nics, settings, 5);
-
-    //         expect(result.nics[0].ipConfigurations[0].properties.privateIPAllocationMethod).toEqual("Static");
-    //         expect(result.nics[0].ipConfigurations[0].properties.privateIPAddress).toEqual("10.0.1.245");
-    //     });
-    //     it('validates that startingIPAddress is correctly computed and rolls over to next octet', () => {
-    //         let result = virtualMachineSettings.processvirtualMachineSettings(settings.nics, settings, 18);
-
-    //         expect(result.nics[0].ipConfigurations[0].properties.privateIPAllocationMethod).toEqual("Static");
-    //         expect(result.nics[0].ipConfigurations[0].properties.privateIPAddress).toEqual("10.0.2.2");
-    //     });
-    //     it('validates that subnets are correctly referenced in the Ip configuration', () => {
-    //         let result = virtualMachineSettings.processvirtualMachineSettings(settings.nics, settings, vmIndex);
-
-    //         expect(result.nics[0].ipConfigurations[0].properties.subnet.id).toEqual("/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/virtualNetworks/test-vnet/subnets/web");
-    //         expect(result.nics[1].ipConfigurations[0].properties.subnet.id).toEqual("/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/virtualNetworks/test-vnet/subnets/biz");
-    //     });
-    //     it('validates that piblic nics have the publicIPAddress correctly referenced in the Ip configuration', () => {
-    //         let param = _.cloneDeep(settings);
-    //         param.nics[0].isPublic = true;
-    //         let result = virtualMachineSettings.processvirtualMachineSettings(param.nics, param, vmIndex);
-
-    //         expect(result.nics[0].ipConfigurations[0].properties.publicIPAddress.id).toEqual("/subscriptions/00000000-0000-1100-AA00-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/publicIPAddresses/testVM1-nic1-pip");
-    //         expect(result.nics[1].ipConfigurations[0].properties.hasOwnProperty("publicIPAddress")).toEqual(false);
-    //     });
-    //     it('validates that only one Ip configuration is created for each nic', () => {
-    //         let param = _.cloneDeep(settings);
-    //         param.nics[0].isPublic = true;
-    //         let result = virtualMachineSettings.processvirtualMachineSettings(param.nics, param, vmIndex);
-
-    //         expect(result.nics[0].ipConfigurations.length).toEqual(1);
-    //         expect(result.nics[0].ipConfigurations[0].name).toEqual("ipconfig1");
-    //         expect(result.nics[1].ipConfigurations.length).toEqual(1);
-    //         expect(result.nics[1].ipConfigurations[0].name).toEqual("ipconfig1");
-    //     });
-    //     it('validates that for private nics, pips array is empty', () => {
-    //         let result = virtualMachineSettings.processvirtualMachineSettings(settings.nics, settings, vmIndex);
-
-    //         expect(result.pips.length).toEqual(0);
-    //     });
-    //     it('validates that pips are named correctly', () => {
-    //         let param = _.cloneDeep(settings);
-    //         param.nics[0].isPublic = true;
-    //         let result = virtualMachineSettings.processvirtualMachineSettings(param.nics, param, vmIndex);
-
-    //         expect(result.pips[0].name).toEqual("testVM1-nic1-pip");
-    //     });
-    //     it('validates that publicIPAllocationMethod is correctly assigned in the pips', () => {
-    //         let param = _.cloneDeep(settings);
-    //         param.nics[0].isPublic = true;
-    //         let result = virtualMachineSettings.processvirtualMachineSettings(param.nics, param, vmIndex);
-
-    //         expect(result.pips[0].properties.publicIPAllocationMethod).toEqual("Dynamic");
-    //     });
-    // });
+    describe('transform:', () => {
+        describe('windows', () => {
+            let settings = {
+                virtualMachinesSettings: {
+                    vmCount: 2,
+                    namePrefix: "testName",
+                    computerNamePrefix: "testName",
+                    adminUsername: "testAdminUser",
+                    adminPassword: "testPassword",
+                    osAuthenticationType: "password",
+                    existingWindowsServerlicense: false,
+                    virtualNetwork: {
+                        name: "test-vnet"
+                    },
+                    storageAccounts: {
+                        count: 2
+                    },
+                    diagnosticStorageAccounts: {
+                        count: 2
+                    },
+                    nics: [
+                        {
+                            isPublic: true,
+                            subnetName: "web",
+                            privateIPAllocationMethod: "Static",
+                            startingIPAddress: "10.0.1.240",
+                            isPrimary: true,
+                            dnsServers: [
+                                "10.0.1.240",
+                                "10.0.1.242"
+                            ]
+                        },
+                        {
+                            isPrimary: false,
+                            subnetName: "biz",
+                            privateIPAllocationMethod: "Dynamic"
+                        }
+                    ],
+                    osDisk: {
+                        osType: "windows"
+                    },
+                    dataDisks: {
+                        count: 2,
+                        properties: {
+                            diskSizeGB: 127
+                        }
+                    },
+                    availabilitySet: {
+                        useExistingAvailabilitySet: "no",
+                        name: "test-as"
+                    }
+                },
+                buildingBlockSettings: {
+                    resourceGroupName: "test-rg",
+                    subscriptionId: "00000000-0000-1000-A000-000000000000"
+                }
+            };
+            it('validates that number of stamps created are based on vmcount property', () => {
+                let processedParam = virtualMachineSettings.mergeWithDefaults(settings.virtualMachinesSettings, settings.buildingBlockSettings);
+                
+            });
+        });
+    });
 })

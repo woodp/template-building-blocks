@@ -11,6 +11,7 @@
             "program": "${workspaceRoot}/node_modules/gulp/bin/gulp.js",
             "stopOnEntry": false,
             "protocol": "inspector",
+            //"protocol": "auto",
             "args": [
                 "run-tests"
             ],
