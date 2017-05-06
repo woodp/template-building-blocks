@@ -184,7 +184,7 @@ describe('networkInterfaceSettings:', () => {
                     validations: validation
                 });
                 expect(errors.length).toEqual(1);
-                expect(errors[0].name).toEqual('.dnsServers[0');
+                expect(errors[0].name).toEqual('.dnsServers[0]');
             });
         });
     });
