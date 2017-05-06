@@ -41,18 +41,22 @@ let connectionSettingsValidations = {
             result: true
         };
 
-        if (parent.connectionType === 'ExpressRoute') {
-            if (!_.isUndefined(value)) {
+        if (parent.connectionType) {
+            // If connectionType is not specified, this may be confusing for the user, so we will simply return true as
+            // there will be a validation failure for the connectionType
+            if (parent.connectionType === 'ExpressRoute') {
+                if (!_.isUndefined(value)) {
+                    result = {
+                        result: false,
+                        message: 'sharedKey cannot be specified for an ExpressRoute connection'
+                    };
+                }
+            } else {
                 result = {
-                    result: false,
-                    message: 'sharedKey cannot be specified for an ExpressRoute connection'
+                    result: v.utilities.isNotNullOrWhitespace(value),
+                    message: 'sharedKey cannot be null, empty, or only whitespace'
                 };
             }
-        } else {
-            result = {
-                result: !_.isUndefined(value),
-                message: 'sharedKey cannot be null, empty, or only whitespace'
-            };
         }
 
         return result;
@@ -62,11 +66,26 @@ let connectionSettingsValidations = {
             result: true
         };
 
-        if ((v.utilities.isStringInArray(parent.connectionType, ['IPsec', 'ExpressRoute'])) && (_.isNil(value))) {
-            result = {
-                result: false,
-                message: 'Value cannot be null or undefined if connectionType is IPsec or ExpressRoute'
-            };
+        if (parent.connectionType) {
+            // If connectionType is not specified, this may be confusing for the user, so we will simply return true as
+            // there will be a validation failure for the connectionType
+            if (v.utilities.isStringInArray(parent.connectionType, ['IPsec', 'ExpressRoute'])) {
+                if (_.isNil(value)) {
+                    result = {
+                        result: false,
+                        message: 'Value cannot be null or undefined if connectionType is IPsec or ExpressRoute'
+                    };
+                } else {
+                    result = {
+                        validations: virtualNetworkGatewayValidations
+                    };
+                }
+            } else if (!_.isNil(value)) {
+                result = {
+                    result: false,
+                    message: 'virtualNetworkGateway cannot be specified if connectionType is not IPsec or ExpressRoute'
+                };
+            }
         }
 
         return result;
@@ -76,22 +95,26 @@ let connectionSettingsValidations = {
             result: true
         };
 
-        if (parent.connectionType === 'IPsec') {
-            if (_.isNil(value)) {
+        if (parent.connectionType) {
+            // If connectionType is not specified, this may be confusing for the user, so we will simply return true as
+            // there will be a validation failure for the connectionType
+            if (parent.connectionType === 'IPsec') {
+                if (_.isNil(value)) {
+                    result = {
+                        result: false,
+                        message: 'Value cannot be null or undefined if connectionType is IPsec'
+                    };
+                } else {
+                    result = {
+                        validations: localNetworkGatewayValidations
+                    };
+                }
+            } else if (!_.isNil(value)) {
                 result = {
                     result: false,
-                    message: 'Value cannot be null or undefined if connectionType is IPsec'
-                };
-            } else {
-                result = {
-                    validations: localNetworkGatewayValidations
+                    message: 'localNetworkGateway cannot be specified if connectionType is not IPsec'
                 };
             }
-        } else if (!_.isNil(value)) {
-            result = {
-                result: false,
-                message: 'localNetworkGateway cannot be specified if connectionType is not IPsec'
-            };
         }
 
         return result;
@@ -101,17 +124,21 @@ let connectionSettingsValidations = {
             result: true
         };
 
-        if (parent.connectionType !== 'ExpressRoute') {
-            if (!_.isUndefined(value)) {
+        if (parent.connectionType) {
+            // If connectionType is not specified, this may be confusing for the user, so we will simply return true as
+            // there will be a validation failure for the connectionType
+            if (parent.connectionType !== 'ExpressRoute') {
+                if (!_.isUndefined(value)) {
+                    result = {
+                        result: false,
+                        message: 'expressRouteCircuit cannot be specified if connectionType is not ExpressRoute'
+                    };
+                }
+            } else {
                 result = {
-                    result: false,
-                    message: 'expressRouteCircuit cannot be specified if connectionType is not ExpressRoute'
+                    validations: expressRouteCircuitValidations
                 };
             }
-        } else {
-            result = {
-                validations: expressRouteCircuitValidations
-            };
         }
 
         return result;
@@ -121,23 +148,27 @@ let connectionSettingsValidations = {
             result: true
         };
 
-        if ((parent.connectionType === 'Vnet2Vnet')) {
-            if ((_.isNil(value))) {
-                result = {
-                    result: false,
-                    message: 'Value cannot be null or undefined if connectionType is Vnet2Vnet'
-                };
+        if (parent.connectionType) {
+            // If connectionType is not specified, this may be confusing for the user, so we will simply return true as
+            // there will be a validation failure for the connectionType
+            if ((parent.connectionType === 'Vnet2Vnet')) {
+                if ((_.isNil(value))) {
+                    result = {
+                        result: false,
+                        message: 'Value cannot be null or undefined if connectionType is Vnet2Vnet'
+                    };
+                } else {
+                    result = {
+                        validations: virtualNetworkGatewayValidations
+                    };
+                }
             } else {
-                result = {
-                    validations: virtualNetworkGatewayValidations
-                };
-            }
-        } else {
-            if ((!_.isNil(value))) {
-                result = {
-                    result: false,
-                    message: 'Value cannot be specified if connectionType is not Vnet2Vnet'
-                };
+                if ((!_.isNil(value))) {
+                    result = {
+                        result: false,
+                        message: 'Value cannot be specified if connectionType is not Vnet2Vnet'
+                    };
+                }
             }
         }
 
@@ -148,23 +179,27 @@ let connectionSettingsValidations = {
             result: true
         };
 
-        if ((parent.connectionType === 'Vnet2Vnet')) {
-            if ((_.isNil(value))) {
-                result = {
-                    result: false,
-                    message: 'Value cannot be null or undefined if connectionType is Vnet2Vnet'
-                };
+        if (parent.connectionType) {
+            // If connectionType is not specified, this may be confusing for the user, so we will simply return true as
+            // there will be a validation failure for the connectionType
+            if ((parent.connectionType === 'Vnet2Vnet')) {
+                if ((_.isNil(value))) {
+                    result = {
+                        result: false,
+                        message: 'Value cannot be null or undefined if connectionType is Vnet2Vnet'
+                    };
+                } else {
+                    result = {
+                        validations: virtualNetworkGatewayValidations
+                    };
+                }
             } else {
-                result = {
-                    validations: virtualNetworkGatewayValidations
-                };
-            }
-        } else {
-            if ((!_.isNil(value))) {
-                result = {
-                    result: false,
-                    message: 'Value cannot be specified if connectionType is not Vnet2Vnet'
-                };
+                if ((!_.isNil(value))) {
+                    result = {
+                        result: false,
+                        message: 'Value cannot be specified if connectionType is not Vnet2Vnet'
+                    };
+                }
             }
         }
 
@@ -218,17 +253,25 @@ function transform(settings) {
     return result;
 }
 
+function merge({settings}) {
+    return v.merge(settings, connectionSettingsDefaults);
+}
+
+function validate({settings}) {
+    return v.validate({
+        settings: settings,
+        validations: connectionSettingsValidations
+    });
+}
+
 exports.transform = function ({ settings, buildingBlockSettings }) {
     if (_.isPlainObject(settings)) {
         settings = [settings];
     }
 
     let results = _.transform(settings, (result, setting, index) => {
-        let merged = v.merge(setting, connectionSettingsDefaults);
-        let errors = v.validate({
-            settings: merged,
-            validations: connectionSettingsValidations
-        });
+        let merged = merge({settings: setting});
+        let errors = validate({settings: merged});
         if (errors.length > 0) {
             throw new Error(JSON.stringify(errors));
         }

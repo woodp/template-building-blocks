@@ -2,6 +2,7 @@ describe('networkInterfaceSettings:', () => {
     let rewire = require('rewire');
     let networkInterfaceSettings = rewire('../core/networkInterfaceSettings.js');
     let _ = require('../lodashMixins.js');
+    let v = require('../core/validation.js');
 
     describe('merge:', () => {
 
@@ -167,13 +168,23 @@ describe('networkInterfaceSettings:', () => {
             });
         });
         describe('dnsServers:', () => {
-            let validation = networkInterfaceSettings.__get__("networkInterfaceValidations").dnsServers;
+            let validation = networkInterfaceSettings.__get__("networkInterfaceValidations");
             it("validates that values are valid ip addresses.", () => {
-                result = validation("10.0.0.0")
-                expect(result).toEqual(true);
+                let settings = _.cloneDeep(nicParam);
+                settings.dnsServers[0] = '10.0.0.0';
+                let errors = v.validate({
+                    settings: settings,
+                    validations: validation
+                });
+                expect(errors.length).toEqual(0);
 
-                result = validation("test")
-                expect(result).toEqual(false);
+                settings.dnsServers[0] = 'test';
+                errors = v.validate({
+                    settings: settings,
+                    validations: validation
+                });
+                expect(errors.length).toEqual(1);
+                expect(errors[0].name).toEqual('.dnsServers[0]');
             });
         });
     });

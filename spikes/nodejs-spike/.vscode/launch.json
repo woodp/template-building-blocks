@@ -7,14 +7,27 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Gulp task",
+            "name": "Run Unit Tests",
             "program": "${workspaceRoot}/node_modules/gulp/bin/gulp.js",
             "stopOnEntry": false,
-            "protocol": "inspector",
-            //"protocol": "auto",
             "args": [
                 "run-tests"
             ],
+            "protocol": "inspector",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceRoot}"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Run Unit Tests with Coverage",
+            "program": "${workspaceRoot}/node_modules/gulp/bin/gulp.js",
+            "stopOnEntry": false,
+            "args": [
+                "run-tests-with-coverage"
+            ],
+            "protocol": "inspector",
+            "console": "integratedTerminal",
             "cwd": "${workspaceRoot}"
         },
         {

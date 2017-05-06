@@ -52,7 +52,22 @@ let networkInterfaceValidations = {
     },
     isPrimary: v.validationUtilities.isBoolean,
     isPublic: v.validationUtilities.isBoolean,
-    dnsServers: v.utilities.networking.isValidIpAddress
+    dnsServers: (value, parent) => {
+        if (_.isNil(value)) {
+            return {
+                result: false,
+                message: 'Value cannot be null or undefined'
+            };
+        } else if (value.length === 0) {
+            return {
+                result: true
+            };
+        } else {
+            return {
+                validations: v.utilities.networking.isValidIpAddress
+            };
+        }
+    }
 };
 
 function intToIP(int) {

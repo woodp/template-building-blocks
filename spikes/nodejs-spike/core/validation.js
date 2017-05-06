@@ -13,7 +13,7 @@ function merge(settings, defaultSettings, mergeCustomizer, childResources) {
 }
 
 let toString = (value) => {
-    return _.isUndefined(value) ? '<undefined>' : _.isNull(value) ? '<null>' : _.isString(value) ? `'${value}'` : _.toString(value);
+    return _.isUndefined(value) ? '<undefined>' : _.isNull(value) ? '<null>' : _.isString(value) ? `'${value}'` : _.isArray(value) ? '[array Array]' : _.toString(value);
 };
 
 function validate({settings, validations, parentKey = '', parentValue = null}) { 
@@ -36,16 +36,24 @@ function reduce({validations, value, parentKey, parentValue, accumulator}) {
             });
         } else if (_.isArray(value)) {
             // The value is an array, so we need to iterate it and then reduce
-            _.reduce(value, (accumulator, item, index) => {
-                reduce({
-                    validations: validations,
-                    value: item,
-                    parentKey: `${parentKey}[${index}]`,
-                    parentValue: parentValue,
-                    accumulator: accumulator
+            // By default, we will not allow undefined or empty arrays.  The null or undefined check will be caught by the earlier check, but we need to check this here.
+            if (value.length === 0) {
+                accumulator.push({
+                    name: `${parentKey}`,
+                    message: validationMessages.ArrayCannotBeEmpty
                 });
-                return accumulator;
-            }, accumulator);
+            } else {
+                _.reduce(value, (accumulator, item, index) => {
+                    reduce({
+                        validations: validations,
+                        value: item,
+                        parentKey: `${parentKey}[${index}]`,
+                        parentValue: parentValue,
+                        accumulator: accumulator
+                    });
+                    return accumulator;
+                }, accumulator);
+            }
         } else {
             // The value is a plain object, so iterate the validations and run them against value[key]
             _.reduce(validations, (accumulator, validation, key) => {
@@ -63,35 +71,85 @@ function reduce({validations, value, parentKey, parentValue, accumulator}) {
         // If the value is an array, reduce, then call validation inside
         // Otherwise, just call the validation
         if (_.isArray(value)) {
-            _.reduce(value, (accumulator, item, index) => {
-                let result = validationWrapper(validations, item, parentValue);
-                // We can either get a boolean, an object with the error, or an array of objects with errors.
-                // We may be able to wrap this later, but let's brute force it for now
-                if ((_.isArray(result)) && (result.length > 0)) {
-                    // An array of already materialized errors, so just add them.
-                    _.forEach(result, (value) => {
-                        accumulator.push(value);
-                    });
-                //} else if (((_.isBoolean(result)) && (!result)) || ((_.isBoolean(result.result)) && (!result.result))) {
-                } else if ((_.isBoolean(result.result)) && (!result.result)) {
-                    let {message, name} = result;
-                    accumulator.push({
-                        name: name ? name : `${parentKey}[${index}]`,
-                        message: `Invalid value: ${toString(item)}.` + (message ? '  ' + message : '')
-                    });
-                } else if (result.validations) {
+            // Since we don't know if this is a function for the array as a whole, or the individual elements, we need to do a check here.
+            let result = validationWrapper(validations, value, parentValue);
+            if ((_.isBoolean(result.result)) && (!result.result)) {
+                let {message} = result;
+                accumulator.push({
+                    name: `${parentKey}`,
+                    message: `Invalid value: ${toString(value)}.` + (message ? '  ' + message : '')
+                });
+            } else {
+                let localValidations = validations;
+                if (result.validations) {
+                    // We got back more validations to run.  Since we are in an array, we'll replace the one we have with this one.
+                    // reduce({
+                    //     validations: result.validations,
+                    //     value: value,
+                    //     parentKey: `${parentKey}`,
+                    //     parentValue: parentValue,
+                    //     accumulator: accumulator
+                    // });
+                    localValidations = result.validations;
+                }
+                _.reduce(value, (accumulator, item, index) => {
+                    //let result = validationWrapper(localValidations, item, parentValue);
+                    // if (localValidations) {
+                    //     if (!_.isFunction(localValidations)) {
+                    //         localValidations = {
+                    //             validations: localValidations
+                    //         };
+                    //     }
+                    // }
+
+
                     // We got back more validations to run
                     reduce({
                         validations: result.validations,
-                        value: value,
+                        value: item,
                         parentKey: `${parentKey}[${index}]`,
                         parentValue: parentValue,
                         accumulator: accumulator
                     });
-                }
 
-                return accumulator;
-            }, accumulator);
+
+
+                    // let result = _.isFunction(localValidations) ? validationWrapper(localValidations, item, parentValue) : {
+                    //     validations: localValidations
+                    // };
+                    // // We can either get a boolean, an object with the error, or an array of objects with errors.
+                    // // We may be able to wrap this later, but let's brute force it for now
+                    // if ((_.isArray(result)) && (result.length > 0)) {
+                    //     // An array of already materialized errors, so just add them.
+                    //     _.forEach(result, (value) => {
+                    //         accumulator.push(value);
+                    //     });
+                    // //} else if (((_.isBoolean(result)) && (!result)) || ((_.isBoolean(result.result)) && (!result.result))) {
+                    // } else if ((_.isBoolean(result.result)) && (!result.result)) {
+                    //     let {message, name} = result;
+                    //     accumulator.push({
+                    //         name: name ? name : `${parentKey}[${index}]`,
+                    //         message: `Invalid value: ${toString(item)}.` + (message ? '  ' + message : '')
+                    //     });
+                    // } else if (result.validations) {
+                    //     // We got back more validations to run
+                    //     reduce({
+                    //         validations: result.validations,
+                    //         value: value,
+                    //         parentKey: `${parentKey}`,
+                    //         parentValue: parentValue,
+                    //         accumulator: accumulator
+                    //     });
+                    // }
+
+
+
+
+
+
+                    return accumulator;
+                }, accumulator);
+            }
         } else {
             // We're just a value
             let result = validationWrapper(validations, value, parentValue);
@@ -104,9 +162,9 @@ function reduce({validations, value, parentKey, parentValue, accumulator}) {
                 }
             // } else if (((_.isBoolean(result)) && (!result)) || ((_.isBoolean(result.result)) && (!result.result))) {
             } else if ((_.isBoolean(result.result)) && (!result.result)) {
-                let {message, name} = result;
+                let {message} = result;
                 accumulator.push({
-                    name: name ? name : `${parentKey}`,
+                    name: `${parentKey}`,
                     message: `Invalid value: ${toString(value)}.` + (message ? '  ' + message : '')
                 });
             } else if (result.validations) {
@@ -126,6 +184,7 @@ function reduce({validations, value, parentKey, parentValue, accumulator}) {
 }
 
 let validationWrapper = (validation, value, parent) => {
+
     let r = validation(value, parent);
     // We need to check the result and mutate accordingly.
     // If the result is just a boolean, this was a true/false function, so we need to wrap the result in an object with a default message so we can destructure
@@ -143,7 +202,6 @@ let ipAddressRegex = /^(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:
 let guidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 let utilities = {
-    nameOf: varObj => Object.keys(varObj)[0],
     isGuid: (guid) => guidRegex.test(guid),
     isStringInArray: (value, array) => _.indexOf(array, value) > -1,
     isNotNullOrWhitespace: (value) => !_.isNullOrWhitespace(value),
@@ -157,7 +215,7 @@ let utilities = {
         isValidPortRange: value => {
             if (_.isFinite(value)) {
                 // If value is a number, make sure it's in the proper range.
-                return _.inRange(value, 1, 65536);
+                return _.inRange(_.toSafeInteger(value), 1, 65536);
             } else if (value === '*') {
                 return true;
             } else {
@@ -167,48 +225,17 @@ let utilities = {
                 }
 
                 var [low, high] = _.map(split, (value, index, collection) => {
-                    return _.toNumber(value);
+                    return _.toSafeInteger(value);
                 });
 
-                // Make sure it only has two parts
-                if (_.isUndefined(low) || _.isUndefined(high) || !_.isFinite(low) || !_.isFinite(high)) {
-                    return false;
-                }
-
                 // Make sure both numbers are in the valid range
-                return _.inRange(low, 1, 65536) && _.inRange(high, 1, 65536);
+                return _.inRange(low, 1, 65536) && _.inRange(high, 1, 65536) && (low < high);
             }
         }
     }
 };
 
 let validationUtilities = {
-    isNullOrWhitespace: function (result, parentKey, key, value, parent) {
-        let retVal = !_.isNullOrWhitespace(value);
-        if (!retVal) {
-            result.push(_.join((parentKey ? [parentKey, key] : [key]), '.'));
-        }
-
-        return retVal;
-    },
-    networking: {
-        isValidCidr: function (result, parentKey, key, value, parent) {
-            if (!utilities.networking.isValidCidr(value)) {
-                result.push({
-                    name: _.join((parentKey ? [parentKey, key] : [key]), '.'),
-                    message: validationMessages.InvalidCidr
-                })
-            }
-        }
-    },
-    isNumber: function (result, parentKey, key, value, parent) {
-        let retVal = _.isNumber(value);
-        if (!retVal) {
-            result.push(_.join((parentKey ? [parentKey, key] : [key]), '.'));
-        }
-
-        return retVal;
-    },
     isBoolean: (value, parent) => {
         return {
             result: _.isBoolean(value),
