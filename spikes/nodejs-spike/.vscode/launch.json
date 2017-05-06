@@ -10,7 +10,8 @@
             "name": "Gulp task",
             "program": "${workspaceRoot}/node_modules/gulp/bin/gulp.js",
             "stopOnEntry": false,
-            "protocol": "auto",
+            "protocol": "inspector",
+            //"protocol": "auto",
             "args": [
                 "run-tests"
             ],
