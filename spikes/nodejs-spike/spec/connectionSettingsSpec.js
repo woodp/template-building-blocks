@@ -523,4 +523,115 @@ describe('connectionSettings', () => {
             });
         });
     });
+
+    describe('transform', () => {
+        let fullConnectionSettings = {
+                name: 'my-connection',
+                routingWeight: 10,
+                sharedKey: 'mysecret',
+                virtualNetworkGateway: {
+                    name: 'vgw'
+                },
+                virtualNetworkGateway1: {
+                    name: 'vgw1'
+                },
+                virtualNetworkGateway2: {
+                    name: 'vgw2'
+                },
+                expressRouteCircuit: {
+                    name: 'my-er-circuit'
+                },
+                localNetworkGateway: {
+                    name: 'my-lgw',
+                    ipAddress: '40.50.60.70',
+                    addressPrefixes: ['10.0.1.0/24']
+                }
+            };
+
+            let ipsecConnectionSettings = {
+                name: fullConnectionSettings.name,
+                routingWeight: fullConnectionSettings.routingWeight,
+                connectionType: 'IPsec',
+                sharedKey: fullConnectionSettings.sharedKey,
+                virtualNetworkGateway: fullConnectionSettings.virtualNetworkGateway,
+                localNetworkGateway: fullConnectionSettings.localNetworkGateway
+            };
+
+            let expressRouteConnectionSettings = {
+                name: fullConnectionSettings.name,
+                routingWeight: fullConnectionSettings.routingWeight,
+                connectionType: 'ExpressRoute',
+                virtualNetworkGateway: fullConnectionSettings.virtualNetworkGateway,
+                expressRouteCircuit: fullConnectionSettings.expressRouteCircuit
+            };
+
+            let vnet2VnetConnectionSettings = {
+                name: fullConnectionSettings.name,
+                routingWeight: fullConnectionSettings.routingWeight,
+                connectionType: 'Vnet2Vnet',
+                sharedKey: fullConnectionSettings.sharedKey,
+                virtualNetworkGateway1: fullConnectionSettings.virtualNetworkGateway1,
+                virtualNetworkGateway2: fullConnectionSettings.virtualNetworkGateway2
+            };
+
+        let buildingBlockSettings = {
+            subscriptionId: "00000000-0000-1000-8000-000000000000",
+            resourceGroupName: "test-vnet-rg"
+        };
+
+        it('IPsec settings', () => {
+            let settings = _.cloneDeep(ipsecConnectionSettings);
+            let result = connectionSettings.transform({
+                settings: settings,
+                buildingBlockSettings: buildingBlockSettings
+            });
+        });
+
+        it('ExpressRoute settings', () => {
+            let settings = _.cloneDeep(expressRouteConnectionSettings);
+            let result = connectionSettings.transform({
+                settings: settings,
+                buildingBlockSettings: buildingBlockSettings
+            });
+        });
+
+        it('Vnet2Vnet settings', () => {
+            let settings = _.cloneDeep(vnet2VnetConnectionSettings);
+            let result = connectionSettings.transform({
+                settings: settings,
+                buildingBlockSettings: buildingBlockSettings
+            });
+        });
+
+        it('IPsec and ExpressRoute settings', () => {
+            let settings = [_.cloneDeep(ipsecConnectionSettings), _.cloneDeep(expressRouteConnectionSettings)];
+            let result = connectionSettings.transform({
+                settings: settings,
+                buildingBlockSettings: buildingBlockSettings
+            });
+        });
+
+        it('test settings validation errors', () => {
+            let settings = _.cloneDeep(ipsecConnectionSettings);
+            delete settings.name;
+            expect(() => {
+                let result = connectionSettings.transform({
+                    settings: settings,
+                    buildingBlockSettings: buildingBlockSettings
+                });
+            }).toThrow();
+        });
+
+        it('test building blocks validation errors', () => {
+            let settings = _.cloneDeep(ipsecConnectionSettings);
+            let bbSettings = _.cloneDeep(buildingBlockSettings);
+            delete bbSettings.subscriptionId;
+            expect(() => {
+                let result = connectionSettings.transform({
+                    settings: settings,
+                    buildingBlockSettings: bbSettings
+                });
+            }).toThrow();
+        });
+    });
 });

@@ -128,8 +128,7 @@ describe('virtualNetworkSettings', () => {
                     validations: peeringValidations
                 });
 
-                expect(errors.length).toEqual(1);
-                expect(errors[0].name).toEqual('[0].name');
+                expect(errors.length).toEqual(0);
             });
 
             it('name empty', () => {
@@ -144,7 +143,7 @@ describe('virtualNetworkSettings', () => {
                 expect(errors[0].name).toEqual('[0].name');
             });
 
-            it('name whitespace', () => {
+            it('name only whitespace', () => {
                 let settings = _.cloneDeep(peeringSettings);
                 settings[0].name = '   ';
                 let errors = validation.validate({
@@ -480,6 +479,228 @@ describe('virtualNetworkSettings', () => {
 
                 expect(errors.length).toEqual(0);
             });
+        });
+    });
+
+    describe('merge', () => {
+        let virtualNetworkSettingsDefaults = virtualNetworkSettings.__get__('virtualNetworkSettingsDefaults');
+        let mergeCustomizer = virtualNetworkSettings.__get__('mergeCustomizer');
+
+        describe('customizer', () => {
+            let virtualNetworkSettings = {
+                name: "my-virtual-network",
+                addressPrefixes: [
+                    "10.0.0.0/16"
+                ],
+                subnets: [
+                    {
+                        name: "web",
+                        addressPrefix: "10.0.1.0/24"
+                    }
+                ],
+                dnsServers: ['10.0.0.1'],
+                virtualNetworkPeerings: [
+                    {
+                        name: "peering-name",
+                        remoteVirtualNetwork: {
+                            name: "my-other-virtual-network"
+                        },
+                        allowForwardedTraffic: false,
+                        allowGatewayTransit: false,
+                        useRemoteGateways: true
+                    }
+                ]
+            };
+
+            it('subnets undefined', () => {
+                let settings = _.cloneDeep(virtualNetworkSettings);
+                delete settings.subnets;
+                let merged = validation.merge(settings, virtualNetworkSettingsDefaults, mergeCustomizer);
+                expect(merged.subnets.length).toEqual(1);
+                expect(merged.subnets[0].name).toEqual('default');
+                expect(merged.subnets[0].addressPrefix).toEqual('10.0.1.0/24');
+            });
+
+            it('subnets null', () => {
+                let settings = _.cloneDeep(virtualNetworkSettings);
+                settings.subnets = null;
+                let merged = validation.merge(settings, virtualNetworkSettingsDefaults, mergeCustomizer);
+                expect(merged.subnets).toBeNull();
+            });
+
+            it('subnets present', () => {
+                let settings = _.cloneDeep(virtualNetworkSettings);
+                let merged = validation.merge(settings, virtualNetworkSettingsDefaults, mergeCustomizer);
+                expect(merged.subnets.length).toEqual(1);
+                expect(merged.subnets[0].name).toEqual('web');
+                expect(merged.subnets[0].addressPrefix).toEqual('10.0.1.0/24');
+            });
+
+            it('virtualNetworkPeerings undefined', () => {
+                let settings = _.cloneDeep(virtualNetworkSettings);
+                delete settings.virtualNetworkPeerings;
+                let merged = validation.merge(settings, virtualNetworkSettingsDefaults, mergeCustomizer);
+                expect(merged.virtualNetworkPeerings.length).toEqual(0);
+            });
+
+            it('virtualNetworkPeerings null', () => {
+                let settings = _.cloneDeep(virtualNetworkSettings);
+                settings.virtualNetworkPeerings = null;
+                let merged = validation.merge(settings, virtualNetworkSettingsDefaults, mergeCustomizer);
+                expect(merged.virtualNetworkPeerings).toBeNull();
+            });
+
+            it('virtualNetworkPeerings present', () => {
+                let settings = _.cloneDeep(virtualNetworkSettings);
+                let merged = validation.merge(settings, virtualNetworkSettingsDefaults, mergeCustomizer);
+                expect(merged.virtualNetworkPeerings.length).toEqual(1);
+                expect(merged.virtualNetworkPeerings[0].name).toEqual('peering-name');
+            });
+        });
+    });
+
+    describe('transform', () => {
+        let virtualNetworkSettingsWithPeering = [
+            {
+                name: "my-virtual-network",
+                addressPrefixes: [
+                    "10.0.0.0/16"
+                ],
+                subnets: [
+                {
+                    name: "web",
+                    addressPrefix: "10.0.1.0/24"
+                },
+                {
+                    name: "biz",
+                    addressPrefix: "10.0.2.0/24"
+                }
+                ],
+                dnsServers: [],
+                virtualNetworkPeerings: [
+                    {
+                        remoteVirtualNetwork: {
+                            name: "my-other-virtual-network"
+                        },
+                        allowGatewayTransit: true,
+                        useRemoteGateways: false
+                    },
+                    {
+                        name: "provided-peering-name",
+                        remoteVirtualNetwork: {
+                            name: "my-third-virtual-network",
+                            resourceGroupName: "different-resource-group"
+                        },
+                        allowForwardedTraffic: false,
+                        allowGatewayTransit: false,
+                        useRemoteGateways: true
+                    }
+                ]
+            },
+            {
+                name: "my-other-virtual-network",
+                addressPrefixes: [
+                "10.1.0.0/16"
+                ],
+                subnets: [
+                {
+                    name: "web",
+                    addressPrefix: "10.1.1.0/24"
+                },
+                {
+                    name: "biz",
+                    addressPrefix: "10.1.2.0/24"
+                }
+                ],
+                dnsServers: [],
+                virtualNetworkPeerings: [
+                    {
+                        name: "another-provided-peering-name",
+                        remoteVirtualNetwork: {
+                            name: "my-third-virtual-network",
+                            resourceGroupName: "different-resource-group"
+                        },
+                        allowForwardedTraffic: false,
+                        allowGatewayTransit: false,
+                        useRemoteGateways: true
+                    }
+                ]
+            },
+            {
+                name: "my-third-virtual-network",
+                addressPrefixes: [
+                    "10.2.0.0/16"
+                ],
+                subnets: [
+                    {
+                        name: "web",
+                        addressPrefix: "10.2.1.0/24"
+                    },
+                    {
+                        name: "biz",
+                        addressPrefix: "10.2.2.0/24"
+                    }
+                ],
+                dnsServers: [],
+                virtualNetworkPeerings: []
+            }
+        ];
+
+        let buildingBlockSettings = {
+            subscriptionId: "00000000-0000-1000-8000-000000000000",
+            resourceGroupName: "test-vnet-rg"
+        };
+
+        it('single virtual network with no peers', () => {
+            let settings = _.cloneDeep(virtualNetworkSettingsWithPeering);
+            settings = settings[0];
+            delete settings.virtualNetworkPeerings;
+            let result = virtualNetworkSettings.transform({
+                settings: settings,
+                buildingBlockSettings: buildingBlockSettings
+            });
+        });
+
+        it('single virtual network with peers', () => {
+            let settings = _.cloneDeep(virtualNetworkSettingsWithPeering);
+            settings = settings[0];
+
+            let result = virtualNetworkSettings.transform({
+                settings: settings,
+                buildingBlockSettings: buildingBlockSettings
+            });
+        });
+
+        it('multiple virtual network with peers', () => {
+            let settings = _.cloneDeep(virtualNetworkSettingsWithPeering);
+
+            let result = virtualNetworkSettings.transform({
+                settings: settings,
+                buildingBlockSettings: buildingBlockSettings
+            });
+        });
+
+        it('test settings validation errors', () => {
+            let settings = _.cloneDeep(virtualNetworkSettingsWithPeering);
+            delete settings[0].name;
+            expect(() => {
+                let result = virtualNetworkSettings.transform({
+                    settings: settings,
+                    buildingBlockSettings: buildingBlockSettings
+                });
+            }).toThrow();
+        });
+
+        it('test building blocks validation errors', () => {
+            let settings = _.cloneDeep(virtualNetworkSettingsWithPeering);
+            let bbSettings = _.cloneDeep(buildingBlockSettings);
+            delete bbSettings.subscriptionId;
+            expect(() => {
+                let result = virtualNetworkSettings.transform({
+                    settings: settings,
+                    buildingBlockSettings: bbSettings
+                });
+            }).toThrow();
         });
     });
 });

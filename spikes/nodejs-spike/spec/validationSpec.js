@@ -28,19 +28,19 @@ describe('validation', () => {
             });
 
             it('invalid spacing', () => {
-                expect(isGuid(' 00000000-0000-0000-0000-000000000000 ')).toEqual(false);
+                expect(isGuid(' 00000000-0000-1000-8000-000000000000 ')).toEqual(false);
             });
 
             it('invalid value', () => {
-                expect(isGuid('NOT_A_VALID_IP_ADDRESS')).toEqual(false);
+                expect(isGuid('NOT_A_VALID_GUID')).toEqual(false);
             });
 
             it('too many parts', () => {
-                expect(isGuid('00000000-0000-0000-0000-000000000000-0000')).toEqual(false);
+                expect(isGuid('00000000-0000-1000-8000-000000000000-0000')).toEqual(false);
             });
 
             it('not enough parts', () => {
-                expect(isGuid('00000000-0000-0000-0000')).toEqual(false);
+                expect(isGuid('00000000-0000-1000-8000')).toEqual(false);
             });
 
             it('valid', () => {
@@ -238,6 +238,14 @@ describe('validation', () => {
 
                 it('Port 1-10-20', () => {
                     expect(isValidPortRange('1-10-20')).toEqual(false);
+                });
+
+                it('Port -', () => {
+                    expect(isValidPortRange(' - ')).toEqual(false);
+                });
+
+                it('100-50', () => {
+                    expect(isValidPortRange('100-50')).toEqual(false);
                 });
             });
         });

@@ -4,14 +4,15 @@ let r = require('./resources.js');
 let validationMessages = require('./validationMessages.js');
 
 let virtualNetworkSettingsDefaults = {
-    addressPrefixes: ["10.0.0.0/24"],
+    addressPrefixes: ["10.0.0.0/16"],
     subnets: [
         {
             name: "default",
-            addressPrefix: "10.0.1.0/16"
+            addressPrefix: "10.0.1.0/24"
         }
     ],
-    dnsServers: []
+    dnsServers: [],
+    virtualNetworkPeerings: []
 };
 
 let virtualNetworkPeeringsSettingsDefaults = {
@@ -26,7 +27,19 @@ let virtualNetworkSettingsSubnetsValidations = {
 };
 
 let virtualNetworkSettingsPeeringValidations = {
-    name: v.utilities.isNotNullOrWhitespace,
+    name: (value, parent) => {
+        // Undefined is okay, as it will be generated, but null or whitespace is not.
+        if (_.isUndefined(value)) {
+            return {
+                result: true
+            };
+        } else {
+            return {
+                result: v.utilities.isNotNullOrWhitespace(value),
+                message: 'name must not be null or only whitespace'
+            };
+        }
+    },
     remoteVirtualNetwork: {
         name: v.utilities.isNotNullOrWhitespace
     },
@@ -39,7 +52,6 @@ let virtualNetworkSettingsValidations = {
     name: v.utilities.isNotNullOrWhitespace,
     addressPrefixes: v.utilities.networking.isValidCidr,
     subnets: virtualNetworkSettingsSubnetsValidations,
-    //dnsServers: v.utilities.isNotNullOrWhitespace,
     dnsServers: (value, parent) => {
         // An empty array is okay
         let result = {
@@ -78,16 +90,6 @@ let virtualNetworkSettingsValidations = {
 
         return result;
     }
-    //WORKS! addressPrefixes: (value, parent) => {
-    //     return { result: v.utilities.networking.isValidCidr(value), message: "Invalid CIDR" };
-    // }
-    // addressPrefixes: (value, parent) => {
-    //     return {
-    //         result: v.utilities.networking.isValidCidr(value),
-    //         message: "Another invalid CIDR",
-    //         name: "not-a-real-field-name"
-    //     }
-    // }
 };
 
 function transform(settings) {
@@ -132,7 +134,7 @@ function transformVirtualNetworkPeering({settings, parentSettings}) {
 
 let mergeCustomizer = function (objValue, srcValue, key, object, source, stack) {
     if (key === "subnets") {
-        if ((srcValue) && (_.isArray(srcValue)) && (srcValue.length > 0)) {
+        if ((!_.isNil(srcValue)) && (_.isArray(srcValue)) && (srcValue.length > 0)) {
             return srcValue;
         }
     }
@@ -173,17 +175,6 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
 
     if (buildingBlockErrors.length > 0) {
         throw new Error(JSON.stringify(buildingBlockErrors));
-    }
-
-    if (_.some(results, 'validationErrors') || (buildingBlockSettings.validationErrors)) {
-        results.push(buildingBlockSettings);
-        return {
-            validationErrors: _.transform(_.compact(results), (result, value) => {
-                if (value.validationErrors) {
-                    result.validationErrors.push(value.validationErrors);
-                }
-            }, { validationErrors: [] })
-        };
     }
 
     results = _.transform(results, (result, setting) => {
