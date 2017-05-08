@@ -195,8 +195,8 @@ let virtualMachineValidations = {
             },
             count: (value, parent) => {
                 return {
-                    result: ((_.isFinite(value)) && value > 0),
-                    message: 'Value must be greater than 0'
+                    result: ((_.isFinite(value))),
+                    message: 'Invalid value for count'
                 };
             }
         };

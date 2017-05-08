@@ -44,7 +44,7 @@
                     "osType": "windows"
                 },
                 "dataDisks": {
-                    "count": 1,
+                    "count": 0,
                     "properties": {
                         "diskSizeGB": 127
                     }
