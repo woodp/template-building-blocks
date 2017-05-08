@@ -307,7 +307,7 @@ let processorProperties = {
         }
     },
     availabilitySet: (value, key, index, parent) => {
-        if (_.toLower(value.useExistingAvailabilitySet) === "no" && parent.vmCount < 2) {
+        if (!value.useExistingAvailabilitySet && parent.vmCount < 2) {
             return {
                 availabilitySet: null
             };
@@ -543,7 +543,7 @@ let processChildResources = {
         accumulator["pips"] = mergedCol;
     },
     availabilitySet: (value, key, index, parent, accumulator) => {
-        if (_.toLower(value.useExistingAvailabilitySet) === "no" && parent.vmCount === 1) {
+        if (value.useExistingAvailabilitySet || parent.vmCount < 2) {
             accumulator["availabilitySet"] = [];
         } else if (!availabilitySetProcessed) {
             accumulator["availabilitySet"] = avSetSettings.processAvSetSettings(value, parent);

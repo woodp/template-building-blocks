@@ -50,7 +50,7 @@
                     }
                 },
                 "availabilitySet": {
-                    "useExistingAvailabilitySet": "no",
+                    "useExistingAvailabilitySet": false,
                     "name": "test-as"
                 }
             }

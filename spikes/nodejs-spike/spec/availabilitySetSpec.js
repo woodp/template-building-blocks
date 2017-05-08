@@ -9,24 +9,24 @@ describe('availabilitySetSettings:', () => {
             let settings = {};
 
             let mergedValue = availabilitySetSettings.mergeWithDefaults(settings);
-            expect(_.toLower(mergedValue.useExistingAvailabilitySet)).toBe("no");
-            expect(mergedValue.platformFaultDomainCount).toBe(3);
-            expect(mergedValue.platformUpdateDomainCount).toBe(5);
-            expect(mergedValue.name).toBe("default-as");
+            expect(mergedValue.useExistingAvailabilitySet).toEqual(false);
+            expect(mergedValue.platformFaultDomainCount).toEqual(3);
+            expect(mergedValue.platformUpdateDomainCount).toEqual(5);
+            expect(mergedValue.name).toEqual("default-as");
         });
         it("validate defaults do not override settings.", () => {
             let settings = {
-                "useExistingAvailabilitySet": "yes",
+                "useExistingAvailabilitySet": true,
                 "platformFaultDomainCount": 10,
                 "platformUpdateDomainCount": 11,
                 "name": "test-as"
             };
 
             let mergedValue = availabilitySetSettings.mergeWithDefaults(settings);
-            expect(_.toLower(mergedValue.useExistingAvailabilitySet)).toBe("yes");
-            expect(mergedValue.platformFaultDomainCount).toBe(10);
-            expect(mergedValue.platformUpdateDomainCount).toBe(11);
-            expect(mergedValue.name).toBe("test-as");
+            expect(mergedValue.useExistingAvailabilitySet).toEqual(true);
+            expect(mergedValue.platformFaultDomainCount).toEqual(10);
+            expect(mergedValue.platformUpdateDomainCount).toEqual(11);
+            expect(mergedValue.name).toEqual("test-as");
         });
         it("validate additional properties in settings are not removed.", () => {
             let settings = {
@@ -35,37 +35,37 @@ describe('availabilitySetSettings:', () => {
 
             let mergedValue = availabilitySetSettings.mergeWithDefaults(settings);
             expect(mergedValue.hasOwnProperty("name1")).toBeTruthy();
-            expect(mergedValue.name1).toBe("test-as");
+            expect(mergedValue.name1).toEqual("test-as");
         });
         it("validate missing properties in settings are picked up from defaults.", () => {
             let settings = {
-                "useExistingAvailabilitySet": "yes",
+                "useExistingAvailabilitySet": false,
                 "platformFaultDomainCount": 10,
                 "platformUpdateDomainCount": 11
             };
 
             let mergedValue = availabilitySetSettings.mergeWithDefaults(settings);
-            expect(mergedValue.hasOwnProperty("name")).toBeTruthy();
-            expect(mergedValue.name).toBe("default-as");
+            expect(mergedValue.hasOwnProperty("name")).toEqual(true);
+            expect(mergedValue.name).toEqual("default-as");
         });
     });
     describe('validations:', () => {
         let testAvSetSettings = {
-            useExistingAvailabilitySet: "no",
+            useExistingAvailabilitySet: false,
             platformFaultDomainCount: 3,
             platformUpdateDomainCount: 5,
             name: "test-as"
         };
         describe('useExistingAvailabilitySet:', () => {
             let validation = availabilitySetSettings.__get__("availabilitySetValidations").useExistingAvailabilitySet;
-            it("validate only 'yes' & 'no' are valid values.", () => {
+            it("validate obly boolean are valid.", () => {
                 let result = validation("yEs", testAvSetSettings)
                 expect(result.result).toEqual(false);
 
-                result = validation("yes", testAvSetSettings)
+                result = validation(true, testAvSetSettings)
                 expect(result.result).toEqual(true);
 
-                result = validation("no", testAvSetSettings)
+                result = validation(false, testAvSetSettings)
                 expect(result.result).toEqual(true);
             });
         });
@@ -122,15 +122,15 @@ describe('availabilitySetSettings:', () => {
                 managed: false
             },
             availabilitySet: {
-                useExistingAvailabilitySet: "no",
+                useExistingAvailabilitySet: false,
                 platformFaultDomainCount: 3,
                 platformUpdateDomainCount: 5,
                 name: "test-as"
             }
         };
-        it('returns empty array if useExistingAvailabilitySet is yes:', () => {
+        it('returns empty array if useExistingAvailabilitySet is true:', () => {
             let param = _.cloneDeep(settings);
-            param.availabilitySet.useExistingAvailabilitySet = "yes";
+            param.availabilitySet.useExistingAvailabilitySet = true;
 
             let result = availabilitySetSettings.processAvSetSettings(param.availabilitySet, param);
             expect(result.length).toEqual(0);

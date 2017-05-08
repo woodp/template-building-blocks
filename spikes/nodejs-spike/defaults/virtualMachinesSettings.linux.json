@@ -48,6 +48,6 @@
     }
   },
   "availabilitySet": {
-    "useExistingAvailabilitySet": "No"
+    "useExistingAvailabilitySet": false
   }
 }
