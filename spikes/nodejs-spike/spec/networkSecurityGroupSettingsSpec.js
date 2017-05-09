@@ -1,6 +1,8 @@
 describe('networkSecurityGroupSettings', () => {
     let rewire = require('rewire');
+    let _ = require('lodash');
     let nsgSettings = rewire('../core/networkSecurityGroupSettings.js');
+    let validation = require('../core/validation.js');
     let validationMessages = require('../core/validationMessages.js');
 
     describe('isValidProtocol', () => {
@@ -235,173 +237,467 @@ describe('networkSecurityGroupSettings', () => {
         });
     });
 
-    describe('securityRulesValidations', () => {
-        describe('protocol', () => {
-            let validation = nsgSettings.__get__('networkSecurityGroupSettingsSecurityRulesValidations').protocol;
-            it('invalid', () => {
-                let result = validation('NOT_A_VALID_PROTOCOL', null);
-                expect(result.result).toEqual(false);
-                //let results = [];
-                // validation(results, 'securityRules[0]', 'protocol', 'NOT_A_VALID_PROTOCOL', null);
-                // expect(results.length).toEqual(1);
-                // expect(results[0].name).toEqual('securityRules[0].protocol');
-                // expect(results[0].message).toEqual(validationMessages.networkSecurityGroup.securityRules.InvalidProtocol);
+    describe('validations', () => {
+        let nsgSettingsValidations = nsgSettings.__get__('networkSecurityGroupSettingsValidations');
+
+        describe('networkInterfaceValidations', () => {
+            let networkInterfaceValidations = nsgSettingsValidations.networkInterfaces;
+            let networkInterfaceSettings = [
+                {
+                name: "my-nic1"
+                },
+                {
+                name: "my-nic2"
+                }
+            ];
+
+            it('empty array', () => {
+                let errors = validation.validate({
+                    settings: [],
+                    validations: networkInterfaceValidations
+                });
+
+                expect(errors.length).toEqual(0);
             });
 
-            it('valid', () => {
-                let result = validation('*', null);
-                expect(result.result).toEqual(true);
-                // let results = [];
-                // validation(results, 'securityRules[0]', 'protocol', '*', null);
-                // expect(results.length).toEqual(0);
+            it('name undefined', () => {
+                let settings = _.cloneDeep(networkInterfaceSettings);
+                delete settings[0].name;
+
+                let errors = validation.validate({
+                    settings: settings,
+                    validations: networkInterfaceValidations
+                });
+
+                expect(errors.length).toEqual(1);
+                expect(errors[0].name).toEqual('[0].name');
+            });
+
+            it('name null', () => {
+                let settings = _.cloneDeep(networkInterfaceSettings);
+                settings[0].name = null;
+
+                let errors = validation.validate({
+                    settings: settings,
+                    validations: networkInterfaceValidations
+                });
+
+                expect(errors.length).toEqual(1);
+                expect(errors[0].name).toEqual('[0].name');
+            });
+
+            it('name empty', () => {
+                let settings = _.cloneDeep(networkInterfaceSettings);
+                settings[0].name = '';
+
+                let errors = validation.validate({
+                    settings: settings,
+                    validations: networkInterfaceValidations
+                });
+
+                expect(errors.length).toEqual(1);
+                expect(errors[0].name).toEqual('[0].name');
             });
         });
 
-        describe('sourcePortRange', () => {
-            let validation = nsgSettings.__get__('networkSecurityGroupSettingsSecurityRulesValidations').sourcePortRange;
-            it('invalid', () => {
-                let result = validation('NOT_A_VALID_PORT_RANGE', null);
-                expect(result).toEqual(false);
-                // let results = [];
-                // validation(results, 'securityRules[0]', 'sourcePortRange', 'NOT_A_VALID_PORT_RANGE', null);
-                // expect(results.length).toEqual(1);
-                // expect(results[0].name).toEqual('securityRules[0].sourcePortRange');
-                // expect(results[0].message).toEqual(validationMessages.networkSecurityGroup.securityRules.InvalidPortRange);
+        describe('virtualNetworkValidations', () => {
+            let virtualNetworkValidations = nsgSettingsValidations.virtualNetworks;
+            let virtualNetworkSettings = [
+                {
+                    name: 'my-virtual-network',
+                    subnets: ['web', 'biz']
+                }
+            ];
+
+            it('empty array', () => {
+                let errors = validation.validate({
+                    settings: [],
+                    validations: virtualNetworkValidations
+                });
+
+                expect(errors.length).toEqual(0);
             });
 
-            it('valid', () => {
-                let result = validation('*', null);
-                expect(result).toEqual(true);
-                // let results = [];
-                // validation(results, 'securityRules[0]', 'sourcePortRange', '*', null);
-                // expect(results.length).toEqual(0);
+            it('name undefined', () => {
+                let settings = _.cloneDeep(virtualNetworkSettings);
+                delete settings[0].name;
+
+                let errors = validation.validate({
+                    settings: settings,
+                    validations: virtualNetworkValidations
+                });
+
+                expect(errors.length).toEqual(1);
+                expect(errors[0].name).toEqual('[0].name');
+            });
+
+            it('subnets undefined', () => {
+                let settings = _.cloneDeep(virtualNetworkSettings);
+                delete settings[0].subnets;
+
+                let errors = validation.validate({
+                    settings: settings,
+                    validations: virtualNetworkValidations
+                });
+
+                expect(errors.length).toEqual(1);
+                expect(errors[0].name).toEqual('[0].subnets');
+            });
+
+            it('subnets empty', () => {
+                let settings = _.cloneDeep(virtualNetworkSettings);
+                settings[0].subnets = [];
+
+                let errors = validation.validate({
+                    settings: settings,
+                    validations: virtualNetworkValidations
+                });
+
+                expect(errors.length).toEqual(1);
+                expect(errors[0].name).toEqual('[0].subnets');
+            });
+
+            it('subnets empty string', () => {
+                let settings = _.cloneDeep(virtualNetworkSettings);
+                settings[0].subnets = [''];
+
+                let errors = validation.validate({
+                    settings: settings,
+                    validations: virtualNetworkValidations
+                });
+
+                expect(errors.length).toEqual(1);
+                expect(errors[0].name).toEqual('[0].subnets[0]');
             });
         });
 
-        describe('destinationPortRange', () => {
-            let validation = nsgSettings.__get__('networkSecurityGroupSettingsSecurityRulesValidations').destinationPortRange;
-            it('invalid', () => {
-                let result = validation('NOT_A_VALID_PORT_RANGE', null);
-                expect(result).toEqual(false);
-                // let results = [];
-                // validation(results, 'securityRules[0]', 'destinationPortRange', 'NOT_A_VALID_PORT_RANGE', null);
-                // expect(results.length).toEqual(1);
-                // expect(results[0].name).toEqual('securityRules[0].destinationPortRange');
-                // expect(results[0].message).toEqual(validationMessages.networkSecurityGroup.securityRules.InvalidPortRange);
+        describe('securityRulesValidations', () => {
+            let securityRulesValidations = nsgSettingsValidations.securityRules;
+
+            let valid = [
+                {
+                    name: 'rule1',
+                    direction: 'Inbound',
+                    priority: 100,
+                    sourceAddressPrefix: '192.168.1.1',
+                    destinationAddressPrefix: '*',
+                    sourcePortRange: '*',
+                    destinationPortRange: '*',
+                    access: 'Allow',
+                    protocol: '*'
+                }
+            ];
+
+            it('empty array', () => {
+                let errors = validation.validate({
+                    settings: [],
+                    validations: securityRulesValidations
+                });
+
+                expect(errors.length).toEqual(0);
             });
 
-            it('valid', () => {
-                let result = validation('*', null);
-                expect(result).toEqual(true);
-                // let results = [];
-                // validation(results, 'securityRules[0]', 'destinationPortRange', '*', null);
-                // expect(results.length).toEqual(0);
+            it('name undefined', () => {
+                let invalid = _.cloneDeep(valid);
+                delete invalid[0].name;
+                let errors = validation.validate({
+                    settings: invalid,
+                    validations: securityRulesValidations
+                });
+
+                expect(errors.length).toEqual(1);
+                expect(errors[0].name).toEqual('[0].name');
+            });
+
+            it('direction undefined', () => {
+                let invalid = _.cloneDeep(valid);
+                delete invalid[0].direction;
+                let errors = validation.validate({
+                    settings: invalid,
+                    validations: securityRulesValidations
+                });
+
+                expect(errors.length).toEqual(1);
+                expect(errors[0].name).toEqual('[0].direction');
+            });
+
+            it('priority undefined', () => {
+                let invalid = _.cloneDeep(valid);
+                delete invalid[0].priority;
+                let errors = validation.validate({
+                    settings: invalid,
+                    validations: securityRulesValidations
+                });
+
+                expect(errors.length).toEqual(1);
+                expect(errors[0].name).toEqual('[0].priority');
+            });
+
+            it('sourceAddressPrefix undefined', () => {
+                let invalid = _.cloneDeep(valid);
+                delete invalid[0].sourceAddressPrefix;
+                let errors = validation.validate({
+                    settings: invalid,
+                    validations: securityRulesValidations
+                });
+
+                expect(errors.length).toEqual(1);
+                expect(errors[0].name).toEqual('[0].sourceAddressPrefix');
+            });
+
+            it('destinationAddressPrefix undefined', () => {
+                let invalid = _.cloneDeep(valid);
+                delete invalid[0].destinationAddressPrefix;
+                let errors = validation.validate({
+                    settings: invalid,
+                    validations: securityRulesValidations
+                });
+
+                expect(errors.length).toEqual(1);
+                expect(errors[0].name).toEqual('[0].destinationAddressPrefix');
+            });
+
+            it('sourcePortRange undefined', () => {
+                let invalid = _.cloneDeep(valid);
+                delete invalid[0].sourcePortRange;
+                let errors = validation.validate({
+                    settings: invalid,
+                    validations: securityRulesValidations
+                });
+
+                expect(errors.length).toEqual(1);
+                expect(errors[0].name).toEqual('[0].sourcePortRange');
+            });
+
+            it('destinationPortRange undefined', () => {
+                let invalid = _.cloneDeep(valid);
+                delete invalid[0].destinationPortRange;
+                let errors = validation.validate({
+                    settings: invalid,
+                    validations: securityRulesValidations
+                });
+
+                expect(errors.length).toEqual(1);
+                expect(errors[0].name).toEqual('[0].destinationPortRange');
+            });
+
+            it('access undefined', () => {
+                let invalid = _.cloneDeep(valid);
+                delete invalid[0].access;
+                let errors = validation.validate({
+                    settings: invalid,
+                    validations: securityRulesValidations
+                });
+
+                expect(errors.length).toEqual(1);
+                expect(errors[0].name).toEqual('[0].access');
+            });
+
+            it('protocol undefined', () => {
+                let invalid = _.cloneDeep(valid);
+                delete invalid[0].protocol;
+                let errors = validation.validate({
+                    settings: invalid,
+                    validations: securityRulesValidations
+                });
+
+                expect(errors.length).toEqual(1);
+                expect(errors[0].name).toEqual('[0].protocol');
             });
         });
+    });
 
-        describe('sourceAddressPrefix', () => {
-            let validation = nsgSettings.__get__('networkSecurityGroupSettingsSecurityRulesValidations').sourceAddressPrefix;
-            it('invalid', () => {
-                let result = validation('NOT_A_VALID_ADDRESS_PREFIX', null);
-                expect(result.result).toEqual(false);
-                // let results = [];
-                // validation(results, 'securityRules[0]', 'sourceAddressPrefix', 'NOT_A_VALID_ADDRESS_PREFIX', null);
-                // expect(results.length).toEqual(1);
-                // expect(results[0].name).toEqual('securityRules[0].sourceAddressPrefix');
-                // expect(results[0].message).toEqual(validationMessages.networkSecurityGroup.securityRules.InvalidAddressPrefix);
-            });
+    describe('merge', () => {
+        let nsgSettingsDefaults = nsgSettings.__get__('networkSecurityGroupSettingsDefaults');
+        let mergeCustomizer = nsgSettings.__get__('mergeCustomizer');
 
-            it('valid', () => {
-                let result = validation('*', null);
-                expect(result.result).toEqual(true);
-                // let results = [];
-                // validation(results, 'securityRules[0]', 'sourceAddressPrefix', '*', null);
-                // expect(results.length).toEqual(0);
-            });
+        let networkSecurityGroup = {
+            name: "test-nsg",
+            virtualNetworks: [
+                {
+                    name: "my-virtual-network",
+                    subnets: ["biz", "web"]
+                }
+            ],
+            networkInterfaces: [
+                {
+                    name: "my-nic1"
+                }
+            ],
+            securityRules: [
+                {
+                    name: 'rule1',
+                    direction: 'Inbound',
+                    priority: 100,
+                    sourceAddressPrefix: '192.168.1.1',
+                    destinationAddressPrefix: '*',
+                    sourcePortRange: '*',
+                    destinationPortRange: '*',
+                    access: 'Allow',
+                    protocol: '*'
+                }
+            ]
+        };
+
+        it('virtualNetworks undefined', () => {
+            let settings = _.cloneDeep(networkSecurityGroup);
+            delete settings.virtualNetworks;
+            let merged = validation.merge(settings, nsgSettingsDefaults, mergeCustomizer);
+            expect(merged.virtualNetworks.length).toBe(0);
         });
 
-        describe('destinationAddressPrefix', () => {
-            let validation = nsgSettings.__get__('networkSecurityGroupSettingsSecurityRulesValidations').destinationAddressPrefix;
-            it('invalid', () => {
-                let result = validation('NOT_A_VALID_ADDRESS_PREFIX', null);
-                expect(result.result).toEqual(false);
-                // let results = [];
-                // validation(results, 'securityRules[0]', 'destinationAddressPrefix', 'NOT_A_VALID_ADDRESS_PREFIX', null);
-                // expect(results.length).toEqual(1);
-                // expect(results[0].name).toEqual('securityRules[0].destinationAddressPrefix');
-                // expect(results[0].message).toEqual(validationMessages.networkSecurityGroup.securityRules.InvalidAddressPrefix);
-            });
-
-            it('valid', () => {
-                let result = validation('*', null);
-                expect(result.result).toEqual(true);
-                // let results = [];
-                // validation(results, 'securityRules[0]', 'destinationAddressPrefix', '*', null);
-                // expect(results.length).toEqual(0);
-            });
+        it('virtualNetworks null', () => {
+            let settings = _.cloneDeep(networkSecurityGroup);
+            settings.virtualNetworks = null;
+            let merged = validation.merge(settings, nsgSettingsDefaults, mergeCustomizer);
+            expect(merged.virtualNetworks.length).toBe(0);
         });
 
-        describe('direction', () => {
-            let validation = nsgSettings.__get__('networkSecurityGroupSettingsSecurityRulesValidations').direction;
-            it('invalid', () => {
-                let result = validation('NOT_A_VALID_DIRECTION', null);
-                expect(result.result).toEqual(false);
-                // let results = [];
-                // validation(results, 'securityRules[0]', 'direction', 'NOT_A_VALID_DIRECTION', null);
-                // expect(results.length).toEqual(1);
-                // expect(results[0].name).toEqual('securityRules[0].direction');
-                // expect(results[0].message).toEqual(validationMessages.networkSecurityGroup.securityRules.InvalidDirection);
-            });
-
-            it('valid', () => {
-                let result = validation('Inbound', null);
-                expect(result.result).toEqual(true);
-                // let results = [];
-                // validation(results, 'securityRules[0]', 'direction', 'Inbound', null);
-                // expect(results.length).toEqual(0);
-            });
+        it('virtualNetworks present', () => {
+            let settings = _.cloneDeep(networkSecurityGroup);
+            let merged = validation.merge(settings, nsgSettingsDefaults, mergeCustomizer);
+            expect(merged.virtualNetworks[0].name).toBe('my-virtual-network');
         });
 
-        describe('priority', () => {
-            let validation = nsgSettings.__get__('networkSecurityGroupSettingsSecurityRulesValidations').priority;
-            it('invalid', () => {
-                let result = validation('NOT_A_VALID_PRIORITY', null);
-                expect(result).toEqual(false);
-                // let results = [];
-                // validation(results, 'securityRules[0]', 'priority', 'NOT_A_VALID_PRIORITY', null);
-                // expect(results.length).toEqual(1);
-                // expect(results[0].name).toEqual('securityRules[0].priority');
-                // expect(results[0].message).toEqual(validationMessages.networkSecurityGroup.securityRules.InvalidPriority);
-            });
-
-            it('valid', () => {
-                let result = validation('100', null);
-                expect(result).toEqual(true);
-                // let results = [];
-                // validation(results, 'securityRules[0]', 'priority', '100', null);
-                // expect(results.length).toEqual(0);
-            });
+        it('networkInterfaces undefined', () => {
+            let settings = _.cloneDeep(networkSecurityGroup);
+            delete settings.networkInterfaces;
+            let merged = validation.merge(settings, nsgSettingsDefaults, mergeCustomizer);
+            expect(merged.networkInterfaces.length).toBe(0);
         });
 
-        describe('access', () => {
-            let validation = nsgSettings.__get__('networkSecurityGroupSettingsSecurityRulesValidations').access;
-            it('invalid', () => {
-                let result = validation('NOT_A_VALID_ACCESS', null);
-                expect(result.result).toEqual(false);
-                // let results = [];
-                // validation(results, 'securityRules[0]', 'access', 'NOT_A_VALID_ACCESS', null);
-                // expect(results.length).toEqual(1);
-                // expect(results[0].name).toEqual('securityRules[0].access');
-                // expect(results[0].message).toEqual(validationMessages.networkSecurityGroup.securityRules.InvalidAccess);
+        it('networkInterfaces null', () => {
+            let settings = _.cloneDeep(networkSecurityGroup);
+            settings.networkInterfaces = null;
+            let merged = validation.merge(settings, nsgSettingsDefaults, mergeCustomizer);
+            expect(merged.networkInterfaces.length).toBe(0);
+        });
+
+        it('networkInterfaces present', () => {
+            let settings = _.cloneDeep(networkSecurityGroup);
+            let merged = validation.merge(settings, nsgSettingsDefaults, mergeCustomizer);
+            expect(merged.networkInterfaces[0].name).toBe('my-nic1');
+        });
+
+        it('securityRules undefined', () => {
+            let settings = _.cloneDeep(networkSecurityGroup);
+            delete settings.securityRules;
+            let merged = validation.merge(settings, nsgSettingsDefaults, mergeCustomizer);
+            expect(merged.securityRules.length).toBe(0);
+        });
+
+        it('securityRules null', () => {
+            let settings = _.cloneDeep(networkSecurityGroup);
+            settings.securityRules = null;
+            let merged = validation.merge(settings, nsgSettingsDefaults, mergeCustomizer);
+            expect(merged.securityRules.length).toBe(0);
+        });
+
+        it('securityRules present', () => {
+            let settings = _.cloneDeep(networkSecurityGroup);
+            let merged = validation.merge(settings, nsgSettingsDefaults, mergeCustomizer);
+            expect(merged.securityRules[0].name).toBe('rule1');
+        });
+    });
+
+    describe('transform', () => {
+        let networkSecurityGroup = [
+            {
+                name: "test-nsg",
+                virtualNetworks: [
+                    {
+                        name: "my-virtual-network",
+                        subnets: ["biz", "web"]
+                    }
+                ],
+                networkInterfaces: [
+                    {
+                        name: "my-nic1"
+                    }
+                ],
+                securityRules: [
+                    {
+                        name: 'rule1',
+                        direction: 'Inbound',
+                        priority: 100,
+                        sourceAddressPrefix: '192.168.1.1',
+                        destinationAddressPrefix: '*',
+                        sourcePortRange: '*',
+                        destinationPortRange: '*',
+                        access: 'Allow',
+                        protocol: '*'
+                    }
+                ]
+            }
+        ];
+
+        let buildingBlockSettings = {
+            subscriptionId: "00000000-0000-1000-8000-000000000000",
+            resourceGroupName: "test-rg"
+        };
+
+        it('single network security group', () => {
+            let settings = _.cloneDeep(networkSecurityGroup);
+            settings = settings[0];
+            let result = nsgSettings.transform({
+                settings: settings,
+                buildingBlockSettings: buildingBlockSettings
             });
 
-            it('valid', () => {
-                let result = validation('Allow', null);
-                expect(result.result).toEqual(true);
-                // let results = [];
-                // validation(results, 'securityRules[0]', 'access', 'Allow', null);
-                // expect(results.length).toEqual(0);
-            });
+            expect(result.settings.length).toBe(1);
+            let settingsResult = result.settings[0];
+            expect(settingsResult.hasOwnProperty('id')).toBe(true);
+            expect(settingsResult.hasOwnProperty('name')).toBe(true);
+            expect(settingsResult.hasOwnProperty('resourceGroupName')).toBe(true);
+            expect(settingsResult.hasOwnProperty('subscriptionId')).toBe(true);
+            
+            expect(settingsResult.hasOwnProperty('subnets')).toBe(true);
+            expect(settingsResult.subnets.length).toBe(2);
+            let subnetsResult = settingsResult.subnets;
+            expect(subnetsResult[0].endsWith('my-virtual-network/subnets/biz')).toBe(true);
+            expect(subnetsResult[1].endsWith('my-virtual-network/subnets/web')).toBe(true);
+
+            expect(settingsResult.hasOwnProperty('networkInterfaces')).toBe(true);
+            expect(settingsResult.subnets.length).toBe(2);
+            let nicsResult = settingsResult.networkInterfaces;
+            expect(nicsResult[0].endsWith('networkInterfaces/my-nic1')).toBe(true);
+
+            expect(settingsResult.hasOwnProperty('properties')).toBe(true);
+            expect(settingsResult.properties.hasOwnProperty('securityRules')).toBe(true);
+            expect(settingsResult.properties.securityRules.length).toBe(1);
+            let securityRulesResult = settingsResult.properties.securityRules;
+            expect(securityRulesResult[0].name).toBe('rule1');
+            expect(securityRulesResult[0].properties.direction).toBe('Inbound');
+            expect(securityRulesResult[0].properties.priority).toBe(100);
+            expect(securityRulesResult[0].properties.sourceAddressPrefix).toBe('192.168.1.1');
+            expect(securityRulesResult[0].properties.destinationAddressPrefix).toBe('*');
+            expect(securityRulesResult[0].properties.sourcePortRange).toBe('*');
+            expect(securityRulesResult[0].properties.destinationPortRange).toBe('*');
+            expect(securityRulesResult[0].properties.access).toBe('Allow');
+            expect(securityRulesResult[0].properties.protocol).toBe('*');
+        });
+
+        it('test settings validation errors', () => {
+            let settings = _.cloneDeep(networkSecurityGroup);
+            delete settings[0].name;
+            expect(() => {
+                let result = nsgSettings.transform({
+                    settings: settings,
+                    buildingBlockSettings: buildingBlockSettings
+                });
+            }).toThrow();
+        });
+
+        it('test building blocks validation errors', () => {
+            let settings = _.cloneDeep(networkSecurityGroup);
+            let bbSettings = _.cloneDeep(buildingBlockSettings);
+            delete bbSettings.subscriptionId;
+            expect(() => {
+                let result = nsgSettings.transform({
+                    settings: settings,
+                    buildingBlockSettings: bbSettings
+                });
+            }).toThrow();
         });
     });
 });

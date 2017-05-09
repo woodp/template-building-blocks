@@ -648,7 +648,7 @@ describe('virtualNetworkSettings', () => {
 
         let buildingBlockSettings = {
             subscriptionId: "00000000-0000-1000-8000-000000000000",
-            resourceGroupName: "test-vnet-rg"
+            resourceGroupName: "test-rg"
         };
 
         it('single virtual network with no peers', () => {
