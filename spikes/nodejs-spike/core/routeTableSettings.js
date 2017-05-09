@@ -104,6 +104,16 @@ let routeTableSettingsValidations = {
     }
 };
 
+let mergeCustomizer = function (objValue, srcValue, key, object, source, stack) {
+    if (v.utilities.isStringInArray(key, ['routes', 'virtualNetworks'])) {
+        if ((!_.isNil(srcValue)) && (_.isArray(srcValue))) {
+            return srcValue;
+        } else {
+            return objValue;
+        }
+    }
+};
+
 function transform(settings) {
     return {
         name: settings.name,

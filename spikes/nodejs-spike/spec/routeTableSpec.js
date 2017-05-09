@@ -243,6 +243,42 @@ describe('routeTableSettings', () => {
                 expect(errors.length).toEqual(0);
             });
 
+            it('routes undefined', () => {
+                let settings = _.cloneDeep(routeTableSettings);
+                delete settings.routes;
+                let errors = validation.validate({
+                    settings: settings,
+                    validations: routeTableSettingsValidations
+                });
+
+                expect(errors.length).toEqual(1);
+                expect(errors[0].name).toEqual('.routes');
+            });
+
+            it('routes null', () => {
+                let settings = _.cloneDeep(routeTableSettings);
+                settings.routes = null;
+                let errors = validation.validate({
+                    settings: settings,
+                    validations: routeTableSettingsValidations
+                });
+
+                expect(errors.length).toEqual(1);
+                expect(errors[0].name).toEqual('.routes');
+            });
+
+            it('routes empty', () => {
+                let settings = _.cloneDeep(routeTableSettings);
+                settings.routes = [];
+                let errors = validation.validate({
+                    settings: settings,
+                    validations: routeTableSettingsValidations
+                });
+
+                expect(errors.length).toEqual(1);
+                expect(errors[0].name).toEqual('.routes');
+            });
+
             it('duplicate route name', () => {
                 let settings = _.cloneDeep(routeTableSettings);
                 settings.routes[1].name = 'route1';
@@ -254,6 +290,169 @@ describe('routeTableSettings', () => {
                 expect(errors.length).toEqual(1);
                 expect(errors[0].name).toEqual('.routes');
             });
+        });
+    });
+
+    describe('merge', () => {
+        let routeTableSettingsDefaults = routeTableSettings.__get__('routeTableSettingsDefaults');
+        let mergeCustomizer = routeTableSettings.__get__('mergeCustomizer');
+
+        let routeTable = {
+            name: 'my-route-table',
+            virtualNetworks: [
+                {
+                    name: 'my-virtual-network',
+                    subnets: [
+                        'biz',
+                        'web'
+                    ]
+                }
+            ],
+            routes: [
+                {
+                    name: 'route1',
+                    addressPrefix: '10.0.1.0/24',
+                    nextHopType: 'VnetLocal'
+                },
+                {
+                    name: 'route2',
+                    addressPrefix: '10.0.2.0/24',
+                    nextHopType: 'VirtualAppliance',
+                    nextHopIpAddress: '192.168.1.1'
+                }
+            ]
+        };
+
+        it('virtualNetworks undefined', () => {
+            let settings = _.cloneDeep(routeTable);
+            delete settings.virtualNetworks;
+            let merged = validation.merge(settings, routeTableSettingsDefaults, mergeCustomizer);
+            expect(merged.virtualNetworks.length).toBe(0);
+        });
+
+        it('virtualNetworks null', () => {
+            let settings = _.cloneDeep(routeTable);
+            settings.virtualNetworks = null;
+            let merged = validation.merge(settings, routeTableSettingsDefaults, mergeCustomizer);
+            expect(merged.virtualNetworks.length).toBe(0);
+        });
+
+        it('virtualNetworks present', () => {
+            let settings = _.cloneDeep(routeTable);
+            let merged = validation.merge(settings, routeTableSettingsDefaults, mergeCustomizer);
+            expect(merged.virtualNetworks[0].name).toBe('my-virtual-network');
+        });
+
+        it('routes undefined', () => {
+            let settings = _.cloneDeep(routeTable);
+            delete settings.routes;
+            let merged = validation.merge(settings, routeTableSettingsDefaults, mergeCustomizer);
+            expect(merged.routes.length).toBe(0);
+        });
+
+        it('routes null', () => {
+            let settings = _.cloneDeep(routeTable);
+            settings.routes = null;
+            let merged = validation.merge(settings, routeTableSettingsDefaults, mergeCustomizer);
+            expect(merged.routes.length).toBe(0);
+        });
+
+        it('routes present', () => {
+            let settings = _.cloneDeep(routeTable);
+            let merged = validation.merge(settings, routeTableSettingsDefaults, mergeCustomizer);
+            expect(merged.routes[0].name).toBe('route1');
+        });
+    });
+
+    describe('transform', () => {
+        let routeTable = [
+            {
+                name: 'my-route-table',
+                virtualNetworks: [
+                    {
+                        name: 'my-virtual-network',
+                        subnets: [
+                            'biz',
+                            'web'
+                        ]
+                    }
+                ],
+                routes: [
+                    {
+                        name: 'route1',
+                        addressPrefix: '10.0.1.0/24',
+                        nextHopType: 'VnetLocal'
+                    },
+                    {
+                        name: 'route2',
+                        addressPrefix: '10.0.2.0/24',
+                        nextHopType: 'VirtualAppliance',
+                        nextHopIpAddress: '192.168.1.1'
+                    }
+                ]
+            }
+        ];
+
+        let buildingBlockSettings = {
+            subscriptionId: "00000000-0000-1000-8000-000000000000",
+            resourceGroupName: "test-rg"
+        };
+
+        it('single route table', () => {
+            let settings = _.cloneDeep(routeTable);
+            settings = settings[0];
+            let result = routeTableSettings.transform({
+                settings: settings,
+                buildingBlockSettings: buildingBlockSettings
+            });
+
+            expect(result.settings.length).toBe(1);
+            let settingsResult = result.settings[0];
+            expect(settingsResult.hasOwnProperty('id')).toBe(true);
+            expect(settingsResult.hasOwnProperty('name')).toBe(true);
+            expect(settingsResult.hasOwnProperty('resourceGroupName')).toBe(true);
+            expect(settingsResult.hasOwnProperty('subscriptionId')).toBe(true);
+            
+            expect(settingsResult.hasOwnProperty('subnets')).toBe(true);
+            expect(settingsResult.subnets.length).toBe(2);
+            let subnetsResult = settingsResult.subnets;
+            expect(subnetsResult[0].endsWith('my-virtual-network/subnets/biz')).toBe(true);
+            expect(subnetsResult[1].endsWith('my-virtual-network/subnets/web')).toBe(true);
+
+            expect(settingsResult.hasOwnProperty('properties')).toBe(true);
+            expect(settingsResult.properties.hasOwnProperty('routes')).toBe(true);
+            expect(settingsResult.properties.routes.length).toBe(2);
+            let routesResult = settingsResult.properties.routes;
+            expect(routesResult[0].name).toBe('route1');
+            expect(routesResult[0].properties.addressPrefix).toBe('10.0.1.0/24');
+            expect(routesResult[0].properties.nextHopType).toBe('VnetLocal');
+            expect(routesResult[1].name).toBe('route2');
+            expect(routesResult[1].properties.addressPrefix).toBe('10.0.2.0/24');
+            expect(routesResult[1].properties.nextHopType).toBe('VirtualAppliance');
+            expect(routesResult[1].properties.nextHopIpAddress).toBe('192.168.1.1');
+        });
+
+        it('test settings validation errors', () => {
+            let settings = _.cloneDeep(routeTable);
+            delete settings[0].name;
+            expect(() => {
+                let result = routeTableSettings.transform({
+                    settings: settings,
+                    buildingBlockSettings: buildingBlockSettings
+                });
+            }).toThrow();
+        });
+
+        it('test building blocks validation errors', () => {
+            let settings = _.cloneDeep(routeTable);
+            let bbSettings = _.cloneDeep(buildingBlockSettings);
+            delete bbSettings.subscriptionId;
+            expect(() => {
+                let result = routeTableSettings.transform({
+                    settings: settings,
+                    buildingBlockSettings: bbSettings
+                });
+            }).toThrow();
         });
     });
 });

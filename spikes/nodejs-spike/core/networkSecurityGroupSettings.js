@@ -75,9 +75,83 @@ let networkSecurityGroupSettingsSecurityRulesValidations = {
     }
 };
 
+let virtualNetworkValidations = {
+    name: v.utilities.isNotNullOrWhitespace,
+    subnets: (value, parent) => {
+       if ((_.isNil(value)) || (value.length === 0)) {
+            return {
+                result: false,
+                message: 'Value cannot be null, undefined, or an empty array'
+            };
+        } else {
+            return {
+                validations: v.utilities.isNotNullOrWhitespace
+            };
+        }
+    }
+};
+
+let networkInterfaceValidations = {
+    name: v.utilities.isNotNullOrWhitespace
+};
+
 let networkSecurityGroupSettingsValidations = {
     name: v.utilities.isNotNullOrWhitespace,
-    securityRules: networkSecurityGroupSettingsSecurityRulesValidations
+    securityRules: (value, parent) => {
+        // We allow empty arrays
+        let result = {
+            result: true
+        };
+
+        if (value.length > 0) {
+            // We need to validate if the array isn't empty
+            result = {
+                validations: networkSecurityGroupSettingsSecurityRulesValidations
+            };
+        }
+
+        return result;
+    },
+    virtualNetworks: (value, parent) => {
+        // We allow empty arrays
+        let result = {
+            result: true
+        };
+
+        if (value.length > 0) {
+            // We need to validate if the array isn't empty
+            result = {
+                validations: virtualNetworkValidations
+            };
+        }
+
+        return result;
+    },
+    networkInterfaces: (value, parent) => {
+        // We allow empty arrays
+        let result = {
+            result: true
+        };
+
+        if (value.length > 0) {
+            // We need to validate if the array isn't empty
+            result = {
+                validations: networkInterfaceValidations
+            };
+        }
+
+        return result;
+    }
+};
+
+let mergeCustomizer = function (objValue, srcValue, key, object, source, stack) {
+    if (v.utilities.isStringInArray(key, ['virtualNetworks', 'networkInterfaces', 'securityRules'])) {
+        if ((!_.isNil(srcValue)) && (_.isArray(srcValue))) {
+            return srcValue;
+        } else {
+            return objValue;
+        }
+    }
 };
 
 function transform(settings) {
