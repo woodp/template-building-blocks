@@ -40,7 +40,7 @@
     "version": "latest"
   },
   "dataDisks": {
-    "count": 1,
+    "count": 0,
     "properties": {
       "diskSizeGB": 127,
       "caching": "None",
@@ -48,6 +48,6 @@
     }
   },
   "availabilitySet": {
-    "useExistingAvailabilitySet": "No"
+    "useExistingAvailabilitySet": false
   }
 }

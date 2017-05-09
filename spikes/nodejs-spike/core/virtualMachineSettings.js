@@ -195,8 +195,8 @@ let virtualMachineValidations = {
             },
             count: (value, parent) => {
                 return {
-                    result: ((_.isFinite(value)) && value > 0),
-                    message: 'Value must be greater than 0'
+                    result: ((_.isFinite(value))),
+                    message: 'Invalid value for count'
                 };
             }
         };
@@ -307,7 +307,7 @@ let processorProperties = {
         }
     },
     availabilitySet: (value, key, index, parent) => {
-        if (_.toLower(value.useExistingAvailabilitySet) === "no" && parent.vmCount < 2) {
+        if (!value.useExistingAvailabilitySet && parent.vmCount < 2) {
             return {
                 availabilitySet: null
             };
@@ -516,22 +516,17 @@ let processorProperties = {
     }
 }
 
-let storageAccountsProcessed = false;
-let availabilitySetProcessed = false;
-let diagnosticStorageAccountsProcessed = false;
 let processChildResources = {
     storageAccounts: (value, key, index, parent, accumulator) => {
-        if (!storageAccountsProcessed) {
+        if (!accumulator.hasOwnProperty('storageAccounts')) {
             let mergedCol = (accumulator["storageAccounts"] || (accumulator["storageAccounts"] = [])).concat(storageSettings.processStorageSettings(value, parent));
             accumulator.storageAccounts = mergedCol;
-            storageAccountsProcessed = true;
         }
     },
     diagnosticStorageAccounts: (value, key, index, parent, accumulator) => {
-        if (!diagnosticStorageAccountsProcessed) {
+        if (!accumulator.hasOwnProperty('diagnosticStorageAccounts')) {
             let mergedCol = (accumulator["diagnosticStorageAccounts"] || (accumulator["diagnosticStorageAccounts"] = [])).concat(storageSettings.processStorageSettings(value, parent));
             accumulator.diagnosticStorageAccounts = mergedCol;
-            diagnosticStorageAccountsProcessed = true;
         }
     },
     nics: (value, key, index, parent, accumulator) => {
@@ -543,9 +538,9 @@ let processChildResources = {
         accumulator["pips"] = mergedCol;
     },
     availabilitySet: (value, key, index, parent, accumulator) => {
-        if (_.toLower(value.useExistingAvailabilitySet) === "no" && parent.vmCount === 1) {
+        if (value.useExistingAvailabilitySet || parent.vmCount < 2) {
             accumulator["availabilitySet"] = [];
-        } else if (!availabilitySetProcessed) {
+        } else if (!accumulator.hasOwnProperty('availabilitySet')) {
             accumulator["availabilitySet"] = avSetSettings.processAvSetSettings(value, parent);
         }
     },
@@ -598,7 +593,7 @@ function process(param, buildingBlockSettings) {
         return result;
     }, { virtualMachines: [] })
 
-    return createTemplateParameters(processedParams);
+    return processedParams;
 };
 
 function createTemplateParameters(resources) {
@@ -621,6 +616,11 @@ function createTemplateParameters(resources) {
     return templateParameters;
 };
 
-exports.processVirtualMachineSettings = process;
+function getTemplateParameters(param, buildingBlockSettings) {
+    let processedParams = process(param, buildingBlockSettings);
+    return createTemplateParameters(processedParams); 
+}
+
+exports.processVirtualMachineSettings = getTemplateParameters;
 exports.mergeWithDefaults = merge;
 exports.validations = validate;

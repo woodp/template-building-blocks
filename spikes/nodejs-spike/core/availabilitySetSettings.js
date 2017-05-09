@@ -11,19 +11,8 @@ function merge(settings) {
   return v.merge(settings, defaults)
 }
 
-let validUseExistingAvailabilitySetValues = ['yes', 'no'];
-
-let isValidUseExistingAvailabilitySet = (useExistingAvailabilitySet) => {
-  return v.utilities.isStringInArray(useExistingAvailabilitySet, validUseExistingAvailabilitySetValues);
-};
-
 let availabilitySetValidations = {
-  useExistingAvailabilitySet: (value, parent) => {
-    return {
-      result: isValidUseExistingAvailabilitySet(value),
-      message: `Valid values are ${validUseExistingAvailabilitySetValues.join(', ')}`
-    };
-  },
+  useExistingAvailabilitySet: v.validationUtilities.isBoolean,
   platformFaultDomainCount: (value, parent) => {
     return {
       result: ((_.isFinite(value)) && value > 0 && value <= 3),
@@ -40,7 +29,7 @@ let availabilitySetValidations = {
 };
 
 function process(settings, parent) {
-  if (_.toLower(settings.useExistingAvailabilitySet) === "yes") {
+  if (settings.useExistingAvailabilitySet) {
     return [];
   }
 
