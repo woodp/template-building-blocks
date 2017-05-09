@@ -32,6 +32,12 @@ let storageValidations = {
             result: (parent.managed) || v.utilities.isNotNullOrWhitespace(value),
             message: 'Value cannot be null or empty string if managed is set to false'
         };
+    },
+    accounts: (value, parent) => {
+        return {
+            result: _.isArray(value),
+            message: 'Value cannot be null'
+        };
     }
 };
 
@@ -60,7 +66,13 @@ let diagnosticValidations = {
             message: 'Value must be greater than 0'
         };
     },
-    nameSuffix: v.utilities.isNotNullOrWhitespace
+    nameSuffix: v.utilities.isNotNullOrWhitespace,
+    accounts: (value, parent) => {
+        return {
+            result: _.isArray(value),
+            message: 'Value cannot be null'
+        };
+    }
 };
 
 function convertToBase32(carryOverValue, carryOverBits, buffer) {
