@@ -815,22 +815,22 @@ describe('virtualMachineSettings:', () => {
             });
         });
         describe('windows:', () => {
-            let windowsSettings = _.cloneDeep(testSettings);
-            windowsSettings.osDisk.osType = "windows";
-
             it('validates that osAuthenticationType cannot be ssh if osType is windows', () => {
+                let windowsSettings = _.cloneDeep(testSettings);
+                windowsSettings.osDisk.osType = "windows";
                 windowsSettings.osAuthenticationType = "ssh";
+                windowsSettings.sshPublicKey = "testKey";
                 let result = virtualMachineSettings.validations(windowsSettings);
                 expect(result.length).toEqual(1);
                 expect(result[0].name).toEqual('.osAuthenticationType');
             });
         });
         describe('linux:', () => {
-            let linuxSettings = _.cloneDeep(testSettings);
-            linuxSettings.osDisk.osType = "linux";
-
             it('validates that osAuthenticationType ssh can be used with linux', () => {
+                let linuxSettings = _.cloneDeep(testSettings);
+                linuxSettings.osDisk.osType = "linux";
                 linuxSettings.osAuthenticationType = "ssh";
+                linuxSettings.sshPublicKey = "testKey";
                 let result = virtualMachineSettings.validations(linuxSettings);
                 expect(result.length).toEqual(0);
             });
@@ -905,62 +905,70 @@ describe('virtualMachineSettings:', () => {
             it('validates that vhd property is correctly updated in the storageprofile.osDisk', () => {
                 let settings = _.cloneDeep(testSettings);
                 settings.storageAccounts.count = 2;
-                settings.vmCount.count = 5;
+                settings.vmCount = 5;
                 let process = virtualMachineSettings.__get__("process");
                 let processedParam = process(settings, buildingBlockSettings);
 
-                expect(processedParam.virtualMachines[0].storageProfile.osDisk.vhd).toEqual(`http://${processedParam.storageAccounts[0].name}.blob.core.windows.net/vhds/test-vm1-os.vhd`);
-                expect(processedParam.virtualMachines[1].storageProfile.osDisk.vhd).toEqual(`http://${processedParam.storageAccounts[1].name}.blob.core.windows.net/vhds/test-vm1-os.vhd`);
-                expect(processedParam.virtualMachines[2].storageProfile.osDisk.vhd).toEqual(`http://${processedParam.storageAccounts[0].name}.blob.core.windows.net/vhds/test-vm1-os.vhd`);
-                expect(processedParam.virtualMachines[3].storageProfile.osDisk.vhd).toEqual(`http://${processedParam.storageAccounts[1].name}.blob.core.windows.net/vhds/test-vm1-os.vhd`);
-                expect(processedParam.virtualMachines[4].storageProfile.osDisk.vhd).toEqual(`http://${processedParam.storageAccounts[0].name}.blob.core.windows.net/vhds/test-vm1-os.vhd`);
+                expect(processedParam.virtualMachines[0].properties.storageProfile.osDisk.vhd.uri).toEqual(`http://${processedParam.storageAccounts[0].name}.blob.core.windows.net/vhds/test-vm1-os.vhd`);
+                expect(processedParam.virtualMachines[1].properties.storageProfile.osDisk.vhd.uri).toEqual(`http://${processedParam.storageAccounts[1].name}.blob.core.windows.net/vhds/test-vm2-os.vhd`);
+                expect(processedParam.virtualMachines[2].properties.storageProfile.osDisk.vhd.uri).toEqual(`http://${processedParam.storageAccounts[0].name}.blob.core.windows.net/vhds/test-vm3-os.vhd`);
+                expect(processedParam.virtualMachines[3].properties.storageProfile.osDisk.vhd.uri).toEqual(`http://${processedParam.storageAccounts[1].name}.blob.core.windows.net/vhds/test-vm4-os.vhd`);
+                expect(processedParam.virtualMachines[4].properties.storageProfile.osDisk.vhd.uri).toEqual(`http://${processedParam.storageAccounts[0].name}.blob.core.windows.net/vhds/test-vm5-os.vhd`);
             });
             it('validates that vhd property is correctly updated in the storageprofile.osDisk when existing accounts are provided', () => {
                 let settings = _.cloneDeep(testSettings);
                 settings.storageAccounts.count = 4;
                 settings.storageAccounts.accounts = ['A', 'B'];
-                settings.vmCount.count = 8;
+                settings.vmCount = 8;
                 let process = virtualMachineSettings.__get__("process");
                 let processedParam = process(settings, buildingBlockSettings);
 
-                expect(processedParam.virtualMachines[0].storageProfile.osDisk.vhd).toEqual(`http://${settings.storageAccounts.accounts[0]}.blob.core.windows.net/vhds/test-vm1-os.vhd`);
-                expect(processedParam.virtualMachines[1].storageProfile.osDisk.vhd).toEqual(`http://${settings.storageAccounts.accounts[1]}.blob.core.windows.net/vhds/test-vm1-os.vhd`);
-                expect(processedParam.virtualMachines[2].storageProfile.osDisk.vhd).toEqual(`http://${processedParam.storageAccounts[0].name}.blob.core.windows.net/vhds/test-vm1-os.vhd`);
-                expect(processedParam.virtualMachines[3].storageProfile.osDisk.vhd).toEqual(`http://${processedParam.storageAccounts[1].name}.blob.core.windows.net/vhds/test-vm1-os.vhd`);
-                expect(processedParam.virtualMachines[4].storageProfile.osDisk.vhd).toEqual(`http://${settings.storageAccounts.accounts[0]}.blob.core.windows.net/vhds/test-vm1-os.vhd`);
-                expect(processedParam.virtualMachines[5].storageProfile.osDisk.vhd).toEqual(`http://${settings.storageAccounts.accounts[1]}.blob.core.windows.net/vhds/test-vm1-os.vhd`);
-                expect(processedParam.virtualMachines[6].storageProfile.osDisk.vhd).toEqual(`http://${processedParam.storageAccounts[0].name}.blob.core.windows.net/vhds/test-vm1-os.vhd`);
-                expect(processedParam.virtualMachines[7].storageProfile.osDisk.vhd).toEqual(`http://${processedParam.storageAccounts[1].name}.blob.core.windows.net/vhds/test-vm1-os.vhd`);
+                expect(processedParam.virtualMachines[0].properties.storageProfile.osDisk.vhd.uri).toEqual(`http://${settings.storageAccounts.accounts[0]}.blob.core.windows.net/vhds/test-vm1-os.vhd`);
+                expect(processedParam.virtualMachines[1].properties.storageProfile.osDisk.vhd.uri).toEqual(`http://${settings.storageAccounts.accounts[1]}.blob.core.windows.net/vhds/test-vm2-os.vhd`);
+                expect(processedParam.virtualMachines[2].properties.storageProfile.osDisk.vhd.uri).toEqual(`http://${processedParam.storageAccounts[0].name}.blob.core.windows.net/vhds/test-vm3-os.vhd`);
+                expect(processedParam.virtualMachines[3].properties.storageProfile.osDisk.vhd.uri).toEqual(`http://${processedParam.storageAccounts[1].name}.blob.core.windows.net/vhds/test-vm4-os.vhd`);
+                expect(processedParam.virtualMachines[4].properties.storageProfile.osDisk.vhd.uri).toEqual(`http://${settings.storageAccounts.accounts[0]}.blob.core.windows.net/vhds/test-vm5-os.vhd`);
+                expect(processedParam.virtualMachines[5].properties.storageProfile.osDisk.vhd.uri).toEqual(`http://${settings.storageAccounts.accounts[1]}.blob.core.windows.net/vhds/test-vm6-os.vhd`);
+                expect(processedParam.virtualMachines[6].properties.storageProfile.osDisk.vhd.uri).toEqual(`http://${processedParam.storageAccounts[0].name}.blob.core.windows.net/vhds/test-vm7-os.vhd`);
+                expect(processedParam.virtualMachines[7].properties.storageProfile.osDisk.vhd.uri).toEqual(`http://${processedParam.storageAccounts[1].name}.blob.core.windows.net/vhds/test-vm8-os.vhd`);
             });
             it('validates that vhd property is correctly updated in the storageprofile.dataDisk', () => {
                 let settings = _.cloneDeep(testSettings);
                 settings.storageAccounts.count = 2;
-                settings.vmCount.count = 5;
+                settings.vmCount = 5;
+                settings.dataDisks.count = 2;
                 let process = virtualMachineSettings.__get__("process");
                 let processedParam = process(settings, buildingBlockSettings);
 
-                expect(processedParam.virtualMachines[0].storageProfile.dataDisks.vhd).toEqual(`http://${processedParam.storageAccounts[0].name}.blob.core.windows.net/vhds/test-vm1-dataDisk1.vhd`);
-                expect(processedParam.virtualMachines[1].storageProfile.dataDisks.vhd).toEqual(`http://${processedParam.storageAccounts[1].name}.blob.core.windows.net/vhds/test-vm1-dataDisk1.vhd`);
-                expect(processedParam.virtualMachines[2].storageProfile.dataDisks.vhd).toEqual(`http://${processedParam.storageAccounts[0].name}.blob.core.windows.net/vhds/test-vm1-dataDisk1.vhd`);
-                expect(processedParam.virtualMachines[3].storageProfile.dataDisks.vhd).toEqual(`http://${processedParam.storageAccounts[1].name}.blob.core.windows.net/vhds/test-vm1-dataDisk1.vhd`);
-                expect(processedParam.virtualMachines[4].storageProfile.dataDisks.vhd).toEqual(`http://${processedParam.storageAccounts[0].name}.blob.core.windows.net/vhds/test-vm1-dataDisk1.vhd`);
+                expect(processedParam.virtualMachines[0].properties.storageProfile.dataDisks[0].vhd.uri).toEqual(`http://${processedParam.storageAccounts[0].name}.blob.core.windows.net/vhds/test-vm1-dataDisk1.vhd`);
+                expect(processedParam.virtualMachines[1].properties.storageProfile.dataDisks[0].vhd.uri).toEqual(`http://${processedParam.storageAccounts[1].name}.blob.core.windows.net/vhds/test-vm2-dataDisk1.vhd`);
+                expect(processedParam.virtualMachines[2].properties.storageProfile.dataDisks[0].vhd.uri).toEqual(`http://${processedParam.storageAccounts[0].name}.blob.core.windows.net/vhds/test-vm3-dataDisk1.vhd`);
+                expect(processedParam.virtualMachines[3].properties.storageProfile.dataDisks[0].vhd.uri).toEqual(`http://${processedParam.storageAccounts[1].name}.blob.core.windows.net/vhds/test-vm4-dataDisk1.vhd`);
+                expect(processedParam.virtualMachines[4].properties.storageProfile.dataDisks[0].vhd.uri).toEqual(`http://${processedParam.storageAccounts[0].name}.blob.core.windows.net/vhds/test-vm5-dataDisk1.vhd`);
+
+                expect(processedParam.virtualMachines[0].properties.storageProfile.dataDisks[1].vhd.uri).toEqual(`http://${processedParam.storageAccounts[0].name}.blob.core.windows.net/vhds/test-vm1-dataDisk2.vhd`);
+                expect(processedParam.virtualMachines[1].properties.storageProfile.dataDisks[1].vhd.uri).toEqual(`http://${processedParam.storageAccounts[1].name}.blob.core.windows.net/vhds/test-vm2-dataDisk2.vhd`);
+                expect(processedParam.virtualMachines[2].properties.storageProfile.dataDisks[1].vhd.uri).toEqual(`http://${processedParam.storageAccounts[0].name}.blob.core.windows.net/vhds/test-vm3-dataDisk2.vhd`);
+                expect(processedParam.virtualMachines[3].properties.storageProfile.dataDisks[1].vhd.uri).toEqual(`http://${processedParam.storageAccounts[1].name}.blob.core.windows.net/vhds/test-vm4-dataDisk2.vhd`);
+                expect(processedParam.virtualMachines[4].properties.storageProfile.dataDisks[1].vhd.uri).toEqual(`http://${processedParam.storageAccounts[0].name}.blob.core.windows.net/vhds/test-vm5-dataDisk2.vhd`);
             });
             it('validates that vhd property is correctly updated in the storageprofile.osDisk when existing accounts are provided', () => {
                 let settings = _.cloneDeep(testSettings);
                 settings.storageAccounts.count = 4;
                 settings.storageAccounts.accounts = ['A', 'B'];
-                settings.vmCount.count = 8;
+                settings.vmCount = 8;
+                settings.dataDisks.count = 1;
                 let process = virtualMachineSettings.__get__("process");
                 let processedParam = process(settings, buildingBlockSettings);
 
-                expect(processedParam.virtualMachines[0].storageProfile.dataDisks.vhd).toEqual(`http://${settings.storageAccounts.accounts[0]}.blob.core.windows.net/vhds/test-vm1-dataDisk1.vhd`);
-                expect(processedParam.virtualMachines[1].storageProfile.dataDisks.vhd).toEqual(`http://${settings.storageAccounts.accounts[1]}.blob.core.windows.net/vhds/test-vm1-dataDisk1.vhd`);
-                expect(processedParam.virtualMachines[2].storageProfile.dataDisks.vhd).toEqual(`http://${processedParam.storageAccounts[0].name}.blob.core.windows.net/vhds/test-vm1-dataDisk1.vhd`);
-                expect(processedParam.virtualMachines[3].storageProfile.dataDisks.vhd).toEqual(`http://${processedParam.storageAccounts[1].name}.blob.core.windows.net/vhds/test-vm1-dataDisk1.vhd`);
-                expect(processedParam.virtualMachines[4].storageProfile.dataDisks.vhd).toEqual(`http://${settings.storageAccounts.accounts[0]}.blob.core.windows.net/vhds/test-vm1-dataDisk1.vhd`);
-                expect(processedParam.virtualMachines[5].storageProfile.dataDisks.vhd).toEqual(`http://${settings.storageAccounts.accounts[1]}.blob.core.windows.net/vhds/test-vm1-dataDisk1.vhd`);
-                expect(processedParam.virtualMachines[6].storageProfile.dataDisks.vhd).toEqual(`http://${processedParam.storageAccounts[0].name}.blob.core.windows.net/vhds/test-vm1-dataDisk1.vhd`);
-                expect(processedParam.virtualMachines[7].storageProfile.dataDisks.vhd).toEqual(`http://${processedParam.storageAccounts[1].name}.blob.core.windows.net/vhds/test-vm1-dataDisk1.vhd`);
+                expect(processedParam.virtualMachines[0].properties.storageProfile.dataDisks[0].vhd.uri).toEqual(`http://${settings.storageAccounts.accounts[0]}.blob.core.windows.net/vhds/test-vm1-dataDisk1.vhd`);
+                expect(processedParam.virtualMachines[1].properties.storageProfile.dataDisks[0].vhd.uri).toEqual(`http://${settings.storageAccounts.accounts[1]}.blob.core.windows.net/vhds/test-vm2-dataDisk1.vhd`);
+                expect(processedParam.virtualMachines[2].properties.storageProfile.dataDisks[0].vhd.uri).toEqual(`http://${processedParam.storageAccounts[0].name}.blob.core.windows.net/vhds/test-vm3-dataDisk1.vhd`);
+                expect(processedParam.virtualMachines[3].properties.storageProfile.dataDisks[0].vhd.uri).toEqual(`http://${processedParam.storageAccounts[1].name}.blob.core.windows.net/vhds/test-vm4-dataDisk1.vhd`);
+                expect(processedParam.virtualMachines[4].properties.storageProfile.dataDisks[0].vhd.uri).toEqual(`http://${settings.storageAccounts.accounts[0]}.blob.core.windows.net/vhds/test-vm5-dataDisk1.vhd`);
+                expect(processedParam.virtualMachines[5].properties.storageProfile.dataDisks[0].vhd.uri).toEqual(`http://${settings.storageAccounts.accounts[1]}.blob.core.windows.net/vhds/test-vm6-dataDisk1.vhd`);
+                expect(processedParam.virtualMachines[6].properties.storageProfile.dataDisks[0].vhd.uri).toEqual(`http://${processedParam.storageAccounts[0].name}.blob.core.windows.net/vhds/test-vm7-dataDisk1.vhd`);
+                expect(processedParam.virtualMachines[7].properties.storageProfile.dataDisks[0].vhd.uri).toEqual(`http://${processedParam.storageAccounts[1].name}.blob.core.windows.net/vhds/test-vm8-dataDisk1.vhd`);
             });
         });
         describe('diagnosticStorageAccounts:', () => {
@@ -987,8 +995,8 @@ describe('virtualMachineSettings:', () => {
                 let process = virtualMachineSettings.__get__("process");
                 let processedParam = process(settings, buildingBlockSettings);
 
-                expect(processedParam.diagnosticStorageAccounts[0].sku.name).toEqual("Premium_LRS");
-                expect(processedParam.diagnosticStorageAccounts[1].sku.name).toEqual("Premium_LRS");
+                expect(processedParam.diagnosticStorageAccounts[0].sku.name).toEqual("Standard_LRS");
+                expect(processedParam.diagnosticStorageAccounts[1].sku.name).toEqual("Standard_LRS");
             });
             it('validates that kind property is correctly assigned in the storage stamps', () => {
                 let settings = _.cloneDeep(testSettings);
@@ -1002,32 +1010,32 @@ describe('virtualMachineSettings:', () => {
             it('validates that storageUri property is correctly updated in the diagnosticsProfile', () => {
                 let settings = _.cloneDeep(testSettings);
                 settings.diagnosticStorageAccounts.count = 2;
-                settings.vmCount.count = 5;
+                settings.vmCount = 5;
                 let process = virtualMachineSettings.__get__("process");
                 let processedParam = process(settings, buildingBlockSettings);
 
-                expect(processedParam.virtualMachines[0].diagnosticsProfile.bootDiagnostics.storageUri).toEqual(`http://${processedParam.diagnosticStorageAccounts[0].name}.blob.core.windows.net`);
-                expect(processedParam.virtualMachines[1].diagnosticsProfile.bootDiagnostics.storageUri).toEqual(`http://${processedParam.diagnosticStorageAccounts[1].name}.blob.core.windows.net`);
-                expect(processedParam.virtualMachines[2].diagnosticsProfile.bootDiagnostics.storageUri).toEqual(`http://${processedParam.diagnosticStorageAccounts[0].name}.blob.core.windows.net`);
-                expect(processedParam.virtualMachines[3].diagnosticsProfile.bootDiagnostics.storageUri).toEqual(`http://${processedParam.diagnosticStorageAccounts[1].name}.blob.core.windows.net`);
-                expect(processedParam.virtualMachines[4].diagnosticsProfile.bootDiagnostics.storageUri).toEqual(`http://${processedParam.diagnosticStorageAccounts[0].name}.blob.core.windows.net`);
+                expect(processedParam.virtualMachines[0].properties.diagnosticsProfile.bootDiagnostics.storageUri).toEqual(`http://${processedParam.diagnosticStorageAccounts[0].name}.blob.core.windows.net`);
+                expect(processedParam.virtualMachines[1].properties.diagnosticsProfile.bootDiagnostics.storageUri).toEqual(`http://${processedParam.diagnosticStorageAccounts[1].name}.blob.core.windows.net`);
+                expect(processedParam.virtualMachines[2].properties.diagnosticsProfile.bootDiagnostics.storageUri).toEqual(`http://${processedParam.diagnosticStorageAccounts[0].name}.blob.core.windows.net`);
+                expect(processedParam.virtualMachines[3].properties.diagnosticsProfile.bootDiagnostics.storageUri).toEqual(`http://${processedParam.diagnosticStorageAccounts[1].name}.blob.core.windows.net`);
+                expect(processedParam.virtualMachines[4].properties.diagnosticsProfile.bootDiagnostics.storageUri).toEqual(`http://${processedParam.diagnosticStorageAccounts[0].name}.blob.core.windows.net`);
             });
             it('validates that storageUri property is correctly updated in the diagnosticsProfile when existing accounts are provided', () => {
                 let settings = _.cloneDeep(testSettings);
                 settings.diagnosticStorageAccounts.count = 4;
                 settings.diagnosticStorageAccounts.accounts = ['A', 'B'];
-                settings.vmCount.count = 8;
+                settings.vmCount = 8;
                 let process = virtualMachineSettings.__get__("process");
                 let processedParam = process(settings, buildingBlockSettings);
 
-                expect(processedParam.virtualMachines[0].diagnosticsProfile.bootDiagnostics.storageUri).toEqual(`http://${settings.diagnosticStorageAccounts.accounts[0]}.blob.core.windows.net`);
-                expect(processedParam.virtualMachines[1].diagnosticsProfile.bootDiagnostics.storageUri).toEqual(`http://${settings.diagnosticStorageAccounts.accounts[1]}.blob.core.windows.net`);
-                expect(processedParam.virtualMachines[2].diagnosticsProfile.bootDiagnostics.storageUri).toEqual(`http://${processedParam.diagnosticStorageAccounts[0].name}.blob.core.windows.net`);
-                expect(processedParam.virtualMachines[3].diagnosticsProfile.bootDiagnostics.storageUri).toEqual(`http://${processedParam.diagnosticStorageAccounts[1].name}.blob.core.windows.net`);
-                expect(processedParam.virtualMachines[4].diagnosticsProfile.bootDiagnostics.storageUri).toEqual(`http://${settings.diagnosticStorageAccounts.accounts[0]}.blob.core.windows.net`);
-                expect(processedParam.virtualMachines[5].diagnosticsProfile.bootDiagnostics.storageUri).toEqual(`http://${settings.diagnosticStorageAccounts.accounts[1]}.blob.core.windows.net`);
-                expect(processedParam.virtualMachines[6].diagnosticsProfile.bootDiagnostics.storageUri).toEqual(`http://${processedParam.diagnosticStorageAccounts[0].name}.blob.core.windows.net`);
-                expect(processedParam.virtualMachines[7].diagnosticsProfile.bootDiagnostics.storageUri).toEqual(`http://${processedParam.diagnosticStorageAccounts[1].name}.blob.core.windows.net`);
+                expect(processedParam.virtualMachines[0].properties.diagnosticsProfile.bootDiagnostics.storageUri).toEqual(`http://${settings.diagnosticStorageAccounts.accounts[0]}.blob.core.windows.net`);
+                expect(processedParam.virtualMachines[1].properties.diagnosticsProfile.bootDiagnostics.storageUri).toEqual(`http://${settings.diagnosticStorageAccounts.accounts[1]}.blob.core.windows.net`);
+                expect(processedParam.virtualMachines[2].properties.diagnosticsProfile.bootDiagnostics.storageUri).toEqual(`http://${processedParam.diagnosticStorageAccounts[0].name}.blob.core.windows.net`);
+                expect(processedParam.virtualMachines[3].properties.diagnosticsProfile.bootDiagnostics.storageUri).toEqual(`http://${processedParam.diagnosticStorageAccounts[1].name}.blob.core.windows.net`);
+                expect(processedParam.virtualMachines[4].properties.diagnosticsProfile.bootDiagnostics.storageUri).toEqual(`http://${settings.diagnosticStorageAccounts.accounts[0]}.blob.core.windows.net`);
+                expect(processedParam.virtualMachines[5].properties.diagnosticsProfile.bootDiagnostics.storageUri).toEqual(`http://${settings.diagnosticStorageAccounts.accounts[1]}.blob.core.windows.net`);
+                expect(processedParam.virtualMachines[6].properties.diagnosticsProfile.bootDiagnostics.storageUri).toEqual(`http://${processedParam.diagnosticStorageAccounts[0].name}.blob.core.windows.net`);
+                expect(processedParam.virtualMachines[7].properties.diagnosticsProfile.bootDiagnostics.storageUri).toEqual(`http://${processedParam.diagnosticStorageAccounts[1].name}.blob.core.windows.net`);
             });
         });
         describe('windows:', () => {
@@ -1048,15 +1056,15 @@ describe('virtualMachineSettings:', () => {
             it('validates that for password osAuthenticationType, adminPassword is set in the osProfile', () => {
                 let process = virtualMachineSettings.__get__("process");
                 let processedParam = process(windowsSettings, buildingBlockSettings);
-                expect(processedParam.virtualMachines[0].properties.osProfile.adminPassword).toEqual("$SECRET");
-                expect(processedParam.virtualMachines[1].properties.osProfile.adminPassword).toEqual("$SECRET");
+                expect(processedParam.virtualMachines[0].properties.osProfile.adminPassword).toEqual("$SECRET$");
+                expect(processedParam.virtualMachines[1].properties.osProfile.adminPassword).toEqual("$SECRET$");
                 expect(processedParam.secret).toEqual(windowsSettings.adminPassword);
             });
         });
         describe('linux:', () => {
-            let linuxSettings = _.cloneDeep(testSettings);
-            linuxSettings.osDisk.osType = "linux";
             it('validates that for password osAuthenticationType, linuxConfiguration in osProfile is set to null', () => {
+                let linuxSettings = _.cloneDeep(testSettings);
+                linuxSettings.osDisk.osType = "linux";
                 let process = virtualMachineSettings.__get__("process");
                 let processedParam = process(linuxSettings, buildingBlockSettings);
                 expect(processedParam.virtualMachines[0].properties.osProfile.hasOwnProperty('linuxConfiguration')).toEqual(true);
@@ -1065,26 +1073,36 @@ describe('virtualMachineSettings:', () => {
                 expect(processedParam.virtualMachines[1].properties.osProfile.linuxConfiguration).toEqual(null);
             });
             it('validates that for password osAuthenticationType, adminPassword is set in the osProfile', () => {
+                let linuxSettings = _.cloneDeep(testSettings);
+                linuxSettings.osDisk.osType = "linux";
                 let process = virtualMachineSettings.__get__("process");
                 let processedParam = process(linuxSettings, buildingBlockSettings);
-                expect(processedParam.virtualMachines[0].properties.osProfile.adminPassword).toEqual("$SECRET");
-                expect(processedParam.virtualMachines[1].properties.osProfile.adminPassword).toEqual("$SECRET");
+                expect(processedParam.virtualMachines[0].properties.osProfile.adminPassword).toEqual("$SECRET$");
+                expect(processedParam.virtualMachines[1].properties.osProfile.adminPassword).toEqual("$SECRET$");
                 expect(processedParam.secret).toEqual(linuxSettings.adminPassword);
             });
             it('validates that for ssh osAuthenticationType, linuxConfiguration is correctly added to the osProfile', () => {
+                let linuxSettings = _.cloneDeep(testSettings);
+                linuxSettings.osDisk.osType = "linux";
+                linuxSettings.osAuthenticationType = "ssh";
+                linuxSettings.sshPublicKey = "testKey";
                 let process = virtualMachineSettings.__get__("process");
                 let processedParam = process(linuxSettings, buildingBlockSettings);
                 expect(processedParam.virtualMachines[0].properties.osProfile.hasOwnProperty('linuxConfiguration')).toEqual(true);
                 expect(processedParam.virtualMachines[0].properties.osProfile.linuxConfiguration.disablePasswordAuthentication).toEqual(true);
-                expect(processedParam.virtualMachines[0].properties.osProfile.linuxConfiguration.ssh.publicKeys[0].path).toEqual(`/home/${linuxSettings.osProfile.adminUsername}/.ssh/authorized_keys`);
+                expect(processedParam.virtualMachines[0].properties.osProfile.linuxConfiguration.ssh.publicKeys[0].path).toEqual(`/home/${linuxSettings.adminUsername}/.ssh/authorized_keys`);
                 expect(processedParam.virtualMachines[0].properties.osProfile.linuxConfiguration.ssh.publicKeys[0].keyData).toEqual('$SECRET$');
 
                 expect(processedParam.virtualMachines[1].properties.osProfile.hasOwnProperty('linuxConfiguration')).toEqual(true);
                 expect(processedParam.virtualMachines[1].properties.osProfile.linuxConfiguration.disablePasswordAuthentication).toEqual(true);
-                expect(processedParam.virtualMachines[1].properties.osProfile.linuxConfiguration.ssh.publicKeys[0].path).toEqual(`/home/${linuxSettings.osProfile.adminUsername}/.ssh/authorized_keys`);
+                expect(processedParam.virtualMachines[1].properties.osProfile.linuxConfiguration.ssh.publicKeys[0].path).toEqual(`/home/${linuxSettings.adminUsername}/.ssh/authorized_keys`);
                 expect(processedParam.virtualMachines[1].properties.osProfile.linuxConfiguration.ssh.publicKeys[0].keyData).toEqual('$SECRET$');
             });
             it('validates that for ssh osAuthenticationType, adminPassword is set to null', () => {
+                let linuxSettings = _.cloneDeep(testSettings);
+                linuxSettings.osDisk.osType = "linux";
+                linuxSettings.osAuthenticationType = "ssh";
+                linuxSettings.sshPublicKey = "testKey";
                 let process = virtualMachineSettings.__get__("process");
                 let processedParam = process(linuxSettings, buildingBlockSettings);
                 expect(processedParam.virtualMachines[0].properties.osProfile.adminPassword).toEqual(null);

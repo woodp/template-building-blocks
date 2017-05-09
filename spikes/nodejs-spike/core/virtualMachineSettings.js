@@ -206,6 +206,9 @@ let virtualMachineValidations = {
         };
     },
     existingWindowsServerlicense: (value, parent) => {
+        if(_.isNil(value)) {
+           return { result: true };
+        }
         if (!_.isBoolean(value)) {
             return {
                 result: false,
@@ -230,6 +233,12 @@ let virtualMachineValidations = {
             result = {
                 result: false,
                 message: "Valid values for 'osAuthenticationType' are: 'ssh', 'password'"
+            };
+        }
+        if (value === 'ssh' && parent.osDisk.osType === 'windows') {
+            result = {
+                result: false,
+                message: "Valid value for 'osAuthenticationType' for windows is: 'password'"
             };
         }
         return result;
@@ -369,7 +378,7 @@ let processorProperties = {
                 storageAccountType: parent.storageAccounts.skuType
             }
         } else {
-            let storageAccounts = parent.storageAccounts.accounts;
+            let storageAccounts = _.cloneDeep(parent.storageAccounts.accounts);
             parentAccumulator.storageAccounts.forEach((account) => {
                 storageAccounts.push(account.name);
             });
@@ -404,7 +413,7 @@ let processorProperties = {
                     storageAccountType: parent.storageAccounts.skuType
                 }
             } else {
-                let storageAccounts = parent.storageAccounts.accounts;
+                let storageAccounts = _.cloneDeep(parent.storageAccounts.accounts);
                 parentAccumulator.storageAccounts.forEach((account) => {
                     storageAccounts.push(account.name);
                 });
@@ -443,7 +452,7 @@ let processorProperties = {
     },
     diagnosticStorageAccounts: (value, key, index, parent, parentAccumulator) => {
         // get the diagonstic account name for the VM
-        let diagnosticAccounts = parent.diagnosticStorageAccounts.accounts;
+        let diagnosticAccounts = _.cloneDeep(parent.diagnosticStorageAccounts.accounts);
         parentAccumulator.diagnosticStorageAccounts.forEach((account) => {
             diagnosticAccounts.push(account.name);
         });
@@ -473,7 +482,7 @@ let processorProperties = {
                     osProfile: {
                         adminPassword: '$SECRET$',
                         windowsConfiguration: {
-                            "provisionVmAgent": "true"
+                            provisionVmAgent: true
                         }
                     }
                 }
@@ -618,7 +627,7 @@ function createTemplateParameters(resources) {
 
 function getTemplateParameters(param, buildingBlockSettings) {
     let processedParams = process(param, buildingBlockSettings);
-    return createTemplateParameters(processedParams); 
+    return createTemplateParameters(processedParams);
 }
 
 exports.processVirtualMachineSettings = getTemplateParameters;

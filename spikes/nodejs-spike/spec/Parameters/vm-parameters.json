@@ -11,7 +11,7 @@
                 "adminUsername": "testadminuser",
                 "adminPassword": "testPassw0rd111",
                 "osAuthenticationType": "password",
-                "existingWindowsServerlicense": false,
+
                 "virtualNetwork": {
                     "name": "ra-vnet"
                 },
@@ -41,7 +41,7 @@
                     }
                 ],
                 "osDisk": {
-                    "osType": "windows"
+                    "osType": "linux"
                 },
                 "dataDisks": {
                     "count": 0,
