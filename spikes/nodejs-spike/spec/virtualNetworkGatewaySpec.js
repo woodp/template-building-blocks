@@ -509,25 +509,12 @@ describe('virtualNetworkGatewaySettings', () => {
     describe('merge', () => {
         let virtualNetworkGatewaySettingsDefaults = virtualNetworkGatewaySettings.__get__('virtualNetworkGatewaySettingsDefaults');
 
-        let virtualNetworkGateway = {
-            name: 'my-gw',
-            gatewayType: 'Vpn',
-            vpnType: 'RouteBased',
-            sku: 'Standard',
-            publicIpAddress: {
-                name: 'my-pip'
-            },
-            virtualNetwork: {
-                name: 'my-virtual-network'
-            },
-            enableBgp: false
-        };
-
-        it('gatewayType undefined', () => {
-            let settings = _.cloneDeep(virtualNetworkGateway);
-            delete settings.gatewayType;
-            let merged = validation.merge(settings, virtualNetworkGatewaySettingsDefaults);
+        it('valid', () => {
+            let merged = validation.merge({}, virtualNetworkGatewaySettingsDefaults);
             expect(merged.gatewayType).toBe('Vpn');
+            expect(merged.vpnType).toBe('RouteBased');
+            expect(merged.sku).toBe('Standard');
+            expect(merged.enableBgp).toBe(false);
         });
     });
 
