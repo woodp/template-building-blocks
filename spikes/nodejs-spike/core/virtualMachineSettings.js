@@ -206,6 +206,9 @@ let virtualMachineValidations = {
         };
     },
     existingWindowsServerlicense: (value, parent) => {
+        if(_.isNil(value)) {
+           return { result: true };
+        }
         if (!_.isBoolean(value)) {
             return {
                 result: false,
