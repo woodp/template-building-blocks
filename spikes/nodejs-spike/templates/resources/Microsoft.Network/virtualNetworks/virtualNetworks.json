@@ -12,6 +12,8 @@
     {
       "type": "Microsoft.Network/virtualNetworks",
       "apiVersion": "2016-06-01",
+      "condition": "[greater(length(parameters('source')), 0)]",
+      "resourceGroup": "[parameters('source')[copyIndex()].resourceGroupName]",
       "location": "[resourceGroup().location]",
       "name": "[parameters('source')[copyIndex()].name]",
       "copy": {

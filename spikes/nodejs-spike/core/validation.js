@@ -1,3 +1,5 @@
+'use strict';
+
 let _ = require('../lodashMixins.js');
 let validationMessages = require('./validationMessages.js');
 
@@ -80,18 +82,18 @@ function reduce({validations, value, parentKey, parentValue, accumulator}) {
                     message: `Invalid value: ${toString(value)}.` + (message ? '  ' + message : '')
                 });
             } else {
-                let localValidations = validations;
-                if (result.validations) {
-                    // We got back more validations to run.  Since we are in an array, we'll replace the one we have with this one.
-                    // reduce({
-                    //     validations: result.validations,
-                    //     value: value,
-                    //     parentKey: `${parentKey}`,
-                    //     parentValue: parentValue,
-                    //     accumulator: accumulator
-                    // });
-                    localValidations = result.validations;
-                }
+                // let localValidations = validations;
+                // if (result.validations) {
+                //     // We got back more validations to run.  Since we are in an array, we'll replace the one we have with this one.
+                //     // reduce({
+                //     //     validations: result.validations,
+                //     //     value: value,
+                //     //     parentKey: `${parentKey}`,
+                //     //     parentValue: parentValue,
+                //     //     accumulator: accumulator
+                //     // });
+                //     localValidations = result.validations;
+                // }
                 _.reduce(value, (accumulator, item, index) => {
                     //let result = validationWrapper(localValidations, item, parentValue);
                     // if (localValidations) {
@@ -195,7 +197,8 @@ let validationWrapper = (validation, value, parent) => {
         // Hopefully it's the right shape!
         return r;
     }
-}
+};
+
 let cidrRegex = /^(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(?:\/([0-9]|[1-2][0-9]|3[0-2]))$/;
 let ipAddressRegex = /^(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/;
 
@@ -224,7 +227,7 @@ let utilities = {
                     return false;
                 }
 
-                var [low, high] = _.map(split, (value, index, collection) => {
+                var [low, high] = _.map(split, (value) => {
                     return _.toSafeInteger(value);
                 });
 
@@ -236,7 +239,7 @@ let utilities = {
 };
 
 let validationUtilities = {
-    isBoolean: (value, parent) => {
+    isBoolean: (value) => {
         return {
             result: _.isBoolean(value),
             message: 'Value must be Boolean'

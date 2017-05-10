@@ -33,8 +33,28 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "Run ESLint",
+            "program": "${workspaceRoot}/node_modules/gulp/bin/gulp.js",
+            "stopOnEntry": false,
+            "args": [
+                "run-eslint"
+            ],
+            "protocol": "inspector",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceRoot}"
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "Launch Program",
             "program": "${workspaceRoot}/app.js",
+            "cwd": "${workspaceRoot}"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch Web API",
+            "program": "${workspaceRoot}/index.js",
             "cwd": "${workspaceRoot}"
         },
         {

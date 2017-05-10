@@ -1,8 +1,8 @@
+'use strict';
+
 let _ = require('../lodashMixins.js');
 let v = require('./validation.js');
 let r = require('./resources.js');
-
-let validationMessages = require('./validationMessages.js');
 
 let routeTableSettingsDefaults = {
     virtualNetworks: [],
@@ -18,7 +18,7 @@ let isValidNextHopType = (nextHopType) => {
 let routeValidations = {
     name: v.utilities.isNotNullOrWhitespace,
     addressPrefix: v.utilities.networking.isValidCidr,
-    nextHopType: (value, parent) => {
+    nextHopType: (value) => {
         return {
             result: isValidNextHopType(value),
             message: `Valid values are ${validNextHopTypes.join(',')}`
@@ -31,8 +31,8 @@ let routeValidations = {
 
 let virtualNetworkValidations = {
     name: v.utilities.isNotNullOrWhitespace,
-    subnets: (value, parent) => {
-       if ((_.isNil(value)) || (value.length === 0)) {
+    subnets: (value) => {
+        if ((_.isNil(value)) || (value.length === 0)) {
             return {
                 result: false,
                 message: 'Value cannot be null, undefined, or an empty array'
@@ -47,8 +47,7 @@ let virtualNetworkValidations = {
 
 let routeTableSettingsValidations = {
     name: v.utilities.isNotNullOrWhitespace,
-    //routes: routeValidations,
-    routes: (value, parent) => {
+    routes: (value) => {
         if ((_.isNil(value)) || (value.length === 0)) {
             return {
                 result: false,
@@ -57,7 +56,7 @@ let routeTableSettingsValidations = {
         }
 
         // Validate route names
-        let names = _.reduce(value, (accumulator, value, index, collection) => {
+        let names = _.reduce(value, (accumulator, value) => {
             if (v.utilities.isNotNullOrWhitespace(value.name)) {
                 if (!accumulator[value.name]) {
                     accumulator[value.name] = 0;
@@ -68,7 +67,7 @@ let routeTableSettingsValidations = {
             return accumulator;
         }, {});
 
-        let duplicates = _.reduce(names, (accumulator, value, key, collection) => {
+        let duplicates = _.reduce(names, (accumulator, value, key) => {
             if (value > 1) {
                 accumulator.push(key);
             }
@@ -87,7 +86,7 @@ let routeTableSettingsValidations = {
             validations: routeValidations
         };
     },
-    virtualNetworks: (value, parent) => {
+    virtualNetworks: (value) => {
         // We allow empty arrays
         let result = {
             result: true
@@ -104,7 +103,7 @@ let routeTableSettingsValidations = {
     }
 };
 
-let mergeCustomizer = function (objValue, srcValue, key, object, source, stack) {
+let mergeCustomizer = function (objValue, srcValue, key) {
     if (v.utilities.isStringInArray(key, ['routes', 'virtualNetworks'])) {
         if ((!_.isNil(srcValue)) && (_.isArray(srcValue))) {
             return srcValue;
@@ -124,10 +123,10 @@ function transform(settings) {
             _.each(virtualNetwork.subnets, (subnet) => {
                 result.push(r.resourceId(virtualNetwork.subscriptionId, virtualNetwork.resourceGroupName, 'Microsoft.Network/virtualNetworks/subnets',
                     virtualNetwork.name, subnet));
-            })
+            });
         }, []),
         properties: {
-            routes: _.map(settings.routes, (value, index) => {
+            routes: _.map(settings.routes, (value) => {
                 let result = {
                     name: value.name,
                     properties: {
@@ -139,33 +138,33 @@ function transform(settings) {
                 if (value.nextHopIpAddress) {
                     result.properties.nextHopIpAddress = value.nextHopIpAddress;
                 }
-                
+
                 return result;
             })
         }
     };
 }
 
-exports.transform = function ({settings, buildingBlockSettings}) {
+exports.transform = function ({ settings, buildingBlockSettings }) {
     if (_.isPlainObject(settings)) {
         settings = [settings];
     }
 
-    let results = _.transform(settings, (result, setting, index) => {
-        let merged = v.merge(setting, routeTableSettingsDefaults);
+    let results = _.transform(settings, (result, setting) => {
+        let merged = v.merge(setting, routeTableSettingsDefaults, mergeCustomizer);
         let errors = v.validate({
             settings: merged,
             validations: routeTableSettingsValidations
         });
 
         if (errors.length > 0) {
-          throw new Error(JSON.stringify(errors));
+            throw new Error(JSON.stringify(errors));
         }
 
         result.push(merged);
     }, []);
 
-    buildingBlockErrors = v.validate({
+    let buildingBlockErrors = v.validate({
         settings: buildingBlockSettings,
         validations: {
             subscriptionId: v.utilities.isNotNullOrWhitespace,
@@ -179,7 +178,7 @@ exports.transform = function ({settings, buildingBlockSettings}) {
 
     results = _.transform(results, (result, setting) => {
         setting = r.setupResources(setting, buildingBlockSettings, (parentKey) => {
-            return ((parentKey === null) || (parentKey === "virtualNetworks"));
+            return ((parentKey === null) || (parentKey === 'virtualNetworks'));
         });
         setting = transform(setting);
         result.push(setting);

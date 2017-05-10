@@ -1,8 +1,8 @@
+'use strict';
+
 let _ = require('../lodashMixins.js');
 let v = require('./validation.js');
 let r = require('./resources.js');
-
-let validationMessages = require('./validationMessages.js');
 
 let networkSecurityGroupSettingsDefaults = {
     virtualNetworks: [],
@@ -40,7 +40,7 @@ let isValidAccess = (access) => {
 
 let networkSecurityGroupSettingsSecurityRulesValidations = {
     name: v.utilities.isNotNullOrWhitespace,
-    protocol: (value, parent) => {
+    protocol: (value) => {
         return {
             result: isValidProtocol(value),
             message: `Valid values are ${validProtocols.join(',')}`
@@ -48,26 +48,26 @@ let networkSecurityGroupSettingsSecurityRulesValidations = {
     },
     sourcePortRange: v.utilities.networking.isValidPortRange,
     destinationPortRange: v.utilities.networking.isValidPortRange,
-    sourceAddressPrefix: (value, parent) => {
+    sourceAddressPrefix: (value) => {
         return {
             result: isValidAddressPrefix(value),
             message: `Valid values are an IPAddress, a CIDR, or one of the following values: ${validDefaultTags.join(',')}`
         };
     },
-    destinationAddressPrefix: (value, parent) => {
+    destinationAddressPrefix: (value) => {
         return {
             result: isValidAddressPrefix(value),
             message: `Valid values are an IPAddress, a CIDR, or one of the following values: ${validDefaultTags.join(',')}`
         };
     },
-    direction: (value, parent) => {
+    direction: (value) => {
         return {
             result: isValidDirection(value),
             message: `Valid values are ${validDirections.join(',')}`
         };
     },
     priority: isValidPriority,
-    access: (value, parent) => {
+    access: (value) => {
         return {
             result: isValidAccess(value),
             message: `Valid values are ${validAccesses.join(',')}`
@@ -77,8 +77,8 @@ let networkSecurityGroupSettingsSecurityRulesValidations = {
 
 let virtualNetworkValidations = {
     name: v.utilities.isNotNullOrWhitespace,
-    subnets: (value, parent) => {
-       if ((_.isNil(value)) || (value.length === 0)) {
+    subnets: (value) => {
+        if ((_.isNil(value)) || (value.length === 0)) {
             return {
                 result: false,
                 message: 'Value cannot be null, undefined, or an empty array'
@@ -97,7 +97,7 @@ let networkInterfaceValidations = {
 
 let networkSecurityGroupSettingsValidations = {
     name: v.utilities.isNotNullOrWhitespace,
-    securityRules: (value, parent) => {
+    securityRules: (value) => {
         // We allow empty arrays
         let result = {
             result: true
@@ -112,7 +112,7 @@ let networkSecurityGroupSettingsValidations = {
 
         return result;
     },
-    virtualNetworks: (value, parent) => {
+    virtualNetworks: (value) => {
         // We allow empty arrays
         let result = {
             result: true
@@ -127,7 +127,7 @@ let networkSecurityGroupSettingsValidations = {
 
         return result;
     },
-    networkInterfaces: (value, parent) => {
+    networkInterfaces: (value) => {
         // We allow empty arrays
         let result = {
             result: true
@@ -144,7 +144,7 @@ let networkSecurityGroupSettingsValidations = {
     }
 };
 
-let mergeCustomizer = function (objValue, srcValue, key, object, source, stack) {
+let mergeCustomizer = function (objValue, srcValue, key) {
     if (v.utilities.isStringInArray(key, ['virtualNetworks', 'networkInterfaces', 'securityRules'])) {
         if ((!_.isNil(srcValue)) && (_.isArray(srcValue))) {
             return srcValue;
@@ -164,14 +164,14 @@ function transform(settings) {
             _.each(virtualNetwork.subnets, (subnet) => {
                 result.push(r.resourceId(virtualNetwork.subscriptionId, virtualNetwork.resourceGroupName, 'Microsoft.Network/virtualNetworks/subnets',
                     virtualNetwork.name, subnet));
-            })
+            });
         }, []),
         networkInterfaces: _.transform(settings.networkInterfaces, (result, networkInterface) => {
             result.push(r.resourceId(networkInterface.subscriptionId, networkInterface.resourceGroupName, 'Microsoft.Network/networkInterfaces',
                     networkInterface.name));
         }, []),
         properties: {
-            securityRules: _.map(settings.securityRules, (value, index) => {
+            securityRules: _.map(settings.securityRules, (value) => {
                 let result = {
                     name: value.name,
                     properties: {
@@ -197,20 +197,20 @@ exports.transform = function ({settings, buildingBlockSettings}) {
         settings = [settings];
     }
 
-    let results = _.transform(settings, (result, setting, index) => {
-        let merged = v.merge(setting, networkSecurityGroupSettingsDefaults);
+    let results = _.transform(settings, (result, setting) => {
+        let merged = v.merge(setting, networkSecurityGroupSettingsDefaults, mergeCustomizer);
         let errors = v.validate({
             settings: merged,
             validations: networkSecurityGroupSettingsValidations
         });
         if (errors.length > 0) {
-          throw new Error(JSON.stringify(errors));
+            throw new Error(JSON.stringify(errors));
         }
 
         result.push(merged);
     }, []);
 
-    buildingBlockErrors = v.validate({
+    let buildingBlockErrors = v.validate({
         settings: buildingBlockSettings,
         validations: {
             subscriptionId: v.utilities.isNotNullOrWhitespace,
@@ -224,7 +224,7 @@ exports.transform = function ({settings, buildingBlockSettings}) {
 
     results = _.transform(results, (result, setting) => {
         setting = r.setupResources(setting, buildingBlockSettings, (parentKey) => {
-            return ((parentKey === null) || (parentKey === "virtualNetworks") || (parentKey === "networkInterfaces"));
+            return ((parentKey === null) || (parentKey === 'virtualNetworks') || (parentKey === 'networkInterfaces'));
         });
         setting = transform(setting);
         result.push(setting);

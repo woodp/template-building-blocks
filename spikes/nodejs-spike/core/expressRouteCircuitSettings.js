@@ -1,8 +1,8 @@
+'use strict';
+
 let _ = require('../lodashMixins.js');
 let v = require('./validation.js');
 let r = require('./resources.js');
-
-let validationMessages = require('./validationMessages.js');
 
 let expressRouteCircuitSettingsDefaults = {
     skuTier: 'Standard',
@@ -19,17 +19,17 @@ let isValidSkuTier = (tier) => {
 
 let isValidSkuFamily = (family) => {
     return v.utilities.isStringInArray(family, validSkuFamilies);
-}
+};
 
 let expressRouteCircuitSettingsValidations = {
     name: v.utilities.isNotNullOrWhitespace,
-    skuTier: (value, parent) => {
+    skuTier: (value) => {
         return {
             result: isValidSkuTier(value),
             message: `Valid values are ${validSkuTiers.join(',')}`
         };
     },
-    skuFamily: (value, parent) => {
+    skuFamily: (value) => {
         return {
             result: isValidSkuFamily(value),
             message: `Valid values are ${validSkuFamilies.join(',')}`
@@ -70,7 +70,7 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
         settings = [settings];
     }
 
-    let results = _.transform(settings, (result, setting, index) => {
+    let results = _.transform(settings, (result, setting) => {
         let merged = v.merge(setting, expressRouteCircuitSettingsDefaults);
         let errors = v.validate({
             settings: merged,
@@ -83,7 +83,7 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
         result.push(merged);
     }, []);
 
-    buildingBlockErrors = v.validate({
+    let buildingBlockErrors = v.validate({
         settings: buildingBlockSettings,
         validations: {
             subscriptionId: v.utilities.isNotNullOrWhitespace,
