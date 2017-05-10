@@ -75,7 +75,15 @@ let encryptionSettingsValidations = {
 };
 
 let virtualMachineValidations = {
-    virtualNetwork: v.utilities.isNotNullOrWhitespace,
+    virtualNetwork: (value, parent) => {
+        let virtualNetworkValidations = {
+            name: v.utilities.isNotNullOrWhitespace
+        }
+
+        return {
+            validations: virtualNetworkValidations
+        };
+    },
     vmCount: (value, parent) => {
         return {
             result: _.isFinite(value) && (value > 0),
@@ -206,8 +214,8 @@ let virtualMachineValidations = {
         };
     },
     existingWindowsServerlicense: (value, parent) => {
-        if(_.isNil(value)) {
-           return { result: true };
+        if (_.isNil(value)) {
+            return { result: true };
         }
         if (!_.isBoolean(value)) {
             return {
@@ -274,7 +282,7 @@ let virtualMachineValidations = {
     nics: (value, parent) => {
         if ((!_.isNil(value)) && (value.length > 0)) {
             let primaryNicCount = _.reduce(value, (accumulator, value, index, collection) => {
-                if (value.isPrimary) {
+                if (value.isPrimary === true) {
                     accumulator++;
                 }
 
@@ -310,9 +318,7 @@ let processorProperties = {
                 licenseType: "Windows_Server"
             }
         } else {
-            return {
-                licenseType: null
-            }
+            return;
         }
     },
     availabilitySet: (value, key, index, parent) => {
@@ -347,10 +353,11 @@ let processorProperties = {
             name: parent.name.concat('-os.vhd'),
             createOption: value.createOption,
             caching: value.caching,
-            diskSizeGB: value.diskSizeGB,
             osType: value.osType
         }
-
+        if (value.hasOwnProperty('diskSizeGB')) {
+            instance.diskSizeGB = value.diskSizeGB;
+        }
         if (value.encryptionSettings) {
             instance.encryptionSettings = {
                 diskEncryptionKey: {
@@ -406,7 +413,7 @@ let processorProperties = {
             };
             if (value.properties.createOption === 'attach') {
                 instance.image = {
-                    uri: value.image
+                    uri: value.properties.image
                 }
             } else if (parent.storageAccounts.managed) {
                 instance.managedDisk = {
