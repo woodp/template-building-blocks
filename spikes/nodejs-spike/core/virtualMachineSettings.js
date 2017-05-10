@@ -11,12 +11,12 @@ const defaultsPath = './defaults/virtualMachinesSettings.';
 function merge(settings) {
     if (!settings.osDisk) {
         throw new Error(JSON.stringify({
-            name: ".osDisk",
+            name: '.osDisk',
             message: `Invalid value: ${settings.osDisk}`
         }));
     } else if (!isValidOSType(settings.osDisk.osType)) {
         throw new Error(JSON.stringify({
-            name: ".osDisk.osType",
+            name: '.osDisk.osType',
             message: `Invalid value: ${settings.osDisk.osType}. Valid values for 'osType' are: ${validOSTypes.join(', ')}`
         }));
     }
@@ -55,7 +55,7 @@ function validate(settings) {
 }
 
 function defaultsCustomizer(objValue, srcValue, key) {
-    if (objValue && key === "nics") {
+    if (objValue && key === 'nics') {
         if (srcValue && _.isArray(srcValue) && srcValue.length > 0) {
             objValue.splice(0, 1);
         }
@@ -75,23 +75,23 @@ let encryptionSettingsValidations = {
 };
 
 let virtualMachineValidations = {
-    virtualNetwork: (value, parent) => {
+    virtualNetwork: (value) => {
         let virtualNetworkValidations = {
             name: v.utilities.isNotNullOrWhitespace
-        }
+        };
 
         return {
             validations: virtualNetworkValidations
         };
     },
-    vmCount: (value, parent) => {
+    vmCount: (value) => {
         return {
             result: _.isFinite(value) && (value > 0),
             message: 'Value must be greater than 0'
         };
     },
     namePrefix: v.utilities.isNotNullOrWhitespace,
-    computerNamePrefix: (value, parent) => {
+    computerNamePrefix: (value) => {
         return {
             result: v.utilities.isNotNullOrWhitespace(value) && (value.length < 7),
             message: 'Value cannot be longer than 6 characters'
@@ -102,23 +102,24 @@ let virtualMachineValidations = {
         // We will need this, so we'll capture here.
         let isManagedStorageAccounts = parent.storageAccounts.managed;
         let osDiskValidations = {
-            caching: (value, parent) => {
+            caching: (value) => {
                 return {
                     result: isValidCachingType(value),
                     message: `Valid values are ${validCachingType.join(', ')}`
                 };
             },
-            createOption: (value, parent) => {
+            createOption: (value) => {
                 if (!isValidCreateOptions(value)) {
                     return {
                         result: false,
                         message: `Valid values are ${validCreateOptions.join(', ')}`
                     };
-                };
+                }
+
                 if (isManagedStorageAccounts && value === 'attach') {
                     return {
                         result: false,
-                        message: `Value cannot be 'attach' with managed disks`
+                        message: 'Value cannot be attach with managed disks'
                     };
                 }
                 return { result: true };
@@ -127,12 +128,12 @@ let virtualMachineValidations = {
                 if (parent.createOption === 'attach' && _.isNullOrWhitespace(value)) {
                     return {
                         result: false,
-                        message: `Value of 'image' cannot be null or empty, if value of '.osDisk.createOption' is 'attach'}`
+                        message: 'Value of image cannot be null or empty, if value of .osDisk.createOption is attach'
                     };
                 };
                 return { result: true };
             },
-            osType: (value, parent) => {
+            osType: (value) => {
                 return {
                     result: isValidOSType(value),
                     message: `Valid values are ${validOSTypes.join(', ')}`
@@ -223,7 +224,7 @@ let virtualMachineValidations = {
                 message: 'Value must be Boolean'
             };
         };
-        if (parent.osDisk.osType !== "windows" && value) {
+        if (parent.osDisk.osType !== 'windows' && value) {
             return {
                 result: false,
                 message: 'Value cannot be true, if the osType is windows'
@@ -240,13 +241,13 @@ let virtualMachineValidations = {
         if (!isValidOSAuthenticationType(value)) {
             result = {
                 result: false,
-                message: "Valid values for 'osAuthenticationType' are: 'ssh', 'password'"
+                message: `Valid values for 'osAuthenticationType' are:  ${validOSAuthenticationTypes.join(',')}`
             };
         }
         if (value === 'ssh' && parent.osDisk.osType === 'windows') {
             result = {
                 result: false,
-                message: "Valid value for 'osAuthenticationType' for windows is: 'password'"
+                message: 'Valid value for osAuthenticationType for windows is: password'
             };
         }
         return result;
@@ -292,7 +293,7 @@ let virtualMachineValidations = {
             if (primaryNicCount !== 1) {
                 return {
                     result: false,
-                    message: "Virtual machine can have only 1 primary NetworkInterface."
+                    message: 'Virtual machine can have only 1 primary NetworkInterface.'
                 };
             }
         }
@@ -313,9 +314,9 @@ let childResourceToMerge = {
 
 let processorProperties = {
     existingWindowsServerlicense: (value, key, index, parent) => {
-        if (parent.osDisk.osType === "windows" && value) {
+        if (parent.osDisk.osType === 'windows' && value) {
             return {
-                licenseType: "Windows_Server"
+                licenseType: 'Windows_Server'
             }
         } else {
             return;
@@ -363,13 +364,13 @@ let processorProperties = {
                 diskEncryptionKey: {
                     secretUrl: value.encryptionSettings.diskEncryptionKey.secretUrl,
                     sourceVault: {
-                        id: resources.resourceId(value.encryptionSettings.subscriptionId, value.encryptionSettings.resourceGroupName, "Microsoft.KeyVault/vaults", value.encryptionSettings.diskEncryptionKey.sourceVaultName)
+                        id: resources.resourceId(value.encryptionSettings.subscriptionId, value.encryptionSettings.resourceGroupName, 'Microsoft.KeyVault/vaults', value.encryptionSettings.diskEncryptionKey.sourceVaultName)
                     }
                 },
                 keyEncryptionKey: {
                     keyUrl: value.encryptionSettings.keyEncryptionKey.keyUrl,
                     sourceVault: {
-                        id: resources.resourceId(value.encryptionSettings.subscriptionId, value.encryptionSettings.resourceGroupName, "Microsoft.KeyVault/vaults", value.encryptionSettings.keyEncryptionKey.sourceVaultName)
+                        id: resources.resourceId(value.encryptionSettings.subscriptionId, value.encryptionSettings.resourceGroupName, 'Microsoft.KeyVault/vaults', value.encryptionSettings.keyEncryptionKey.sourceVaultName)
                     }
                 },
                 enabled: true
@@ -478,13 +479,13 @@ let processorProperties = {
     computerNamePrefix: (value, key, index, parent) => {
         return {
             osProfile: {
-                computerName: value.concat("-vm", index + 1)
+                computerName: value.concat('-vm', index + 1)
             }
         }
     },
     adminPassword: (value, key, index, parent) => {
-        if (_.toLower(parent.osAuthenticationType) === "password") {
-            if (parent.osDisk.osType === "windows") {
+        if (_.toLower(parent.osAuthenticationType) === 'password') {
+            if (parent.osDisk.osType === 'windows') {
                 return {
                     osProfile: {
                         adminPassword: '$SECRET$',
@@ -504,7 +505,7 @@ let processorProperties = {
         }
     },
     sshPublicKey: (value, key, index, parent) => {
-        if (_.toLower(parent.osAuthenticationType) === "ssh") {
+        if (_.toLower(parent.osAuthenticationType) === 'ssh') {
             return {
                 osProfile: {
                     adminPassword: null,
@@ -535,36 +536,36 @@ let processorProperties = {
 let processChildResources = {
     storageAccounts: (value, key, index, parent, accumulator) => {
         if (!accumulator.hasOwnProperty('storageAccounts')) {
-            let mergedCol = (accumulator["storageAccounts"] || (accumulator["storageAccounts"] = [])).concat(storageSettings.processStorageSettings(value, parent));
+            let mergedCol = (accumulator['storageAccounts'] || (accumulator['storageAccounts'] = [])).concat(storageSettings.processStorageSettings(value, parent));
             accumulator.storageAccounts = mergedCol;
         }
     },
     diagnosticStorageAccounts: (value, key, index, parent, accumulator) => {
         if (!accumulator.hasOwnProperty('diagnosticStorageAccounts')) {
-            let mergedCol = (accumulator["diagnosticStorageAccounts"] || (accumulator["diagnosticStorageAccounts"] = [])).concat(storageSettings.processStorageSettings(value, parent));
+            let mergedCol = (accumulator['diagnosticStorageAccounts'] || (accumulator['diagnosticStorageAccounts'] = [])).concat(storageSettings.processStorageSettings(value, parent));
             accumulator.diagnosticStorageAccounts = mergedCol;
         }
     },
     nics: (value, key, index, parent, accumulator) => {
         let col = nicSettings.processNetworkInterfaceSettings(value, parent, index);
 
-        let mergedCol = (accumulator["nics"] || (accumulator["nics"] = [])).concat(col.nics);
-        accumulator["nics"] = mergedCol;
-        mergedCol = (accumulator["pips"] || (accumulator["pips"] = [])).concat(col.pips);
-        accumulator["pips"] = mergedCol;
+        let mergedCol = (accumulator['nics'] || (accumulator['nics'] = [])).concat(col.nics);
+        accumulator['nics'] = mergedCol;
+        mergedCol = (accumulator['pips'] || (accumulator['pips'] = [])).concat(col.pips);
+        accumulator['pips'] = mergedCol;
     },
     availabilitySet: (value, key, index, parent, accumulator) => {
         if (value.useExistingAvailabilitySet || parent.vmCount < 2) {
-            accumulator["availabilitySet"] = [];
+            accumulator['availabilitySet'] = [];
         } else if (!accumulator.hasOwnProperty('availabilitySet')) {
-            accumulator["availabilitySet"] = avSetSettings.processAvSetSettings(value, parent);
+            accumulator['availabilitySet'] = avSetSettings.processAvSetSettings(value, parent);
         }
     },
     osDisk: (value, key, index, parent, accumulator) => {
-        if (value.osType === "linux" && _.toLower(parent.osAuthenticationType) === "ssh") {
-            accumulator["secret"] = parent.sshPublicKey;
+        if (value.osType === 'linux' && _.toLower(parent.osAuthenticationType) === 'ssh') {
+            accumulator['secret'] = parent.sshPublicKey;
         } else {
-            accumulator["secret"] = parent.adminPassword;
+            accumulator['secret'] = parent.adminPassword;
         }
     },
 }
@@ -573,14 +574,14 @@ function processVMStamps(param, buildingBlockSettings) {
     // resource template do not use the vmCount property. Remove from the template
     let vmCount = param.vmCount;
     param = resources.setupResources(param, buildingBlockSettings, (parentKey) => {
-        return ((parentKey === null) || (parentKey === "virtualNetwork") || (parentKey === "availabilitySet") ||
-            (parentKey === "nics") || (parentKey === "diagnosticStorageAccounts") || (parentKey === "storageAccounts") || (parentKey === "encryptionSettings"));
+        return ((parentKey === null) || (parentKey === 'virtualNetwork') || (parentKey === 'availabilitySet') ||
+            (parentKey === 'nics') || (parentKey === 'diagnosticStorageAccounts') || (parentKey === 'storageAccounts') || (parentKey === 'encryptionSettings'));
     });
     // deep clone settings for the number of VMs required (vmCount)  
     return _.transform(_.castArray(param), (result, n) => {
         for (let i = 0; i < vmCount; i++) {
             let stamp = _.cloneDeep(n);
-            stamp.name = n.namePrefix.concat("-vm", i + 1)
+            stamp.name = n.namePrefix.concat('-vm', i + 1)
 
             // delete namePrefix property since we wont need it anymore
             delete stamp.namePrefix;
@@ -614,14 +615,14 @@ function process(param, buildingBlockSettings) {
 
 function createTemplateParameters(resources) {
     let templateParameters = {
-        $schema: "http://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
-        contentVersion: "1.0.0.0",
+        $schema: 'http://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#',
+        contentVersion: '1.0.0.0',
         parameters: {
 
         }
     };
     templateParameters.parameters = _.transform(resources, (result, value, key, obj) => {
-        if (key === "secret" && !_.isString(value)) {
+        if (key === 'secret' && !_.isString(value)) {
             result[key] = value;
         } else {
             result[key] = {};

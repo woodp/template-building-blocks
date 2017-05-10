@@ -44,7 +44,7 @@ let networkInterfaceValidations = {
 
         return result;
     },
-    publicIPAllocationMethod: (value, parent) => {
+    publicIPAllocationMethod: (value) => {
         return {
             result: isValidIPAllocationMethod(value),
             message: `Valid values are ${validIPAllocationMethods.join(',')}`
@@ -52,7 +52,7 @@ let networkInterfaceValidations = {
     },
     isPrimary: v.validationUtilities.isBoolean,
     isPublic: v.validationUtilities.isBoolean,
-    dnsServers: (value, parent) => {
+    dnsServers: (value) => {
         if (_.isNil(value)) {
             return {
                 result: false,
@@ -76,7 +76,7 @@ function intToIP(int) {
     var part3 = ((int >> 16) & 255);
     var part4 = ((int >> 24) & 255);
 
-    return part4 + "." + part3 + "." + part2 + "." + part1;
+    return part4 + '.' + part3 + '.' + part2 + '.' + part1;
 }
 
 function ipToInt(ip) {
@@ -86,7 +86,7 @@ function ipToInt(ip) {
         ipl += parseInt(octet);
     });
     return (ipl >>> 0);
-};
+}
 
 function createPipParameters(parent) {
     return pipSettings.processPipSettings(parent);
@@ -100,10 +100,12 @@ function process(settings, parent, vmIndex) {
             name: n.name,
             ipConfigurations: [
                 {
-                    name: "ipconfig1",
+                    name: 'ipconfig1',
                     properties: {
                         privateIPAllocationMethod: n.privateIPAllocationMethod,
-                        subnet: { "id": resources.resourceId(parent.virtualNetwork.subscriptionId, parent.virtualNetwork.resourceGroupName, 'Microsoft.Network/virtualNetworks/subnets', parent.virtualNetwork.name, n.subnetName) }
+                        subnet: {
+                            id: resources.resourceId(parent.virtualNetwork.subscriptionId, parent.virtualNetwork.resourceGroupName, 'Microsoft.Network/virtualNetworks/subnets', parent.virtualNetwork.name, n.subnetName)
+                        }
                     }
                 }
             ],
@@ -119,15 +121,21 @@ function process(settings, parent, vmIndex) {
             let pip = createPipParameters(n);
             result.pips = result.pips.concat(pip);
 
-            instance.ipConfigurations[0].properties.publicIPAddress = { "id": resources.resourceId(n.subscriptionId, n.resourceGroupName, 'Microsoft.Network/publicIPAddresses', pip[0].name) };
-        };
+            instance.ipConfigurations[0].properties.publicIPAddress = {
+                id: resources.resourceId(n.subscriptionId, n.resourceGroupName, 'Microsoft.Network/publicIPAddresses', pip[0].name)
+            };
+        }
+
         if (_.toLower(n.privateIPAllocationMethod) === 'static') {
             let updatedIp = intToIP(ipToInt(n.startingIPAddress) + vmIndex);
             instance.ipConfigurations[0].properties.privateIPAddress = updatedIp;
         }
         result.nics.push(instance);
         return result;
-    }, { "pips": [], "nics": [] })
+    }, {
+        pips: [],
+        nics: []
+    });
 }
 
 exports.processNetworkInterfaceSettings = process;

@@ -2,7 +2,7 @@
 var fs = require('fs');
 var _ = require('../lodashMixins.js');
 let v = require('./validation.js');
-var murmurHash = require('murmurhash-native').murmurHash64
+let murmurHash = require('murmurhash-native').murmurHash64;
 
 const storageDefaultsFile = './defaults/storageSettings.json';
 const diagDefaultsFile = './defaults/diagnosticStorageSettings.json';
@@ -15,7 +15,7 @@ function merge(settings, key) {
         defaults = JSON.parse(fs.readFileSync(diagDefaultsFile, 'UTF-8'));
     }
 
-    return v.merge(settings, defaults)
+    return v.merge(settings, defaults);
 }
 
 let storageValidations = {
@@ -33,7 +33,7 @@ let storageValidations = {
             message: 'Value cannot be null or empty string if managed is set to false'
         };
     },
-    accounts: (value, parent) => {
+    accounts: (value) => {
         return {
             result: _.isArray(value),
             message: 'Value cannot be null'
@@ -42,32 +42,32 @@ let storageValidations = {
 };
 
 let diagnosticValidations = {
-    managed: (value, parent) => {
+    managed: (value) => {
         if (!_.isBoolean(value)) {
             return {
                 result: false,
                 message: 'Value must be Boolean'
-            }
+            };
         }
         return {
             result: !value,
             message: 'Diagnostic storage cannot be managed.'
         };
     },
-    skuType: (value, parent) => {
+    skuType: (value) => {
         return {
-            result: (v.utilities.isNotNullOrWhitespace(value)) && !_.includes(_.toLower(value), "premium"),
+            result: (v.utilities.isNotNullOrWhitespace(value)) && !_.includes(_.toLower(value), 'premium'),
             message: 'Diagnostic storage cannot use premium storage.'
-        }
+        };
     },
-    count: (value, parent) => {
+    count: (value) => {
         return {
             result: ((_.isFinite(value)) && value > 0),
             message: 'Value must be greater than 0'
         };
     },
     nameSuffix: v.utilities.isNotNullOrWhitespace,
-    accounts: (value, parent) => {
+    accounts: (value) => {
         return {
             result: _.isArray(value),
             message: 'Value cannot be null'
@@ -76,10 +76,10 @@ let diagnosticValidations = {
 };
 
 function convertToBase32(carryOverValue, carryOverBits, buffer) {
-    if (buffer.length === 0) return "";
+    if (buffer.length === 0) return '';
 
-    let charSet = "abcdefghijklmnopqrstuvwxyz234567";
-    let base32String = "";
+    let charSet = 'abcdefghijklmnopqrstuvwxyz234567';
+    let base32String = '';
     let valueToProcess = carryOverValue * 256 + buffer[0];
     let bitsCount = carryOverBits + 8;
 
@@ -104,7 +104,7 @@ function getUniqueString(input) {
     return convertToBase32(0, 0, buffer);
 }
 
-function createStamps(settings, parent) {
+function createStamps(settings) {
     // deep clone settings for the number of VMs required (vmCount)  
     return _.transform(_.castArray(settings), (result, n) => {
         for (let i = 0; i < settings.count - settings.accounts.length; i++) {
@@ -128,7 +128,7 @@ function process(settings, parent) {
         };
         result.push(instance);
         return result;
-    }, [])
+    }, []);
 }
 
 exports.processStorageSettings = process;

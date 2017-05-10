@@ -1,6 +1,4 @@
-
-var fs = require('fs');
-var _ = require('../lodashMixins.js');
+let _ = require('../lodashMixins.js');
 
 function merge(settings) {
     return settings;
@@ -8,7 +6,7 @@ function merge(settings) {
 
 function process(parent) {
     let instance = {};
-    return _.transform(_.castArray(instance), (result, n) => {
+    return _.transform(_.castArray(instance), (result) => {
         instance = {
             name: parent.name.concat('-pip'),
             properties: {
@@ -16,7 +14,7 @@ function process(parent) {
             }
         };
 
-        if (parent.hasOwnProperty("domainNameLabelPrefix") && !_.isNullOrWhitespace(parent.domainNameLabelPrefix)) {
+        if (parent.hasOwnProperty('domainNameLabelPrefix') && !_.isNullOrWhitespace(parent.domainNameLabelPrefix)) {
             instance.properties.dnsSettings = {};
             instance.properties.dnsSettings.domainNameLabel = parent.domainNameLabelPrefix;
         }
