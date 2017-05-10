@@ -1,8 +1,8 @@
+'use strict';
+
 let _ = require('../lodashMixins.js');
 let v = require('./validation.js');
 let r = require('./resources.js');
-
-let validationMessages = require('./validationMessages.js');
 
 let connectionSettingsDefaults = {
 };
@@ -29,7 +29,7 @@ let virtualNetworkGatewayValidations = {
 
 let connectionSettingsValidations = {
     name: v.utilities.isNotNullOrWhitespace,
-    connectionType: (value, parent) => {
+    connectionType: (value) => {
         return {
             result: isValidConnectionType(value),
             message: `Valid values are ${validConnectionTypes.join(',')}`
@@ -269,7 +269,7 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
         settings = [settings];
     }
 
-    let results = _.transform(settings, (result, setting, index) => {
+    let results = _.transform(settings, (result, setting) => {
         let merged = merge({settings: setting});
         let errors = validate({settings: merged});
         if (errors.length > 0) {
@@ -279,7 +279,7 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
         result.push(merged);
     }, []);
 
-    buildingBlockErrors = v.validate({
+    let buildingBlockErrors = v.validate({
         settings: buildingBlockSettings,
         validations: {
             subscriptionId: v.utilities.isNotNullOrWhitespace,

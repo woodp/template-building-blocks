@@ -1,14 +1,16 @@
+'use strict';
+
 let _ = require('../lodashMixins.js');
 let v = require('./validation.js');
 let r = require('./resources.js');
 let validationMessages = require('./validationMessages.js');
 
 let virtualNetworkSettingsDefaults = {
-    addressPrefixes: ["10.0.0.0/16"],
+    addressPrefixes: ['10.0.0.0/16'],
     subnets: [
         {
-            name: "default",
-            addressPrefix: "10.0.1.0/24"
+            name: 'default',
+            addressPrefix: '10.0.1.0/24'
         }
     ],
     dnsServers: [],
@@ -19,7 +21,7 @@ let virtualNetworkPeeringsSettingsDefaults = {
     allowForwardedTraffic: false,
     allowGatewayTransit: false,
     useRemoteGateways: false
-}
+};
 
 let virtualNetworkSettingsSubnetsValidations = {
     name: v.utilities.isNotNullOrWhitespace,
@@ -27,7 +29,7 @@ let virtualNetworkSettingsSubnetsValidations = {
 };
 
 let virtualNetworkSettingsPeeringValidations = {
-    name: (value, parent) => {
+    name: (value) => {
         // Undefined is okay, as it will be generated, but null or whitespace is not.
         if (_.isUndefined(value)) {
             return {
@@ -52,7 +54,7 @@ let virtualNetworkSettingsValidations = {
     name: v.utilities.isNotNullOrWhitespace,
     addressPrefixes: v.utilities.networking.isValidCidr,
     subnets: virtualNetworkSettingsSubnetsValidations,
-    dnsServers: (value, parent) => {
+    dnsServers: (value) => {
         // An empty array is okay
         let result = {
             result: true
@@ -68,10 +70,10 @@ let virtualNetworkSettingsValidations = {
                 validations: v.utilities.networking.isValidIpAddress
             };
         }
-        
+
         return result;
     },
-    virtualNetworkPeerings: (value, parent) => {
+    virtualNetworkPeerings: (value) => {
         // An empty array is okay
         let result = {
             result: true
@@ -101,13 +103,13 @@ function transform(settings) {
             addressSpace: {
                 addressPrefixes: settings.addressPrefixes
             },
-            subnets: _.map(settings.subnets, (value, index) => {
+            subnets: _.map(settings.subnets, (value) => {
                 return {
                     name: value.name,
                     properties: {
                         addressPrefix: value.addressPrefix
                     }
-                }
+                };
             }),
             dhcpOptions: {
                 dnsServers: settings.dnsServers
@@ -116,7 +118,7 @@ function transform(settings) {
     };
 }
 
-function transformVirtualNetworkPeering({settings, parentSettings}) {
+function transformVirtualNetworkPeering({ settings, parentSettings }) {
     let peeringName = settings.name ? settings.name : `${settings.remoteVirtualNetwork.name}-peer`;
     return {
         name: `${parentSettings.name}/${peeringName}`,
@@ -132,14 +134,14 @@ function transformVirtualNetworkPeering({settings, parentSettings}) {
     };
 }
 
-let mergeCustomizer = function (objValue, srcValue, key, object, source, stack) {
-    if (key === "subnets") {
+let mergeCustomizer = function (objValue, srcValue, key) {
+    if (key === 'subnets') {
         if ((!_.isNil(srcValue)) && (_.isArray(srcValue)) && (srcValue.length > 0)) {
             return srcValue;
         }
     }
 
-    if (key === "virtualNetworkPeerings") {
+    if (key === 'virtualNetworkPeerings') {
         if ((srcValue) && (_.isArray(srcValue)) && (srcValue.length > 0)) {
             return _.map(srcValue, (value) => v.merge(value, virtualNetworkPeeringsSettingsDefaults));
         }
@@ -151,7 +153,7 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
         settings = [settings];
     }
 
-    let results = _.transform(settings, (result, setting, index) => {
+    let results = _.transform(settings, (result, setting) => {
         let merged = v.merge(setting, virtualNetworkSettingsDefaults, mergeCustomizer);
         let errors = v.validate({
             settings: merged,
@@ -159,13 +161,13 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
         });
 
         if (errors.length > 0) {
-          throw new Error(JSON.stringify(errors));
+            throw new Error(JSON.stringify(errors));
         }
 
         result.push(merged);
     }, []);
 
-    buildingBlockErrors = v.validate({
+    let buildingBlockErrors = v.validate({
         settings: buildingBlockSettings,
         validations: {
             subscriptionId: v.utilities.isNotNullOrWhitespace,
@@ -179,14 +181,14 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
 
     results = _.transform(results, (result, setting) => {
         setting = r.setupResources(setting, buildingBlockSettings, (parentKey) => {
-            return ((parentKey === null) || (parentKey === "remoteVirtualNetwork"));
+            return ((parentKey === null) || (parentKey === 'remoteVirtualNetwork'));
         });
 
         result.virtualNetworks.push(transform(setting));
         if ((setting.virtualNetworkPeerings) && (setting.virtualNetworkPeerings.length > 0)) {
             result.virtualNetworkPeerings = result.virtualNetworkPeerings.concat(_.transform(setting.virtualNetworkPeerings,
                 (result, virtualNetworkPeeringSettings) => {
-                    result.push(transformVirtualNetworkPeering({settings: virtualNetworkPeeringSettings, parentSettings: setting}));
+                    result.push(transformVirtualNetworkPeering({ settings: virtualNetworkPeeringSettings, parentSettings: setting }));
                 }, []));
         }
     }, {

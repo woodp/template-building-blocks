@@ -133,46 +133,6 @@ describe('virtualNetworkGatewaySettings', () => {
         });
     });
 
-    describe('isValidIPAllocationMethod', () => {
-        let isValidIPAllocationMethod = virtualNetworkGatewaySettings.__get__('isValidIPAllocationMethod');
-        
-        it('undefined', () => {
-            expect(isValidIPAllocationMethod()).toEqual(false);
-        });
-
-        it('null', () => {
-            expect(isValidIPAllocationMethod(null)).toEqual(false);
-        });
-
-        it('empty', () => {
-            expect(isValidIPAllocationMethod('')).toEqual(false);
-        });
-
-        it('whitespace', () => {
-            expect(isValidIPAllocationMethod(' ')).toEqual(false);
-        });
-
-        it('invalid spacing', () => {
-            expect(isValidIPAllocationMethod(' Static ')).toEqual(false);
-        });
-
-        it('invalid casing', () => {
-            expect(isValidIPAllocationMethod('static')).toEqual(false);
-        });
-
-        it('invalid value', () => {
-            expect(isValidIPAllocationMethod('NOT_A_VALID_IP_ALLOCATION_METHOD')).toEqual(false);
-        });
-
-        it('Static', () => {
-            expect(isValidIPAllocationMethod('Static')).toEqual(true);
-        });
-
-        it('Dynamic', () => {
-            expect(isValidIPAllocationMethod('Dynamic')).toEqual(true);
-        });
-    });
-
     describe('validations', () => {
         let vngValidations = virtualNetworkGatewaySettings.__get__('virtualNetworkGatewaySettingsValidations');
 

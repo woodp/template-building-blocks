@@ -1,8 +1,8 @@
+'use strict';
+
 let _ = require('../lodashMixins.js');
 let v = require('./validation.js');
 let r = require('./resources.js');
-
-let validationMessages = require('./validationMessages.js');
 
 let virtualNetworkGatewaySettingsDefaults = {
     gatewayType: 'Vpn',
@@ -14,7 +14,6 @@ let virtualNetworkGatewaySettingsDefaults = {
 let validGatewayTypes = ['Vpn', 'ExpressRoute'];
 let validVpnTypes = ['PolicyBased', 'RouteBased'];
 let validSkus = ['Basic', 'HighPerformance', 'Standard', 'UltraPerformance'];
-let validIPAllocationMethods = ['Static', 'Dynamic'];
 
 let isValidGatewayType = (gatewayType) => {
     return v.utilities.isStringInArray(gatewayType, validGatewayTypes);
@@ -28,73 +27,69 @@ let isValidSku = (sku) => {
     return v.utilities.isStringInArray(sku, validSkus);
 };
 
-let isValidIPAllocationMethod = (ipAllocationMethod) => {
-    return v.utilities.isStringInArray(ipAllocationMethod, validIPAllocationMethods);
-};
-
 let publicIpAddressValidations = {
     name: v.utilities.isNotNullOrWhitespace
 };
 
 let bgpSettingsValidations = {
-    asn: (value, parent) => {
+    asn: (value) => {
         return _.isNil(value) ? {
             result: true
         } : {
-                result: _.isFinite(value),
-                message: 'Value must be an integer'
-            };
+            result: _.isFinite(value),
+            message: 'Value must be an integer'
+        };
     },
-    bgpPeeringAddress: (value, parent) => {
+    bgpPeeringAddress: (value) => {
         return _.isNil(value) ? {
             result: true
         } : {
-                result: !_.isNullOrWhitespace(value),
-                message: 'Value cannot be null, empty, or only whitespace'
-            };
+            result: !_.isNullOrWhitespace(value),
+            message: 'Value cannot be null, empty, or only whitespace'
+        };
     },
-    peerWeight: (value, parent) => {
+    peerWeight: (value) => {
         return _.isNil(value) ? {
             result: true
         } : {
-                result: _.isFinite(value),
-                message: 'Value must be an integer'
-            };
+            result: _.isFinite(value),
+            message: 'Value must be an integer'
+        };
     }
 };
 
 let virtualNetworkGatewaySettingsValidations = {
     name: v.utilities.isNotNullOrWhitespace,
-    gatewayType: (value, parent) => {
+    gatewayType: (value) => {
         return {
             result: isValidGatewayType(value),
             message: `Valid values are ${validGatewayTypes.join(',')}`
         };
     },
-    vpnType: (value, parent) => {
+    vpnType: (value) => {
         return {
             result: isValidVpnType(value),
             message: `Valid values are ${validVpnTypes.join(',')}`
         };
     },
     enableBgp: _.isBoolean,
-    sku: (value, parent) => {
+    sku: (value) => {
         return {
             result: isValidSku(value),
             message: `Valid values are ${validSkus.join(',')}`
         };
     },
-    bgpSettings: (value, parent) => {
+    bgpSettings: (value) => {
         return _.isNil(value) ? {
             result: true
         } : {
-                validations: bgpSettingsValidations
+            validations: bgpSettingsValidations
         };
     },
     virtualNetwork: {
         name: v.utilities.isNotNullOrWhitespace
     },
-    publicIpAddress: (value, parent) => {
+    publicIpAddress: (value) => {
         return _.isNil(value) ? {
             result: true
         } : {
@@ -151,7 +146,7 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
         settings = [settings];
     }
 
-    let results = _.transform(settings, (result, setting, index) => {
+    let results = _.transform(settings, (result, setting) => {
         let merged = v.merge(setting, virtualNetworkGatewaySettingsDefaults);
         let errors = v.validate({
             settings: merged,
@@ -164,7 +159,7 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
         result.push(merged);
     }, []);
 
-    buildingBlockErrors = v.validate({
+    let buildingBlockErrors = v.validate({
         settings: buildingBlockSettings,
         validations: {
             subscriptionId: v.utilities.isNotNullOrWhitespace,
@@ -178,7 +173,7 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
 
     results = _.transform(results, (result, setting) => {
         setting = r.setupResources(setting, buildingBlockSettings, (parentKey) => {
-            return ((parentKey === null) || (parentKey === "virtualNetwork") || (parentKey === 'publicIpAddress'));
+            return ((parentKey === null) || (parentKey === 'virtualNetwork') || (parentKey === 'publicIpAddress'));
         });
         setting = transform(setting);
         result.push(setting);
