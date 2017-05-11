@@ -3,50 +3,49 @@ describe('networkSecurityGroupSettings', () => {
     let _ = require('lodash');
     let nsgSettings = rewire('../core/networkSecurityGroupSettings.js');
     let validation = require('../core/validation.js');
-    let validationMessages = require('../core/validationMessages.js');
 
     describe('isValidProtocol', () => {
-        let isValidProtocol = nsgSettings.__get__("isValidProtocol");
+        let isValidProtocol = nsgSettings.__get__('isValidProtocol');
         
-            it('undefined', () => {
-                expect(isValidProtocol()).toEqual(false);
-            });
+        it('undefined', () => {
+            expect(isValidProtocol()).toEqual(false);
+        });
 
-            it('null', () => {
-                expect(isValidProtocol(null)).toEqual(false);
-            });
+        it('null', () => {
+            expect(isValidProtocol(null)).toEqual(false);
+        });
 
-            it('empty', () => {
-                expect(isValidProtocol('')).toEqual(false);
-            });
+        it('empty', () => {
+            expect(isValidProtocol('')).toEqual(false);
+        });
 
-            it('whitespace', () => {
-                expect(isValidProtocol(' ')).toEqual(false);
-            });
+        it('whitespace', () => {
+            expect(isValidProtocol(' ')).toEqual(false);
+        });
 
-            it('invalid spacing', () => {
-                expect(isValidProtocol(' TCP ')).toEqual(false);
-            });
+        it('invalid spacing', () => {
+            expect(isValidProtocol(' TCP ')).toEqual(false);
+        });
 
-            it('invalid casing', () => {
-                expect(isValidProtocol('tcp')).toEqual(false);
-            });
+        it('invalid casing', () => {
+            expect(isValidProtocol('tcp')).toEqual(false);
+        });
 
-            it('invalid value', () => {
-                expect(isValidProtocol('NOT_A_VALID_PROTOCOL')).toEqual(false);
-            });
+        it('invalid value', () => {
+            expect(isValidProtocol('NOT_A_VALID_PROTOCOL')).toEqual(false);
+        });
 
-            it('TCP', () => {
-                expect(isValidProtocol('TCP')).toEqual(true);
-            });
+        it('TCP', () => {
+            expect(isValidProtocol('TCP')).toEqual(true);
+        });
 
-            it('UDP', () => {
-                expect(isValidProtocol('UDP')).toEqual(true);
-            });
+        it('UDP', () => {
+            expect(isValidProtocol('UDP')).toEqual(true);
+        });
 
-            it('*', () => {
-                expect(isValidProtocol('*')).toEqual(true);
-            });
+        it('*', () => {
+            expect(isValidProtocol('*')).toEqual(true);
+        });
     });
 
     describe('isValidAddressPrefix', () => {
@@ -154,47 +153,47 @@ describe('networkSecurityGroupSettings', () => {
     });
 
     describe('isValidPriority', () => {
-        let isValidPriority = nsgSettings.__get__("isValidPriority");
+        let isValidPriority = nsgSettings.__get__('isValidPriority');
         
-            it('undefined', () => {
-                expect(isValidPriority()).toEqual(false);
-            });
+        it('undefined', () => {
+            expect(isValidPriority()).toEqual(false);
+        });
 
-            it('null', () => {
-                expect(isValidPriority(null)).toEqual(false);
-            });
+        it('null', () => {
+            expect(isValidPriority(null)).toEqual(false);
+        });
 
-            it('empty', () => {
-                expect(isValidPriority('')).toEqual(false);
-            });
+        it('empty', () => {
+            expect(isValidPriority('')).toEqual(false);
+        });
 
-            it('whitespace', () => {
-                expect(isValidPriority(' ')).toEqual(false);
-            });
+        it('whitespace', () => {
+            expect(isValidPriority(' ')).toEqual(false);
+        });
 
-            it('too low', () => {
-                expect(isValidPriority(99)).toEqual(false);
-            });
+        it('too low', () => {
+            expect(isValidPriority(99)).toEqual(false);
+        });
 
-            it('too high', () => {
-                expect(isValidPriority(4097)).toEqual(false);
-            });
+        it('too high', () => {
+            expect(isValidPriority(4097)).toEqual(false);
+        });
 
-            it('low', () => {
-                expect(isValidPriority(100)).toEqual(true);
-            });
+        it('low', () => {
+            expect(isValidPriority(100)).toEqual(true);
+        });
 
-            it('high', () => {
-                expect(isValidPriority(4096)).toEqual(true);
-            });
+        it('high', () => {
+            expect(isValidPriority(4096)).toEqual(true);
+        });
 
-            it('string', () => {
-                expect(isValidPriority('100')).toEqual(true);
-            });
+        it('string', () => {
+            expect(isValidPriority('100')).toEqual(true);
+        });
 
-            it('string with spacing', () => {
-                expect(isValidPriority(' 100 ')).toEqual(true);
-            });
+        it('string with spacing', () => {
+            expect(isValidPriority(' 100 ')).toEqual(true);
+        });
     });
 
     describe('isValidAccess', () => {
@@ -244,10 +243,10 @@ describe('networkSecurityGroupSettings', () => {
             let networkInterfaceValidations = nsgSettingsValidations.networkInterfaces;
             let networkInterfaceSettings = [
                 {
-                name: "my-nic1"
+                    name: 'my-nic1'
                 },
                 {
-                name: "my-nic2"
+                    name: 'my-nic2'
                 }
             ];
 
@@ -512,16 +511,16 @@ describe('networkSecurityGroupSettings', () => {
         let mergeCustomizer = nsgSettings.__get__('mergeCustomizer');
 
         let networkSecurityGroup = {
-            name: "test-nsg",
+            name: 'test-nsg',
             virtualNetworks: [
                 {
-                    name: "my-virtual-network",
-                    subnets: ["biz", "web"]
+                    name: 'my-virtual-network',
+                    subnets: ['biz', 'web']
                 }
             ],
             networkInterfaces: [
                 {
-                    name: "my-nic1"
+                    name: 'my-nic1'
                 }
             ],
             securityRules: [
@@ -603,16 +602,16 @@ describe('networkSecurityGroupSettings', () => {
     describe('transform', () => {
         let networkSecurityGroup = [
             {
-                name: "test-nsg",
+                name: 'test-nsg',
                 virtualNetworks: [
                     {
-                        name: "my-virtual-network",
-                        subnets: ["biz", "web"]
+                        name: 'my-virtual-network',
+                        subnets: ['biz', 'web']
                     }
                 ],
                 networkInterfaces: [
                     {
-                        name: "my-nic1"
+                        name: 'my-nic1'
                     }
                 ],
                 securityRules: [
@@ -632,8 +631,8 @@ describe('networkSecurityGroupSettings', () => {
         ];
 
         let buildingBlockSettings = {
-            subscriptionId: "00000000-0000-1000-8000-000000000000",
-            resourceGroupName: "test-rg"
+            subscriptionId: '00000000-0000-1000-8000-000000000000',
+            resourceGroupName: 'test-rg'
         };
 
         it('single network security group', () => {
@@ -681,7 +680,7 @@ describe('networkSecurityGroupSettings', () => {
             let settings = _.cloneDeep(networkSecurityGroup);
             delete settings[0].name;
             expect(() => {
-                let result = nsgSettings.transform({
+                nsgSettings.transform({
                     settings: settings,
                     buildingBlockSettings: buildingBlockSettings
                 });
@@ -693,7 +692,7 @@ describe('networkSecurityGroupSettings', () => {
             let bbSettings = _.cloneDeep(buildingBlockSettings);
             delete bbSettings.subscriptionId;
             expect(() => {
-                let result = nsgSettings.transform({
+                nsgSettings.transform({
                     settings: settings,
                     buildingBlockSettings: bbSettings
                 });

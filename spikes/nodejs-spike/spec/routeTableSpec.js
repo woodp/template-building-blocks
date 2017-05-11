@@ -1,6 +1,5 @@
 describe('routeTableSettings', () => {
     let rewire = require('rewire');
-    let resources = require('../core/resources.js');
     let routeTableSettings = rewire('../core/routeTableSettings.js');
     let _ = require('lodash');
     let validation = require('../core/validation.js');
@@ -8,57 +7,57 @@ describe('routeTableSettings', () => {
     describe('isValidNextHopType', () => {
         let isValidNextHopType = routeTableSettings.__get__('isValidNextHopType');
         
-            it('undefined', () => {
-                expect(isValidNextHopType()).toEqual(false);
-            });
+        it('undefined', () => {
+            expect(isValidNextHopType()).toEqual(false);
+        });
 
-            it('null', () => {
-                expect(isValidNextHopType(null)).toEqual(false);
-            });
+        it('null', () => {
+            expect(isValidNextHopType(null)).toEqual(false);
+        });
 
-            it('empty', () => {
-                expect(isValidNextHopType('')).toEqual(false);
-            });
+        it('empty', () => {
+            expect(isValidNextHopType('')).toEqual(false);
+        });
 
-            it('whitespace', () => {
-                expect(isValidNextHopType(' ')).toEqual(false);
-            });
+        it('whitespace', () => {
+            expect(isValidNextHopType(' ')).toEqual(false);
+        });
 
-            it('invalid spacing', () => {
-                expect(isValidNextHopType(' VirtualNetworkGateway ')).toEqual(false);
-            });
+        it('invalid spacing', () => {
+            expect(isValidNextHopType(' VirtualNetworkGateway ')).toEqual(false);
+        });
 
-            it('invalid casing', () => {
-                expect(isValidNextHopType('virtualnetworkgateway')).toEqual(false);
-            });
+        it('invalid casing', () => {
+            expect(isValidNextHopType('virtualnetworkgateway')).toEqual(false);
+        });
 
-            it('invalid value', () => {
-                expect(isValidNextHopType('NOT_A_VALID_NEXT_HOP_TYPE')).toEqual(false);
-            });
+        it('invalid value', () => {
+            expect(isValidNextHopType('NOT_A_VALID_NEXT_HOP_TYPE')).toEqual(false);
+        });
 
-            it('VirtualNetworkGateway', () => {
-                expect(isValidNextHopType('VirtualNetworkGateway')).toEqual(true);
-            });
+        it('VirtualNetworkGateway', () => {
+            expect(isValidNextHopType('VirtualNetworkGateway')).toEqual(true);
+        });
 
-            it('VnetLocal', () => {
-                expect(isValidNextHopType('VnetLocal')).toEqual(true);
-            });
+        it('VnetLocal', () => {
+            expect(isValidNextHopType('VnetLocal')).toEqual(true);
+        });
 
-            it('Internet', () => {
-                expect(isValidNextHopType('Internet')).toEqual(true);
-            });
+        it('Internet', () => {
+            expect(isValidNextHopType('Internet')).toEqual(true);
+        });
 
-            it('HyperNetGateway', () => {
-                expect(isValidNextHopType('HyperNetGateway')).toEqual(true);
-            });
+        it('HyperNetGateway', () => {
+            expect(isValidNextHopType('HyperNetGateway')).toEqual(true);
+        });
 
-            it('None', () => {
-                expect(isValidNextHopType('None')).toEqual(true);
-            });
+        it('None', () => {
+            expect(isValidNextHopType('None')).toEqual(true);
+        });
 
-            it('VirtualAppliance', () => {
-                expect(isValidNextHopType('VirtualAppliance')).toEqual(true);
-            });
+        it('VirtualAppliance', () => {
+            expect(isValidNextHopType('VirtualAppliance')).toEqual(true);
+        });
     });
 
     describe('validations', () => {
@@ -394,8 +393,8 @@ describe('routeTableSettings', () => {
         ];
 
         let buildingBlockSettings = {
-            subscriptionId: "00000000-0000-1000-8000-000000000000",
-            resourceGroupName: "test-rg"
+            subscriptionId: '00000000-0000-1000-8000-000000000000',
+            resourceGroupName: 'test-rg'
         };
 
         it('single route table', () => {
@@ -436,7 +435,7 @@ describe('routeTableSettings', () => {
             let settings = _.cloneDeep(routeTable);
             delete settings[0].name;
             expect(() => {
-                let result = routeTableSettings.transform({
+                routeTableSettings.transform({
                     settings: settings,
                     buildingBlockSettings: buildingBlockSettings
                 });
@@ -448,7 +447,7 @@ describe('routeTableSettings', () => {
             let bbSettings = _.cloneDeep(buildingBlockSettings);
             delete bbSettings.subscriptionId;
             expect(() => {
-                let result = routeTableSettings.transform({
+                routeTableSettings.transform({
                     settings: settings,
                     buildingBlockSettings: bbSettings
                 });

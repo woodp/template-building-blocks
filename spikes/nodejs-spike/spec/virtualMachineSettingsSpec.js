@@ -4,27 +4,27 @@ describe('virtualMachineSettings:', () => {
     let _ = require('../lodashMixins.js');
     let testSettings = {
         vmCount: 2,
-        namePrefix: "test",
-        computerNamePrefix: "test",
-        size: "Standard_DS2",
+        namePrefix: 'test',
+        computerNamePrefix: 'test',
+        size: 'Standard_DS2',
         osDisk: {
-            osType: "windows",
-            caching: "ReadWrite",
-            createOption: "fromImage"
+            osType: 'windows',
+            caching: 'ReadWrite',
+            createOption: 'fromImage'
         },
-        adminUsername: "testadminuser",
-        osAuthenticationType: "password",
+        adminUsername: 'testadminuser',
+        osAuthenticationType: 'password',
         storageAccounts: {
-            nameSuffix: "st",
+            nameSuffix: 'st',
             count: 1,
-            skuType: "Premium_LRS",
+            skuType: 'Premium_LRS',
             managed: false,
             accounts: []
         },
         diagnosticStorageAccounts: {
-            nameSuffix: "diag",
+            nameSuffix: 'diag',
             count: 1,
-            skuType: "Standard_LRS",
+            skuType: 'Standard_LRS',
             managed: false,
             accounts: []
         },
@@ -32,41 +32,41 @@ describe('virtualMachineSettings:', () => {
             {
                 isPublic: true,
                 isPrimary: true,
-                subnetName: "web",
-                privateIPAllocationMethod: "Static",
-                publicIPAllocationMethod: "Dynamic",
-                startingIPAddress: "10.0.1.240",
+                subnetName: 'web',
+                privateIPAllocationMethod: 'Static',
+                publicIPAllocationMethod: 'Dynamic',
+                startingIPAddress: '10.0.1.240',
                 enableIPForwarding: false,
-                domainNameLabelPrefix: "",
+                domainNameLabelPrefix: '',
                 dnsServers: [
-                    "10.0.1.240",
-                    "10.0.1.242"
+                    '10.0.1.240',
+                    '10.0.1.242'
                 ]
             },
             {
                 isPublic: false,
                 isPrimary: false,
-                subnetName: "biz",
-                privateIPAllocationMethod: "Dynamic",
-                publicIPAllocationMethod: "Dynamic",
-                startingIPAddress: "",
+                subnetName: 'biz',
+                privateIPAllocationMethod: 'Dynamic',
+                publicIPAllocationMethod: 'Dynamic',
+                startingIPAddress: '',
                 enableIPForwarding: false,
-                domainNameLabelPrefix: "",
+                domainNameLabelPrefix: '',
                 dnsServers: []
             }
         ],
         imageReference: {
-            publisher: "MicrosoftWindowsServer",
-            offer: "WindowsServer",
-            sku: "2012-R2-Datacenter",
-            version: "latest"
+            publisher: 'MicrosoftWindowsServer',
+            offer: 'WindowsServer',
+            sku: '2012-R2-Datacenter',
+            version: 'latest'
         },
         dataDisks: {
             count: 1,
             properties: {
                 diskSizeGB: 127,
-                caching: "None",
-                createOption: "empty"
+                caching: 'None',
+                createOption: 'empty'
             }
         },
         existingWindowsServerlicense: false,
@@ -74,224 +74,224 @@ describe('virtualMachineSettings:', () => {
             useExistingAvailabilitySet: false,
             platformFaultDomainCount: 3,
             platformUpdateDomainCount: 5,
-            name: "test-as"
+            name: 'test-as'
         },
-        adminPassword: "testPassw0rd111",
+        adminPassword: 'testPassw0rd111',
         virtualNetwork: {
-            name: "test-vnet"
+            name: 'test-vnet'
         }
     };
     let buildingBlockSettings = {
-        resourceGroupName: "test-rg",
-        subscriptionId: "00000000-0000-1000-A000-000000000000"
-    }
+        resourceGroupName: 'test-rg',
+        subscriptionId: '00000000-0000-1000-A000-000000000000'
+    };
     describe('merge:', () => {
-        it("throws error if osDisk.osType is not provided.", () => {
+        it('throws error if osDisk.osType is not provided.', () => {
             let settings = {};
             expect(() => virtualMachineSettings.mergeWithDefaults(settings)).toThrowError(Error);
-            settings = { osDisk: { osType: "windows" } }
+            settings = { osDisk: { osType: 'windows' } };
             expect(() => virtualMachineSettings.mergeWithDefaults(settings)).not.toThrowError(Error);
         });
         describe('windows:', () => {
-            it("validates that properties for windows are applied", () => {
-                let settings = { osDisk: { osType: "windows" } };
+            it('validates that properties for windows are applied', () => {
+                let settings = { osDisk: { osType: 'windows' } };
 
                 let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
-                expect(mergedValue.hasOwnProperty("vmCount")).toEqual(true);
-                expect(mergedValue.hasOwnProperty("namePrefix")).toEqual(true);
-                expect(mergedValue.hasOwnProperty("computerNamePrefix")).toEqual(true);
-                expect(mergedValue.hasOwnProperty("size")).toEqual(true);
-                expect(mergedValue.hasOwnProperty("osDisk")).toEqual(true);
-                expect(mergedValue.osDisk.hasOwnProperty("osType")).toEqual(true);
-                expect(mergedValue.osDisk.hasOwnProperty("caching")).toEqual(true);
-                expect(mergedValue.osDisk.hasOwnProperty("createOption")).toEqual(true);
-                expect(mergedValue.hasOwnProperty("adminUsername")).toEqual(true);
-                expect(mergedValue.hasOwnProperty("osAuthenticationType")).toEqual(true);
-                expect(mergedValue.hasOwnProperty("storageAccounts")).toEqual(true);
-                expect(mergedValue.storageAccounts.hasOwnProperty("nameSuffix")).toEqual(true);
-                expect(mergedValue.storageAccounts.hasOwnProperty("count")).toEqual(true);
-                expect(mergedValue.storageAccounts.hasOwnProperty("skuType")).toEqual(true);
-                expect(mergedValue.storageAccounts.hasOwnProperty("accounts")).toEqual(true);
-                expect(mergedValue.storageAccounts.hasOwnProperty("managed")).toEqual(true);
-                expect(mergedValue.hasOwnProperty("diagnosticStorageAccounts")).toEqual(true);
-                expect(mergedValue.diagnosticStorageAccounts.hasOwnProperty("nameSuffix")).toEqual(true);
-                expect(mergedValue.diagnosticStorageAccounts.hasOwnProperty("count")).toEqual(true);
-                expect(mergedValue.diagnosticStorageAccounts.hasOwnProperty("skuType")).toEqual(true);
-                expect(mergedValue.diagnosticStorageAccounts.hasOwnProperty("accounts")).toEqual(true);
-                expect(mergedValue.diagnosticStorageAccounts.hasOwnProperty("managed")).toEqual(true);
-                expect(mergedValue.hasOwnProperty("nics")).toEqual(true);
-                expect(mergedValue.hasOwnProperty("imageReference")).toEqual(true);
-                expect(mergedValue.imageReference.hasOwnProperty("publisher")).toEqual(true);
-                expect(mergedValue.imageReference.hasOwnProperty("offer")).toEqual(true);
-                expect(mergedValue.imageReference.hasOwnProperty("sku")).toEqual(true);
-                expect(mergedValue.imageReference.hasOwnProperty("version")).toEqual(true);
-                expect(mergedValue.hasOwnProperty("dataDisks")).toEqual(true);
-                expect(mergedValue.dataDisks.hasOwnProperty("count")).toEqual(true);
-                expect(mergedValue.dataDisks.hasOwnProperty("properties")).toEqual(true);
-                expect(mergedValue.dataDisks.properties.hasOwnProperty("diskSizeGB")).toEqual(true);
-                expect(mergedValue.dataDisks.properties.hasOwnProperty("caching")).toEqual(true);
-                expect(mergedValue.dataDisks.properties.hasOwnProperty("createOption")).toEqual(true);
-                expect(mergedValue.hasOwnProperty("existingWindowsServerlicense")).toEqual(true);
-                expect(mergedValue.hasOwnProperty("availabilitySet")).toEqual(true);
-                expect(mergedValue.availabilitySet.hasOwnProperty("useExistingAvailabilitySet")).toEqual(true);
-                expect(mergedValue.availabilitySet.hasOwnProperty("platformFaultDomainCount")).toEqual(true);
-                expect(mergedValue.availabilitySet.hasOwnProperty("platformUpdateDomainCount")).toEqual(true);
-                expect(mergedValue.availabilitySet.hasOwnProperty("name")).toEqual(true);
+                expect(mergedValue.hasOwnProperty('vmCount')).toEqual(true);
+                expect(mergedValue.hasOwnProperty('namePrefix')).toEqual(true);
+                expect(mergedValue.hasOwnProperty('computerNamePrefix')).toEqual(true);
+                expect(mergedValue.hasOwnProperty('size')).toEqual(true);
+                expect(mergedValue.hasOwnProperty('osDisk')).toEqual(true);
+                expect(mergedValue.osDisk.hasOwnProperty('osType')).toEqual(true);
+                expect(mergedValue.osDisk.hasOwnProperty('caching')).toEqual(true);
+                expect(mergedValue.osDisk.hasOwnProperty('createOption')).toEqual(true);
+                expect(mergedValue.hasOwnProperty('adminUsername')).toEqual(true);
+                expect(mergedValue.hasOwnProperty('osAuthenticationType')).toEqual(true);
+                expect(mergedValue.hasOwnProperty('storageAccounts')).toEqual(true);
+                expect(mergedValue.storageAccounts.hasOwnProperty('nameSuffix')).toEqual(true);
+                expect(mergedValue.storageAccounts.hasOwnProperty('count')).toEqual(true);
+                expect(mergedValue.storageAccounts.hasOwnProperty('skuType')).toEqual(true);
+                expect(mergedValue.storageAccounts.hasOwnProperty('accounts')).toEqual(true);
+                expect(mergedValue.storageAccounts.hasOwnProperty('managed')).toEqual(true);
+                expect(mergedValue.hasOwnProperty('diagnosticStorageAccounts')).toEqual(true);
+                expect(mergedValue.diagnosticStorageAccounts.hasOwnProperty('nameSuffix')).toEqual(true);
+                expect(mergedValue.diagnosticStorageAccounts.hasOwnProperty('count')).toEqual(true);
+                expect(mergedValue.diagnosticStorageAccounts.hasOwnProperty('skuType')).toEqual(true);
+                expect(mergedValue.diagnosticStorageAccounts.hasOwnProperty('accounts')).toEqual(true);
+                expect(mergedValue.diagnosticStorageAccounts.hasOwnProperty('managed')).toEqual(true);
+                expect(mergedValue.hasOwnProperty('nics')).toEqual(true);
+                expect(mergedValue.hasOwnProperty('imageReference')).toEqual(true);
+                expect(mergedValue.imageReference.hasOwnProperty('publisher')).toEqual(true);
+                expect(mergedValue.imageReference.hasOwnProperty('offer')).toEqual(true);
+                expect(mergedValue.imageReference.hasOwnProperty('sku')).toEqual(true);
+                expect(mergedValue.imageReference.hasOwnProperty('version')).toEqual(true);
+                expect(mergedValue.hasOwnProperty('dataDisks')).toEqual(true);
+                expect(mergedValue.dataDisks.hasOwnProperty('count')).toEqual(true);
+                expect(mergedValue.dataDisks.hasOwnProperty('properties')).toEqual(true);
+                expect(mergedValue.dataDisks.properties.hasOwnProperty('diskSizeGB')).toEqual(true);
+                expect(mergedValue.dataDisks.properties.hasOwnProperty('caching')).toEqual(true);
+                expect(mergedValue.dataDisks.properties.hasOwnProperty('createOption')).toEqual(true);
+                expect(mergedValue.hasOwnProperty('existingWindowsServerlicense')).toEqual(true);
+                expect(mergedValue.hasOwnProperty('availabilitySet')).toEqual(true);
+                expect(mergedValue.availabilitySet.hasOwnProperty('useExistingAvailabilitySet')).toEqual(true);
+                expect(mergedValue.availabilitySet.hasOwnProperty('platformFaultDomainCount')).toEqual(true);
+                expect(mergedValue.availabilitySet.hasOwnProperty('platformUpdateDomainCount')).toEqual(true);
+                expect(mergedValue.availabilitySet.hasOwnProperty('name')).toEqual(true);
 
             });
-            it("validate defaults do not override settings.", () => {
+            it('validate defaults do not override settings.', () => {
                 let settings = {
                     vmCount: 2,
-                    osDisk: { osType: "windows" }
+                    osDisk: { osType: 'windows' }
                 };
 
                 let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
                 expect(mergedValue.vmCount).toEqual(2);
             });
-            it("validate additional properties in settings are not removed.", () => {
+            it('validate additional properties in settings are not removed.', () => {
                 let settings = {
-                    adminPassword: "test",
-                    osDisk: { osType: "windows" }
+                    adminPassword: 'test',
+                    osDisk: { osType: 'windows' }
                 };
 
                 let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
-                expect(mergedValue.hasOwnProperty("adminPassword")).toEqual(true);
-                expect(mergedValue.adminPassword).toEqual("test");
+                expect(mergedValue.hasOwnProperty('adminPassword')).toEqual(true);
+                expect(mergedValue.adminPassword).toEqual('test');
             });
-            it("validate default nics are not added if provided.", () => {
+            it('validate default nics are not added if provided.', () => {
                 let settings = {
                     nics: [
                         {
-                            "isPublic": true,
-                            "subnetName": "web",
-                            "privateIPAllocationMethod": "Static",
-                            "publicIPAllocationMethod": "Static",
-                            "startingIPAddress": "10.0.1.240",
-                            "isPrimary": true,
-                            "dnsServers": [
-                                "10.0.1.240",
-                                "10.0.1.242"
+                            'isPublic': true,
+                            'subnetName': 'web',
+                            'privateIPAllocationMethod': 'Static',
+                            'publicIPAllocationMethod': 'Static',
+                            'startingIPAddress': '10.0.1.240',
+                            'isPrimary': true,
+                            'dnsServers': [
+                                '10.0.1.240',
+                                '10.0.1.242'
                             ]
                         },
                         {
-                            "isPrimary": false,
-                            "subnetName": "biz",
-                            "privateIPAllocationMethod": "Dynamic",
-                            "enableIPForwarding": false,
-                            "domainNameLabelPrefix": "",
-                            "dnsServers": []
+                            'isPrimary': false,
+                            'subnetName': 'biz',
+                            'privateIPAllocationMethod': 'Dynamic',
+                            'enableIPForwarding': false,
+                            'domainNameLabelPrefix': '',
+                            'dnsServers': []
                         }
                     ],
-                    osDisk: { osType: "windows" }
+                    osDisk: { osType: 'windows' }
                 };
 
                 let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
                 expect(mergedValue.nics.length).toEqual(2);
-                expect(mergedValue.nics[0].subnetName).toEqual("web");
-                expect(mergedValue.nics[1].subnetName).toEqual("biz");
+                expect(mergedValue.nics[0].subnetName).toEqual('web');
+                expect(mergedValue.nics[1].subnetName).toEqual('biz');
             });
-            it("validates that individual nics are merged with defaults", () => {
+            it('validates that individual nics are merged with defaults', () => {
                 let settings = {
                     nics: [
                         {
-                            "isPublic": true,
-                            "subnetName": "web",
-                            "privateIPAllocationMethod": "Static",
-                            "publicIPAllocationMethod": "Static",
-                            "startingIPAddress": "10.0.1.240",
-                            "isPrimary": true,
-                            "dnsServers": [
-                                "10.0.1.240",
-                                "10.0.1.242"
+                            'isPublic': true,
+                            'subnetName': 'web',
+                            'privateIPAllocationMethod': 'Static',
+                            'publicIPAllocationMethod': 'Static',
+                            'startingIPAddress': '10.0.1.240',
+                            'isPrimary': true,
+                            'dnsServers': [
+                                '10.0.1.240',
+                                '10.0.1.242'
                             ]
                         },
                         {
-                            "isPrimary": false,
-                            "subnetName": "biz",
-                            "privateIPAllocationMethod": "Dynamic",
-                            "enableIPForwarding": false,
-                            "domainNameLabelPrefix": ""
+                            'isPrimary': false,
+                            'subnetName': 'biz',
+                            'privateIPAllocationMethod': 'Dynamic',
+                            'enableIPForwarding': false,
+                            'domainNameLabelPrefix': ''
                         }
                     ],
-                    osDisk: { osType: "windows" }
+                    osDisk: { osType: 'windows' }
                 };
 
                 let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
                 expect(mergedValue.nics.length).toEqual(2);
                 expect(mergedValue.nics[0].isPublic).toEqual(true);
-                expect(mergedValue.nics[0].subnetName).toEqual("web");
-                expect(mergedValue.nics[0].privateIPAllocationMethod).toEqual("Static");
-                expect(mergedValue.nics[0].publicIPAllocationMethod).toEqual("Static");
-                expect(mergedValue.nics[0].startingIPAddress).toEqual("10.0.1.240");
+                expect(mergedValue.nics[0].subnetName).toEqual('web');
+                expect(mergedValue.nics[0].privateIPAllocationMethod).toEqual('Static');
+                expect(mergedValue.nics[0].publicIPAllocationMethod).toEqual('Static');
+                expect(mergedValue.nics[0].startingIPAddress).toEqual('10.0.1.240');
                 expect(mergedValue.nics[0].enableIPForwarding).toEqual(false);
-                expect(mergedValue.nics[0].domainNameLabelPrefix).toEqual("");
+                expect(mergedValue.nics[0].domainNameLabelPrefix).toEqual('');
                 expect(mergedValue.nics[0].dnsServers.length).toEqual(2);
                 expect(mergedValue.nics[0].isPrimary).toEqual(true);
 
                 expect(mergedValue.nics[1].isPublic).toEqual(false);
-                expect(mergedValue.nics[1].subnetName).toEqual("biz");
-                expect(mergedValue.nics[1].privateIPAllocationMethod).toEqual("Dynamic");
-                expect(mergedValue.nics[1].publicIPAllocationMethod).toEqual("Dynamic");
-                expect(mergedValue.nics[1].startingIPAddress).toEqual("");
+                expect(mergedValue.nics[1].subnetName).toEqual('biz');
+                expect(mergedValue.nics[1].privateIPAllocationMethod).toEqual('Dynamic');
+                expect(mergedValue.nics[1].publicIPAllocationMethod).toEqual('Dynamic');
+                expect(mergedValue.nics[1].startingIPAddress).toEqual('');
                 expect(mergedValue.nics[1].enableIPForwarding).toEqual(false);
-                expect(mergedValue.nics[1].domainNameLabelPrefix).toEqual("");
+                expect(mergedValue.nics[1].domainNameLabelPrefix).toEqual('');
                 expect(mergedValue.nics[1].dnsServers.length).toEqual(0);
                 expect(mergedValue.nics[1].isPrimary).toEqual(false);
             });
-            it("validates that storage is merged with defaults", () => {
+            it('validates that storage is merged with defaults', () => {
                 let settings = {
                     storageAccounts: {
                         count: 5,
                         managed: true
                     },
-                    osDisk: { osType: "windows" }
+                    osDisk: { osType: 'windows' }
                 };
                 let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
-                expect(mergedValue.storageAccounts.nameSuffix).toEqual("st");
+                expect(mergedValue.storageAccounts.nameSuffix).toEqual('st');
                 expect(mergedValue.storageAccounts.count).toEqual(5);
-                expect(mergedValue.storageAccounts.skuType).toEqual("Premium_LRS");
+                expect(mergedValue.storageAccounts.skuType).toEqual('Premium_LRS');
                 expect(mergedValue.storageAccounts.managed).toEqual(true);
                 expect(mergedValue.storageAccounts.accounts.length).toEqual(0);
             });
-            it("validates that diagnostic storage is merged with defaults", () => {
+            it('validates that diagnostic storage is merged with defaults', () => {
                 let settings = {
                     diagnosticStorageAccounts: {
                         count: 5,
                         managed: true
                     },
-                    osDisk: { osType: "windows" }
+                    osDisk: { osType: 'windows' }
                 };
                 let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
-                expect(mergedValue.diagnosticStorageAccounts.nameSuffix).toEqual("diag");
+                expect(mergedValue.diagnosticStorageAccounts.nameSuffix).toEqual('diag');
                 expect(mergedValue.diagnosticStorageAccounts.count).toEqual(5);
-                expect(mergedValue.diagnosticStorageAccounts.skuType).toEqual("Standard_LRS");
+                expect(mergedValue.diagnosticStorageAccounts.skuType).toEqual('Standard_LRS');
                 expect(mergedValue.diagnosticStorageAccounts.managed).toEqual(true);
                 expect(mergedValue.diagnosticStorageAccounts.accounts.length).toEqual(0);
             });
-            it("validates that avset is merged with defaults", () => {
+            it('validates that avset is merged with defaults', () => {
                 let settings = {
-                    "availabilitySet": {
-                        "useExistingAvailabilitySet": "no",
-                        "name": "test-as"
+                    'availabilitySet': {
+                        'useExistingAvailabilitySet': 'no',
+                        'name': 'test-as'
                     },
-                    osDisk: { osType: "windows" }
+                    osDisk: { osType: 'windows' }
                 };
                 let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
-                expect(mergedValue.availabilitySet.useExistingAvailabilitySet).toEqual("no");
-                expect(mergedValue.availabilitySet.name).toEqual("test-as");
+                expect(mergedValue.availabilitySet.useExistingAvailabilitySet).toEqual('no');
+                expect(mergedValue.availabilitySet.name).toEqual('test-as');
                 expect(mergedValue.availabilitySet.platformFaultDomainCount).toEqual(3);
                 expect(mergedValue.availabilitySet.platformUpdateDomainCount).toEqual(5);
             });
-            it("validates that osDisk is merged with defaults", () => {
+            it('validates that osDisk is merged with defaults', () => {
                 let settings = {
-                    osDisk: { osType: "windows" }
+                    osDisk: { osType: 'windows' }
                 };
                 let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
-                expect(mergedValue.osDisk.osType).toEqual("windows");
-                expect(mergedValue.osDisk.caching).toEqual("ReadWrite");
-                expect(mergedValue.osDisk.createOption).toEqual("fromImage");
+                expect(mergedValue.osDisk.osType).toEqual('windows');
+                expect(mergedValue.osDisk.caching).toEqual('ReadWrite');
+                expect(mergedValue.osDisk.createOption).toEqual('fromImage');
             });
-            it("validates that datadisk is merged with defaults", () => {
+            it('validates that datadisk is merged with defaults', () => {
                 let settings = {
                     dataDisks: {
                         count: 2,
@@ -299,227 +299,227 @@ describe('virtualMachineSettings:', () => {
                             diskSizeGB: 127
                         }
                     },
-                    osDisk: { osType: "windows" }
+                    osDisk: { osType: 'windows' }
                 };
                 let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
                 expect(mergedValue.dataDisks.count).toEqual(2);
-                expect(mergedValue.dataDisks.properties.caching).toEqual("None");
-                expect(mergedValue.dataDisks.properties.createOption).toEqual("empty");
+                expect(mergedValue.dataDisks.properties.caching).toEqual('None');
+                expect(mergedValue.dataDisks.properties.createOption).toEqual('empty');
                 expect(mergedValue.dataDisks.properties.diskSizeGB).toEqual(127);
 
             });
-            it("validates that imageReference is merged with defaults", () => {
+            it('validates that imageReference is merged with defaults', () => {
                 let settings = {
                     imageReference: {},
-                    osDisk: { osType: "windows" }
+                    osDisk: { osType: 'windows' }
                 };
                 let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
-                expect(mergedValue.imageReference.publisher).toEqual("MicrosoftWindowsServer");
-                expect(mergedValue.imageReference.offer).toEqual("WindowsServer");
-                expect(mergedValue.imageReference.sku).toEqual("2012-R2-Datacenter");
-                expect(mergedValue.imageReference.version).toEqual("latest");
+                expect(mergedValue.imageReference.publisher).toEqual('MicrosoftWindowsServer');
+                expect(mergedValue.imageReference.offer).toEqual('WindowsServer');
+                expect(mergedValue.imageReference.sku).toEqual('2012-R2-Datacenter');
+                expect(mergedValue.imageReference.version).toEqual('latest');
 
             });
         });
         describe('Linux:', () => {
-            it("validates that properties for linux are applied", () => {
-                let settings = { osDisk: { osType: "linux" } };
+            it('validates that properties for linux are applied', () => {
+                let settings = { osDisk: { osType: 'linux' } };
 
                 let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
-                expect(mergedValue.hasOwnProperty("vmCount")).toEqual(true);
-                expect(mergedValue.hasOwnProperty("namePrefix")).toEqual(true);
-                expect(mergedValue.hasOwnProperty("computerNamePrefix")).toEqual(true);
-                expect(mergedValue.hasOwnProperty("size")).toEqual(true);
-                expect(mergedValue.hasOwnProperty("osDisk")).toEqual(true);
-                expect(mergedValue.osDisk.hasOwnProperty("osType")).toEqual(true);
-                expect(mergedValue.osDisk.hasOwnProperty("caching")).toEqual(true);
-                expect(mergedValue.osDisk.hasOwnProperty("createOption")).toEqual(true);
-                expect(mergedValue.hasOwnProperty("adminUsername")).toEqual(true);
-                expect(mergedValue.hasOwnProperty("osAuthenticationType")).toEqual(true);
-                expect(mergedValue.hasOwnProperty("storageAccounts")).toEqual(true);
-                expect(mergedValue.storageAccounts.hasOwnProperty("nameSuffix")).toEqual(true);
-                expect(mergedValue.storageAccounts.hasOwnProperty("count")).toEqual(true);
-                expect(mergedValue.storageAccounts.hasOwnProperty("skuType")).toEqual(true);
-                expect(mergedValue.storageAccounts.hasOwnProperty("accounts")).toEqual(true);
-                expect(mergedValue.storageAccounts.hasOwnProperty("managed")).toEqual(true);
-                expect(mergedValue.hasOwnProperty("diagnosticStorageAccounts")).toEqual(true);
-                expect(mergedValue.diagnosticStorageAccounts.hasOwnProperty("nameSuffix")).toEqual(true);
-                expect(mergedValue.diagnosticStorageAccounts.hasOwnProperty("count")).toEqual(true);
-                expect(mergedValue.diagnosticStorageAccounts.hasOwnProperty("skuType")).toEqual(true);
-                expect(mergedValue.diagnosticStorageAccounts.hasOwnProperty("accounts")).toEqual(true);
-                expect(mergedValue.diagnosticStorageAccounts.hasOwnProperty("managed")).toEqual(true);
-                expect(mergedValue.hasOwnProperty("nics")).toEqual(true);
-                expect(mergedValue.hasOwnProperty("imageReference")).toEqual(true);
-                expect(mergedValue.imageReference.hasOwnProperty("publisher")).toEqual(true);
-                expect(mergedValue.imageReference.hasOwnProperty("offer")).toEqual(true);
-                expect(mergedValue.imageReference.hasOwnProperty("sku")).toEqual(true);
-                expect(mergedValue.imageReference.hasOwnProperty("version")).toEqual(true);
-                expect(mergedValue.hasOwnProperty("dataDisks")).toEqual(true);
-                expect(mergedValue.dataDisks.hasOwnProperty("count")).toEqual(true);
-                expect(mergedValue.dataDisks.hasOwnProperty("properties")).toEqual(true);
-                expect(mergedValue.dataDisks.properties.hasOwnProperty("diskSizeGB")).toEqual(true);
-                expect(mergedValue.dataDisks.properties.hasOwnProperty("caching")).toEqual(true);
-                expect(mergedValue.dataDisks.properties.hasOwnProperty("createOption")).toEqual(true);
-                expect(mergedValue.hasOwnProperty("availabilitySet")).toEqual(true);
-                expect(mergedValue.availabilitySet.hasOwnProperty("useExistingAvailabilitySet")).toEqual(true);
-                expect(mergedValue.availabilitySet.hasOwnProperty("platformFaultDomainCount")).toEqual(true);
-                expect(mergedValue.availabilitySet.hasOwnProperty("platformUpdateDomainCount")).toEqual(true);
-                expect(mergedValue.availabilitySet.hasOwnProperty("name")).toEqual(true);
+                expect(mergedValue.hasOwnProperty('vmCount')).toEqual(true);
+                expect(mergedValue.hasOwnProperty('namePrefix')).toEqual(true);
+                expect(mergedValue.hasOwnProperty('computerNamePrefix')).toEqual(true);
+                expect(mergedValue.hasOwnProperty('size')).toEqual(true);
+                expect(mergedValue.hasOwnProperty('osDisk')).toEqual(true);
+                expect(mergedValue.osDisk.hasOwnProperty('osType')).toEqual(true);
+                expect(mergedValue.osDisk.hasOwnProperty('caching')).toEqual(true);
+                expect(mergedValue.osDisk.hasOwnProperty('createOption')).toEqual(true);
+                expect(mergedValue.hasOwnProperty('adminUsername')).toEqual(true);
+                expect(mergedValue.hasOwnProperty('osAuthenticationType')).toEqual(true);
+                expect(mergedValue.hasOwnProperty('storageAccounts')).toEqual(true);
+                expect(mergedValue.storageAccounts.hasOwnProperty('nameSuffix')).toEqual(true);
+                expect(mergedValue.storageAccounts.hasOwnProperty('count')).toEqual(true);
+                expect(mergedValue.storageAccounts.hasOwnProperty('skuType')).toEqual(true);
+                expect(mergedValue.storageAccounts.hasOwnProperty('accounts')).toEqual(true);
+                expect(mergedValue.storageAccounts.hasOwnProperty('managed')).toEqual(true);
+                expect(mergedValue.hasOwnProperty('diagnosticStorageAccounts')).toEqual(true);
+                expect(mergedValue.diagnosticStorageAccounts.hasOwnProperty('nameSuffix')).toEqual(true);
+                expect(mergedValue.diagnosticStorageAccounts.hasOwnProperty('count')).toEqual(true);
+                expect(mergedValue.diagnosticStorageAccounts.hasOwnProperty('skuType')).toEqual(true);
+                expect(mergedValue.diagnosticStorageAccounts.hasOwnProperty('accounts')).toEqual(true);
+                expect(mergedValue.diagnosticStorageAccounts.hasOwnProperty('managed')).toEqual(true);
+                expect(mergedValue.hasOwnProperty('nics')).toEqual(true);
+                expect(mergedValue.hasOwnProperty('imageReference')).toEqual(true);
+                expect(mergedValue.imageReference.hasOwnProperty('publisher')).toEqual(true);
+                expect(mergedValue.imageReference.hasOwnProperty('offer')).toEqual(true);
+                expect(mergedValue.imageReference.hasOwnProperty('sku')).toEqual(true);
+                expect(mergedValue.imageReference.hasOwnProperty('version')).toEqual(true);
+                expect(mergedValue.hasOwnProperty('dataDisks')).toEqual(true);
+                expect(mergedValue.dataDisks.hasOwnProperty('count')).toEqual(true);
+                expect(mergedValue.dataDisks.hasOwnProperty('properties')).toEqual(true);
+                expect(mergedValue.dataDisks.properties.hasOwnProperty('diskSizeGB')).toEqual(true);
+                expect(mergedValue.dataDisks.properties.hasOwnProperty('caching')).toEqual(true);
+                expect(mergedValue.dataDisks.properties.hasOwnProperty('createOption')).toEqual(true);
+                expect(mergedValue.hasOwnProperty('availabilitySet')).toEqual(true);
+                expect(mergedValue.availabilitySet.hasOwnProperty('useExistingAvailabilitySet')).toEqual(true);
+                expect(mergedValue.availabilitySet.hasOwnProperty('platformFaultDomainCount')).toEqual(true);
+                expect(mergedValue.availabilitySet.hasOwnProperty('platformUpdateDomainCount')).toEqual(true);
+                expect(mergedValue.availabilitySet.hasOwnProperty('name')).toEqual(true);
 
             });
-            it("validate defaults do not override settings.", () => {
+            it('validate defaults do not override settings.', () => {
                 let settings = {
                     vmCount: 2,
-                    osDisk: { osType: "linux" }
+                    osDisk: { osType: 'linux' }
                 };
 
                 let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
                 expect(mergedValue.vmCount).toEqual(2);
             });
-            it("validate additional properties in settings are not removed.", () => {
+            it('validate additional properties in settings are not removed.', () => {
                 let settings = {
-                    adminPassword: "test",
-                    osDisk: { osType: "linux" }
+                    adminPassword: 'test',
+                    osDisk: { osType: 'linux' }
                 };
 
                 let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
-                expect(mergedValue.hasOwnProperty("adminPassword")).toEqual(true);
-                expect(mergedValue.adminPassword).toEqual("test");
+                expect(mergedValue.hasOwnProperty('adminPassword')).toEqual(true);
+                expect(mergedValue.adminPassword).toEqual('test');
             });
-            it("validate default nics are not added if provided.", () => {
+            it('validate default nics are not added if provided.', () => {
                 let settings = {
                     nics: [
                         {
-                            "isPublic": true,
-                            "subnetName": "web",
-                            "privateIPAllocationMethod": "Static",
-                            "publicIPAllocationMethod": "Static",
-                            "startingIPAddress": "10.0.1.240",
-                            "isPrimary": true,
-                            "dnsServers": [
-                                "10.0.1.240",
-                                "10.0.1.242"
+                            'isPublic': true,
+                            'subnetName': 'web',
+                            'privateIPAllocationMethod': 'Static',
+                            'publicIPAllocationMethod': 'Static',
+                            'startingIPAddress': '10.0.1.240',
+                            'isPrimary': true,
+                            'dnsServers': [
+                                '10.0.1.240',
+                                '10.0.1.242'
                             ]
                         },
                         {
-                            "isPrimary": false,
-                            "subnetName": "biz",
-                            "privateIPAllocationMethod": "Dynamic",
-                            "enableIPForwarding": false,
-                            "domainNameLabelPrefix": "",
-                            "dnsServers": []
+                            'isPrimary': false,
+                            'subnetName': 'biz',
+                            'privateIPAllocationMethod': 'Dynamic',
+                            'enableIPForwarding': false,
+                            'domainNameLabelPrefix': '',
+                            'dnsServers': []
                         }
                     ],
-                    osDisk: { osType: "linux" }
+                    osDisk: { osType: 'linux' }
                 };
 
                 let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
                 expect(mergedValue.nics.length).toEqual(2);
-                expect(mergedValue.nics[0].subnetName).toEqual("web");
-                expect(mergedValue.nics[1].subnetName).toEqual("biz");
+                expect(mergedValue.nics[0].subnetName).toEqual('web');
+                expect(mergedValue.nics[1].subnetName).toEqual('biz');
             });
-            it("validates that individual nics are merged with defaults", () => {
+            it('validates that individual nics are merged with defaults', () => {
                 let settings = {
                     nics: [
                         {
-                            "isPublic": true,
-                            "subnetName": "web",
-                            "privateIPAllocationMethod": "Static",
-                            "publicIPAllocationMethod": "Static",
-                            "startingIPAddress": "10.0.1.240",
-                            "isPrimary": true,
-                            "dnsServers": [
-                                "10.0.1.240",
-                                "10.0.1.242"
+                            'isPublic': true,
+                            'subnetName': 'web',
+                            'privateIPAllocationMethod': 'Static',
+                            'publicIPAllocationMethod': 'Static',
+                            'startingIPAddress': '10.0.1.240',
+                            'isPrimary': true,
+                            'dnsServers': [
+                                '10.0.1.240',
+                                '10.0.1.242'
                             ]
                         },
                         {
-                            "isPrimary": false,
-                            "subnetName": "biz",
-                            "privateIPAllocationMethod": "Dynamic",
-                            "enableIPForwarding": false,
-                            "domainNameLabelPrefix": ""
+                            'isPrimary': false,
+                            'subnetName': 'biz',
+                            'privateIPAllocationMethod': 'Dynamic',
+                            'enableIPForwarding': false,
+                            'domainNameLabelPrefix': ''
                         }
                     ],
-                    osDisk: { osType: "linux" }
+                    osDisk: { osType: 'linux' }
                 };
 
                 let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
                 expect(mergedValue.nics.length).toEqual(2);
                 expect(mergedValue.nics[0].isPublic).toEqual(true);
-                expect(mergedValue.nics[0].subnetName).toEqual("web");
-                expect(mergedValue.nics[0].privateIPAllocationMethod).toEqual("Static");
-                expect(mergedValue.nics[0].publicIPAllocationMethod).toEqual("Static");
-                expect(mergedValue.nics[0].startingIPAddress).toEqual("10.0.1.240");
+                expect(mergedValue.nics[0].subnetName).toEqual('web');
+                expect(mergedValue.nics[0].privateIPAllocationMethod).toEqual('Static');
+                expect(mergedValue.nics[0].publicIPAllocationMethod).toEqual('Static');
+                expect(mergedValue.nics[0].startingIPAddress).toEqual('10.0.1.240');
                 expect(mergedValue.nics[0].enableIPForwarding).toEqual(false);
-                expect(mergedValue.nics[0].domainNameLabelPrefix).toEqual("");
+                expect(mergedValue.nics[0].domainNameLabelPrefix).toEqual('');
                 expect(mergedValue.nics[0].dnsServers.length).toEqual(2);
                 expect(mergedValue.nics[0].isPrimary).toEqual(true);
 
                 expect(mergedValue.nics[1].isPublic).toEqual(false);
-                expect(mergedValue.nics[1].subnetName).toEqual("biz");
-                expect(mergedValue.nics[1].privateIPAllocationMethod).toEqual("Dynamic");
-                expect(mergedValue.nics[1].publicIPAllocationMethod).toEqual("Dynamic");
-                expect(mergedValue.nics[1].startingIPAddress).toEqual("");
+                expect(mergedValue.nics[1].subnetName).toEqual('biz');
+                expect(mergedValue.nics[1].privateIPAllocationMethod).toEqual('Dynamic');
+                expect(mergedValue.nics[1].publicIPAllocationMethod).toEqual('Dynamic');
+                expect(mergedValue.nics[1].startingIPAddress).toEqual('');
                 expect(mergedValue.nics[1].enableIPForwarding).toEqual(false);
-                expect(mergedValue.nics[1].domainNameLabelPrefix).toEqual("");
+                expect(mergedValue.nics[1].domainNameLabelPrefix).toEqual('');
                 expect(mergedValue.nics[1].dnsServers.length).toEqual(0);
                 expect(mergedValue.nics[1].isPrimary).toEqual(false);
             });
-            it("validates that storage is merged with defaults", () => {
+            it('validates that storage is merged with defaults', () => {
                 let settings = {
                     storageAccounts: {
                         count: 5,
                         managed: true
                     },
-                    osDisk: { osType: "linux" }
+                    osDisk: { osType: 'linux' }
                 };
                 let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
-                expect(mergedValue.storageAccounts.nameSuffix).toEqual("st");
+                expect(mergedValue.storageAccounts.nameSuffix).toEqual('st');
                 expect(mergedValue.storageAccounts.count).toEqual(5);
-                expect(mergedValue.storageAccounts.skuType).toEqual("Premium_LRS");
+                expect(mergedValue.storageAccounts.skuType).toEqual('Premium_LRS');
                 expect(mergedValue.storageAccounts.managed).toEqual(true);
                 expect(mergedValue.storageAccounts.accounts.length).toEqual(0);
             });
-            it("validates that diagnostic storage is merged with defaults", () => {
+            it('validates that diagnostic storage is merged with defaults', () => {
                 let settings = {
                     diagnosticStorageAccounts: {
                         count: 5,
                         managed: true
                     },
-                    osDisk: { osType: "linux" }
+                    osDisk: { osType: 'linux' }
                 };
                 let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
-                expect(mergedValue.diagnosticStorageAccounts.nameSuffix).toEqual("diag");
+                expect(mergedValue.diagnosticStorageAccounts.nameSuffix).toEqual('diag');
                 expect(mergedValue.diagnosticStorageAccounts.count).toEqual(5);
-                expect(mergedValue.diagnosticStorageAccounts.skuType).toEqual("Standard_LRS");
+                expect(mergedValue.diagnosticStorageAccounts.skuType).toEqual('Standard_LRS');
                 expect(mergedValue.diagnosticStorageAccounts.managed).toEqual(true);
                 expect(mergedValue.diagnosticStorageAccounts.accounts.length).toEqual(0);
             });
-            it("validates that avset is merged with defaults", () => {
+            it('validates that avset is merged with defaults', () => {
                 let settings = {
-                    "availabilitySet": {
-                        "useExistingAvailabilitySet": "no",
-                        "name": "test-as"
+                    'availabilitySet': {
+                        'useExistingAvailabilitySet': 'no',
+                        'name': 'test-as'
                     },
-                    osDisk: { osType: "linux" }
+                    osDisk: { osType: 'linux' }
                 };
                 let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
-                expect(mergedValue.availabilitySet.useExistingAvailabilitySet).toEqual("no");
-                expect(mergedValue.availabilitySet.name).toEqual("test-as");
+                expect(mergedValue.availabilitySet.useExistingAvailabilitySet).toEqual('no');
+                expect(mergedValue.availabilitySet.name).toEqual('test-as');
                 expect(mergedValue.availabilitySet.platformFaultDomainCount).toEqual(3);
                 expect(mergedValue.availabilitySet.platformUpdateDomainCount).toEqual(5);
             });
-            it("validates that osDisk is merged with defaults", () => {
+            it('validates that osDisk is merged with defaults', () => {
                 let settings = {
-                    osDisk: { osType: "linux" }
+                    osDisk: { osType: 'linux' }
                 };
                 let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
-                expect(mergedValue.osDisk.osType).toEqual("linux");
-                expect(mergedValue.osDisk.caching).toEqual("ReadWrite");
-                expect(mergedValue.osDisk.createOption).toEqual("fromImage");
+                expect(mergedValue.osDisk.osType).toEqual('linux');
+                expect(mergedValue.osDisk.caching).toEqual('ReadWrite');
+                expect(mergedValue.osDisk.createOption).toEqual('fromImage');
             });
-            it("validates that datadisk is merged with defaults", () => {
+            it('validates that datadisk is merged with defaults', () => {
                 let settings = {
                     dataDisks: {
                         count: 2,
@@ -527,25 +527,25 @@ describe('virtualMachineSettings:', () => {
                             diskSizeGB: 127
                         }
                     },
-                    osDisk: { osType: "linux" }
+                    osDisk: { osType: 'linux' }
                 };
                 let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
                 expect(mergedValue.dataDisks.count).toEqual(2);
-                expect(mergedValue.dataDisks.properties.caching).toEqual("None");
-                expect(mergedValue.dataDisks.properties.createOption).toEqual("empty");
+                expect(mergedValue.dataDisks.properties.caching).toEqual('None');
+                expect(mergedValue.dataDisks.properties.createOption).toEqual('empty');
                 expect(mergedValue.dataDisks.properties.diskSizeGB).toEqual(127);
 
             });
-            it("validates that imageReference is merged with defaults", () => {
+            it('validates that imageReference is merged with defaults', () => {
                 let settings = {
                     imageReference: {},
-                    osDisk: { osType: "linux" }
+                    osDisk: { osType: 'linux' }
                 };
                 let mergedValue = virtualMachineSettings.mergeWithDefaults(settings);
-                expect(mergedValue.imageReference.publisher).toEqual("Canonical");
-                expect(mergedValue.imageReference.offer).toEqual("UbuntuServer");
-                expect(mergedValue.imageReference.sku).toEqual("14.04.5-LTS");
-                expect(mergedValue.imageReference.version).toEqual("latest");
+                expect(mergedValue.imageReference.publisher).toEqual('Canonical');
+                expect(mergedValue.imageReference.offer).toEqual('UbuntuServer');
+                expect(mergedValue.imageReference.sku).toEqual('14.04.5-LTS');
+                expect(mergedValue.imageReference.version).toEqual('latest');
 
             });
         });
@@ -568,7 +568,7 @@ describe('virtualMachineSettings:', () => {
             let result = virtualMachineSettings.validations(settings);
             expect(result.length).toEqual(0);
 
-            settings.namePrefix = "";
+            settings.namePrefix = '';
             result = virtualMachineSettings.validations(settings);
             expect(result.length).toEqual(1);
             expect(result[0].name).toEqual('.namePrefix');
@@ -584,7 +584,7 @@ describe('virtualMachineSettings:', () => {
             let result = virtualMachineSettings.validations(settings);
             expect(result.length).toEqual(0);
 
-            settings.computerNamePrefix = "";
+            settings.computerNamePrefix = '';
             result = virtualMachineSettings.validations(settings);
             expect(result.length).toEqual(1);
             expect(result[0].name).toEqual('.computerNamePrefix');
@@ -600,7 +600,7 @@ describe('virtualMachineSettings:', () => {
             let result = virtualMachineSettings.validations(settings);
             expect(result.length).toEqual(0);
 
-            settings.size = "";
+            settings.size = '';
             result = virtualMachineSettings.validations(settings);
             expect(result.length).toEqual(1);
             expect(result[0].name).toEqual('.size');
@@ -616,7 +616,7 @@ describe('virtualMachineSettings:', () => {
             let result = virtualMachineSettings.validations(settings);
             expect(result.length).toEqual(0);
 
-            settings.adminUsername = "";
+            settings.adminUsername = '';
             result = virtualMachineSettings.validations(settings);
             expect(result.length).toEqual(1);
             expect(result[0].name).toEqual('.adminUsername');
@@ -632,9 +632,9 @@ describe('virtualMachineSettings:', () => {
             let result = virtualMachineSettings.validations(settings);
             expect(result.length).toEqual(0);
 
-            settings.osAuthenticationType = "ssh";
-            settings.osDisk.osType = "linux";
-            settings.sshPublicKey = "testKey"
+            settings.osAuthenticationType = 'ssh';
+            settings.osDisk.osType = 'linux';
+            settings.sshPublicKey = 'testKey';
             result = virtualMachineSettings.validations(settings);
             expect(result.length).toEqual(0);
 
@@ -643,7 +643,7 @@ describe('virtualMachineSettings:', () => {
             expect(result.length).toEqual(1);
             expect(result[0].name).toEqual('.osAuthenticationType');
 
-            settings.osAuthenticationType = "SSH1";
+            settings.osAuthenticationType = 'SSH1';
             result = virtualMachineSettings.validations(settings);
             expect(result.length).toEqual(1);
             expect(result[0].name).toEqual('.osAuthenticationType');
@@ -690,7 +690,7 @@ describe('virtualMachineSettings:', () => {
                 let result = virtualMachineSettings.validations(settings);
                 expect(result.length).toEqual(0);
 
-                settings.nics[0].subnetName = "";
+                settings.nics[0].subnetName = '';
                 result = virtualMachineSettings.validations(settings);
                 expect(result.length).toEqual(1);
                 expect(result[0].name).toEqual('.nics[0].subnetName');
@@ -711,7 +711,7 @@ describe('virtualMachineSettings:', () => {
                 expect(result.length).toEqual(1);
                 expect(result[0].name).toEqual('.nics[0].isPublic');
 
-                settings.nics[0].isPublic = "test";
+                settings.nics[0].isPublic = 'test';
                 result = virtualMachineSettings.validations(settings);
                 expect(result.length).toEqual(1);
                 expect(result[0].name).toEqual('.nics[0].isPublic');
@@ -727,7 +727,7 @@ describe('virtualMachineSettings:', () => {
                 expect(result.length).toEqual(1);
                 expect(result[0].name).toEqual('.nics[1].isPrimary');
 
-                settings.nics[1].isPrimary = "test";
+                settings.nics[1].isPrimary = 'test';
                 result = virtualMachineSettings.validations(settings);
                 expect(result.length).toEqual(1);
                 expect(result[0].name).toEqual('.nics[1].isPrimary');
@@ -743,7 +743,7 @@ describe('virtualMachineSettings:', () => {
                 expect(result.length).toEqual(1);
                 expect(result[0].name).toEqual('.nics[0].enableIPForwarding');
 
-                settings.nics[0].enableIPForwarding = "test";
+                settings.nics[0].enableIPForwarding = 'test';
                 result = virtualMachineSettings.validations(settings);
                 expect(result.length).toEqual(1);
                 expect(result[0].name).toEqual('.nics[0].enableIPForwarding');
@@ -770,13 +770,13 @@ describe('virtualMachineSettings:', () => {
                 expect(result.length).toEqual(1);
                 expect(result[0].name).toEqual('.nics[0].privateIPAllocationMethod');
 
-                settings.nics[0].privateIPAllocationMethod = "test";
+                settings.nics[0].privateIPAllocationMethod = 'test';
                 result = virtualMachineSettings.validations(settings);
                 expect(result.length).toEqual(1);
                 expect(result[0].name).toEqual('.nics[0].privateIPAllocationMethod');
 
-                settings.nics[0].privateIPAllocationMethod = "Static";
-                settings.nics[1].privateIPAllocationMethod = "test";
+                settings.nics[0].privateIPAllocationMethod = 'Static';
+                settings.nics[1].privateIPAllocationMethod = 'test';
                 result = virtualMachineSettings.validations(settings);
                 expect(result.length).toEqual(1);
                 expect(result[0].name).toEqual('.nics[1].privateIPAllocationMethod');
@@ -809,13 +809,13 @@ describe('virtualMachineSettings:', () => {
                 expect(result.length).toEqual(1);
                 expect(result[0].name).toEqual('.nics[0].publicIPAllocationMethod');
 
-                settings.nics[0].publicIPAllocationMethod = "test";
+                settings.nics[0].publicIPAllocationMethod = 'test';
                 result = virtualMachineSettings.validations(settings);
                 expect(result.length).toEqual(1);
                 expect(result[0].name).toEqual('.nics[0].publicIPAllocationMethod');
 
-                settings.nics[0].publicIPAllocationMethod = "Static";
-                settings.nics[1].publicIPAllocationMethod = "test";
+                settings.nics[0].publicIPAllocationMethod = 'Static';
+                settings.nics[1].publicIPAllocationMethod = 'test';
                 result = virtualMachineSettings.validations(settings);
                 expect(result.length).toEqual(1);
                 expect(result[0].name).toEqual('.nics[1].publicIPAllocationMethod');
@@ -854,7 +854,7 @@ describe('virtualMachineSettings:', () => {
                 let result = virtualMachineSettings.validations(settings);
                 expect(result.length).toEqual(0);
 
-                settings.storageAccounts.nameSuffix = "";
+                settings.storageAccounts.nameSuffix = '';
                 result = virtualMachineSettings.validations(settings);
                 expect(result.length).toEqual(1);
                 expect(result[0].name).toEqual('.storageAccounts.nameSuffix');
@@ -881,7 +881,7 @@ describe('virtualMachineSettings:', () => {
                 let result = virtualMachineSettings.validations(settings);
                 expect(result.length).toEqual(0);
 
-                settings.storageAccounts.skuType = "";
+                settings.storageAccounts.skuType = '';
                 result = virtualMachineSettings.validations(settings);
                 expect(result.length).toEqual(1);
                 expect(result[0].name).toEqual('.storageAccounts.skuType');
@@ -897,7 +897,7 @@ describe('virtualMachineSettings:', () => {
                 let result = virtualMachineSettings.validations(settings);
                 expect(result.length).toEqual(0);
 
-                settings.storageAccounts.managed = "true";
+                settings.storageAccounts.managed = 'true';
                 result = virtualMachineSettings.validations(settings);
                 expect(result.length).toEqual(1);
                 expect(result[0].name).toEqual('.storageAccounts.managed');
@@ -926,7 +926,7 @@ describe('virtualMachineSettings:', () => {
                 let result = virtualMachineSettings.validations(settings);
                 expect(result.length).toEqual(0);
 
-                settings.diagnosticStorageAccounts.nameSuffix = "";
+                settings.diagnosticStorageAccounts.nameSuffix = '';
                 result = virtualMachineSettings.validations(settings);
                 expect(result.length).toEqual(1);
                 expect(result[0].name).toEqual('.diagnosticStorageAccounts.nameSuffix');
@@ -953,7 +953,7 @@ describe('virtualMachineSettings:', () => {
                 let result = virtualMachineSettings.validations(settings);
                 expect(result.length).toEqual(0);
 
-                settings.diagnosticStorageAccounts.skuType = "";
+                settings.diagnosticStorageAccounts.skuType = '';
                 result = virtualMachineSettings.validations(settings);
                 expect(result.length).toEqual(1);
                 expect(result[0].name).toEqual('.diagnosticStorageAccounts.skuType');
@@ -969,7 +969,7 @@ describe('virtualMachineSettings:', () => {
                 let result = virtualMachineSettings.validations(settings);
                 expect(result.length).toEqual(0);
 
-                settings.diagnosticStorageAccounts.skuType = "Premium_LRS";
+                settings.diagnosticStorageAccounts.skuType = 'Premium_LRS';
                 result = virtualMachineSettings.validations(settings);
                 expect(result.length).toEqual(1);
                 expect(result[0].name).toEqual('.diagnosticStorageAccounts.skuType');
@@ -980,7 +980,7 @@ describe('virtualMachineSettings:', () => {
                 let result = virtualMachineSettings.validations(settings);
                 expect(result.length).toEqual(0);
 
-                settings.diagnosticStorageAccounts.managed = "true";
+                settings.diagnosticStorageAccounts.managed = 'true';
                 result = virtualMachineSettings.validations(settings);
                 expect(result.length).toEqual(1);
                 expect(result[0].name).toEqual('.diagnosticStorageAccounts.managed');
@@ -1016,9 +1016,9 @@ describe('virtualMachineSettings:', () => {
         describe('windows:', () => {
             it('validates that osAuthenticationType cannot be ssh if osType is windows', () => {
                 let windowsSettings = _.cloneDeep(testSettings);
-                windowsSettings.osDisk.osType = "windows";
-                windowsSettings.osAuthenticationType = "ssh";
-                windowsSettings.sshPublicKey = "testKey";
+                windowsSettings.osDisk.osType = 'windows';
+                windowsSettings.osAuthenticationType = 'ssh';
+                windowsSettings.sshPublicKey = 'testKey';
                 let result = virtualMachineSettings.validations(windowsSettings);
                 expect(result.length).toEqual(1);
                 expect(result[0].name).toEqual('.osAuthenticationType');
@@ -1027,9 +1027,9 @@ describe('virtualMachineSettings:', () => {
         describe('linux:', () => {
             it('validates that osAuthenticationType ssh can be used with linux', () => {
                 let linuxSettings = _.cloneDeep(testSettings);
-                linuxSettings.osDisk.osType = "linux";
-                linuxSettings.osAuthenticationType = "ssh";
-                linuxSettings.sshPublicKey = "testKey";
+                linuxSettings.osDisk.osType = 'linux';
+                linuxSettings.osAuthenticationType = 'ssh';
+                linuxSettings.sshPublicKey = 'testKey';
                 let result = virtualMachineSettings.validations(linuxSettings);
                 expect(result.length).toEqual(0);
             });
@@ -1037,39 +1037,39 @@ describe('virtualMachineSettings:', () => {
     });
     describe('transform:', () => {
         it('validates that number of stamps created are based on vmcount property', () => {
-            let process = virtualMachineSettings.__get__("process");
+            let process = virtualMachineSettings.__get__('process');
             let processedParam = process(testSettings, buildingBlockSettings);
             expect(processedParam.virtualMachines.length).toEqual(2);
         });
         it('validates that vm names are correctly computed', () => {
-            let process = virtualMachineSettings.__get__("process");
+            let process = virtualMachineSettings.__get__('process');
             let processedParam = process(testSettings, buildingBlockSettings);
-            expect(processedParam.virtualMachines[0].name).toEqual("test-vm1");
-            expect(processedParam.virtualMachines[1].name).toEqual("test-vm2");
+            expect(processedParam.virtualMachines[0].name).toEqual('test-vm1');
+            expect(processedParam.virtualMachines[1].name).toEqual('test-vm2');
         });
         it('validates that computerNames are correctly computed', () => {
-            let process = virtualMachineSettings.__get__("process");
+            let process = virtualMachineSettings.__get__('process');
             let processedParam = process(testSettings, buildingBlockSettings);
-            expect(processedParam.virtualMachines[0].properties.osProfile.computerName).toEqual("test-vm1");
-            expect(processedParam.virtualMachines[1].properties.osProfile.computerName).toEqual("test-vm2");
+            expect(processedParam.virtualMachines[0].properties.osProfile.computerName).toEqual('test-vm1');
+            expect(processedParam.virtualMachines[1].properties.osProfile.computerName).toEqual('test-vm2');
         });
         it('validates that vm size is added to the hardwareProfile in the output', () => {
-            let process = virtualMachineSettings.__get__("process");
+            let process = virtualMachineSettings.__get__('process');
             let processedParam = process(testSettings, buildingBlockSettings);
-            expect(processedParam.virtualMachines[0].properties.hardwareProfile.vmSize).toEqual("Standard_DS2");
-            expect(processedParam.virtualMachines[1].properties.hardwareProfile.vmSize).toEqual("Standard_DS2");
+            expect(processedParam.virtualMachines[0].properties.hardwareProfile.vmSize).toEqual('Standard_DS2');
+            expect(processedParam.virtualMachines[1].properties.hardwareProfile.vmSize).toEqual('Standard_DS2');
         });
         it('validates that vm adminUsername is added to the osProfile in the output', () => {
-            let process = virtualMachineSettings.__get__("process");
+            let process = virtualMachineSettings.__get__('process');
             let processedParam = process(testSettings, buildingBlockSettings);
-            expect(processedParam.virtualMachines[0].properties.osProfile.adminUsername).toEqual("testadminuser");
-            expect(processedParam.virtualMachines[1].properties.osProfile.adminUsername).toEqual("testadminuser");
+            expect(processedParam.virtualMachines[0].properties.osProfile.adminUsername).toEqual('testadminuser');
+            expect(processedParam.virtualMachines[1].properties.osProfile.adminUsername).toEqual('testadminuser');
         });
         it('validates that whan createOption property of osDisk is set to attach, image property is set and vhd is not available', () => {
             let settings = _.cloneDeep(testSettings);
-            let process = virtualMachineSettings.__get__("process");
+            let process = virtualMachineSettings.__get__('process');
             settings.osDisk.createOption = 'attach';
-            settings.osDisk.image = 'http://testimageuri'
+            settings.osDisk.image = 'http://testimageuri';
             let processedParam = process(settings, buildingBlockSettings);
 
             expect(processedParam.virtualMachines[0].properties.storageProfile.osDisk.hasOwnProperty('image')).toEqual(true);
@@ -1080,9 +1080,9 @@ describe('virtualMachineSettings:', () => {
         });
         it('validates that whan createOption property of dataDisk is set to attach, image property is set and vhd is not available', () => {
             let settings = _.cloneDeep(testSettings);
-            let process = virtualMachineSettings.__get__("process");
+            let process = virtualMachineSettings.__get__('process');
             settings.dataDisks.properties.createOption = 'attach';
-            settings.dataDisks.properties.image = 'http://testimageuri'
+            settings.dataDisks.properties.image = 'http://testimageuri';
             let processedParam = process(settings, buildingBlockSettings);
 
             expect(processedParam.virtualMachines[0].properties.storageProfile.dataDisks[0].hasOwnProperty('image')).toEqual(true);
@@ -1093,7 +1093,7 @@ describe('virtualMachineSettings:', () => {
         });
         it('validates that dataDisks property has right number of disks as per the count property', () => {
             let settings = _.cloneDeep(testSettings);
-            let process = virtualMachineSettings.__get__("process");
+            let process = virtualMachineSettings.__get__('process');
             settings.dataDisks.count = 5;
             let processedParam = process(settings, buildingBlockSettings);
 
@@ -1102,7 +1102,7 @@ describe('virtualMachineSettings:', () => {
         });
         it('validates that diskSizeGB property is correctly set in the osdisk', () => {
             let settings = _.cloneDeep(testSettings);
-            let process = virtualMachineSettings.__get__("process");
+            let process = virtualMachineSettings.__get__('process');
             let processedParam = process(settings, buildingBlockSettings);
 
             expect(processedParam.virtualMachines[0].properties.storageProfile.osDisk.hasOwnProperty('diskSizeGB')).toEqual(false);
@@ -1118,7 +1118,7 @@ describe('virtualMachineSettings:', () => {
         it('validate that avSet reference is correctly computed and set in vm stamps', () => {
             let settings = _.cloneDeep(testSettings);
 
-            let process = virtualMachineSettings.__get__("process");
+            let process = virtualMachineSettings.__get__('process');
             let processedParam = process(settings, buildingBlockSettings);
 
             expect(processedParam.virtualMachines[0].properties.availabilitySet.id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/availabilitySets/test-as');
@@ -1129,7 +1129,7 @@ describe('virtualMachineSettings:', () => {
             it('validates that correct number of storage stamps are created based on the storageAccount.count property', () => {
                 let settings = _.cloneDeep(testSettings);
                 settings.storageAccounts.count = 5;
-                let process = virtualMachineSettings.__get__("process");
+                let process = virtualMachineSettings.__get__('process');
                 let processedParam = process(settings, buildingBlockSettings);
 
                 expect(processedParam.storageAccounts.length).toEqual(5);
@@ -1138,7 +1138,7 @@ describe('virtualMachineSettings:', () => {
                 let settings = _.cloneDeep(testSettings);
                 settings.storageAccounts.count = 5;
                 settings.storageAccounts.accounts = ['a', 'b'];
-                let process = virtualMachineSettings.__get__("process");
+                let process = virtualMachineSettings.__get__('process');
                 let processedParam = process(settings, buildingBlockSettings);
 
                 expect(processedParam.storageAccounts.length).toEqual(3);
@@ -1146,26 +1146,26 @@ describe('virtualMachineSettings:', () => {
             it('validates that sku is correctly assigned in the storage stamps', () => {
                 let settings = _.cloneDeep(testSettings);
                 settings.storageAccounts.count = 2;
-                let process = virtualMachineSettings.__get__("process");
+                let process = virtualMachineSettings.__get__('process');
                 let processedParam = process(settings, buildingBlockSettings);
 
-                expect(processedParam.storageAccounts[0].sku.name).toEqual("Premium_LRS");
-                expect(processedParam.storageAccounts[1].sku.name).toEqual("Premium_LRS");
+                expect(processedParam.storageAccounts[0].sku.name).toEqual('Premium_LRS');
+                expect(processedParam.storageAccounts[1].sku.name).toEqual('Premium_LRS');
             });
             it('validates that kind property is correctly assigned in the storage stamps', () => {
                 let settings = _.cloneDeep(testSettings);
                 settings.storageAccounts.count = 2;
-                let process = virtualMachineSettings.__get__("process");
+                let process = virtualMachineSettings.__get__('process');
                 let processedParam = process(settings, buildingBlockSettings);
 
-                expect(processedParam.storageAccounts[0].kind).toEqual("Storage");
-                expect(processedParam.storageAccounts[1].kind).toEqual("Storage");
+                expect(processedParam.storageAccounts[0].kind).toEqual('Storage');
+                expect(processedParam.storageAccounts[1].kind).toEqual('Storage');
             });
             it('validates that vhd property is correctly updated in the storageprofile.osDisk', () => {
                 let settings = _.cloneDeep(testSettings);
                 settings.storageAccounts.count = 2;
                 settings.vmCount = 5;
-                let process = virtualMachineSettings.__get__("process");
+                let process = virtualMachineSettings.__get__('process');
                 let processedParam = process(settings, buildingBlockSettings);
 
                 expect(processedParam.virtualMachines[0].properties.storageProfile.osDisk.vhd.uri).toEqual(`http://${processedParam.storageAccounts[0].name}.blob.core.windows.net/vhds/test-vm1-os.vhd`);
@@ -1179,7 +1179,7 @@ describe('virtualMachineSettings:', () => {
                 settings.storageAccounts.count = 4;
                 settings.storageAccounts.accounts = ['A', 'B'];
                 settings.vmCount = 8;
-                let process = virtualMachineSettings.__get__("process");
+                let process = virtualMachineSettings.__get__('process');
                 let processedParam = process(settings, buildingBlockSettings);
 
                 expect(processedParam.virtualMachines[0].properties.storageProfile.osDisk.vhd.uri).toEqual(`http://${settings.storageAccounts.accounts[0]}.blob.core.windows.net/vhds/test-vm1-os.vhd`);
@@ -1196,7 +1196,7 @@ describe('virtualMachineSettings:', () => {
                 settings.storageAccounts.count = 2;
                 settings.vmCount = 5;
                 settings.dataDisks.count = 2;
-                let process = virtualMachineSettings.__get__("process");
+                let process = virtualMachineSettings.__get__('process');
                 let processedParam = process(settings, buildingBlockSettings);
 
                 expect(processedParam.virtualMachines[0].properties.storageProfile.dataDisks[0].vhd.uri).toEqual(`http://${processedParam.storageAccounts[0].name}.blob.core.windows.net/vhds/test-vm1-dataDisk1.vhd`);
@@ -1217,7 +1217,7 @@ describe('virtualMachineSettings:', () => {
                 settings.storageAccounts.accounts = ['A', 'B'];
                 settings.vmCount = 8;
                 settings.dataDisks.count = 1;
-                let process = virtualMachineSettings.__get__("process");
+                let process = virtualMachineSettings.__get__('process');
                 let processedParam = process(settings, buildingBlockSettings);
 
                 expect(processedParam.virtualMachines[0].properties.storageProfile.dataDisks[0].vhd.uri).toEqual(`http://${settings.storageAccounts.accounts[0]}.blob.core.windows.net/vhds/test-vm1-dataDisk1.vhd`);
@@ -1233,7 +1233,7 @@ describe('virtualMachineSettings:', () => {
                 let settings = _.cloneDeep(testSettings);
                 settings.storageAccounts.managed = true;
 
-                let process = virtualMachineSettings.__get__("process");
+                let process = virtualMachineSettings.__get__('process');
                 let processedParam = process(settings, buildingBlockSettings);
 
                 expect(processedParam.virtualMachines[0].properties.storageProfile.osDisk.hasOwnProperty('managedDisk')).toEqual(true);
@@ -1248,7 +1248,7 @@ describe('virtualMachineSettings:', () => {
                 let settings = _.cloneDeep(testSettings);
                 settings.storageAccounts.managed = true;
                 settings.dataDisks.count = 2;
-                let process = virtualMachineSettings.__get__("process");
+                let process = virtualMachineSettings.__get__('process');
                 let processedParam = process(settings, buildingBlockSettings);
 
                 expect(processedParam.virtualMachines[0].properties.storageProfile.dataDisks[0].hasOwnProperty('managedDisk')).toEqual(true);
@@ -1269,7 +1269,7 @@ describe('virtualMachineSettings:', () => {
             it('validates that whan managed property is set to true, the storageProfile.osDisk does not include vhd property', () => {
                 let settings = _.cloneDeep(testSettings);
                 settings.storageAccounts.managed = true;
-                let process = virtualMachineSettings.__get__("process");
+                let process = virtualMachineSettings.__get__('process');
                 let processedParam = process(settings, buildingBlockSettings);
 
                 expect(processedParam.virtualMachines[0].properties.storageProfile.osDisk.hasOwnProperty('vhd')).toEqual(false);
@@ -1279,7 +1279,7 @@ describe('virtualMachineSettings:', () => {
                 let settings = _.cloneDeep(testSettings);
                 settings.storageAccounts.managed = true;
                 settings.dataDisks.count = 2;
-                let process = virtualMachineSettings.__get__("process");
+                let process = virtualMachineSettings.__get__('process');
                 let processedParam = process(settings, buildingBlockSettings);
 
                 expect(processedParam.virtualMachines[0].properties.storageProfile.dataDisks[0].hasOwnProperty('vhd')).toEqual(false);
@@ -1289,7 +1289,7 @@ describe('virtualMachineSettings:', () => {
             });
             it('validates that whan managed property is set to true, the availabilitySet resource stamp include managed property as well', () => {
                 let settings = _.cloneDeep(testSettings);
-                let process = virtualMachineSettings.__get__("process");
+                let process = virtualMachineSettings.__get__('process');
                 let processedParam = process(settings, buildingBlockSettings);
 
                 expect(processedParam.availabilitySet[0].properties.hasOwnProperty('managed')).toEqual(false);
@@ -1304,7 +1304,7 @@ describe('virtualMachineSettings:', () => {
             it('validates that correct number of diag storage stamps are created based on the diagnosticStorageAccounts.count property', () => {
                 let settings = _.cloneDeep(testSettings);
                 settings.diagnosticStorageAccounts.count = 5;
-                let process = virtualMachineSettings.__get__("process");
+                let process = virtualMachineSettings.__get__('process');
                 let processedParam = process(settings, buildingBlockSettings);
 
                 expect(processedParam.diagnosticStorageAccounts.length).toEqual(5);
@@ -1313,7 +1313,7 @@ describe('virtualMachineSettings:', () => {
                 let settings = _.cloneDeep(testSettings);
                 settings.diagnosticStorageAccounts.count = 5;
                 settings.diagnosticStorageAccounts.accounts = ['a', 'b'];
-                let process = virtualMachineSettings.__get__("process");
+                let process = virtualMachineSettings.__get__('process');
                 let processedParam = process(settings, buildingBlockSettings);
 
                 expect(processedParam.diagnosticStorageAccounts.length).toEqual(3);
@@ -1321,26 +1321,26 @@ describe('virtualMachineSettings:', () => {
             it('validates that sku is correctly assigned in the storage stamps', () => {
                 let settings = _.cloneDeep(testSettings);
                 settings.diagnosticStorageAccounts.count = 2;
-                let process = virtualMachineSettings.__get__("process");
+                let process = virtualMachineSettings.__get__('process');
                 let processedParam = process(settings, buildingBlockSettings);
 
-                expect(processedParam.diagnosticStorageAccounts[0].sku.name).toEqual("Standard_LRS");
-                expect(processedParam.diagnosticStorageAccounts[1].sku.name).toEqual("Standard_LRS");
+                expect(processedParam.diagnosticStorageAccounts[0].sku.name).toEqual('Standard_LRS');
+                expect(processedParam.diagnosticStorageAccounts[1].sku.name).toEqual('Standard_LRS');
             });
             it('validates that kind property is correctly assigned in the storage stamps', () => {
                 let settings = _.cloneDeep(testSettings);
                 settings.diagnosticStorageAccounts.count = 2;
-                let process = virtualMachineSettings.__get__("process");
+                let process = virtualMachineSettings.__get__('process');
                 let processedParam = process(settings, buildingBlockSettings);
 
-                expect(processedParam.diagnosticStorageAccounts[0].kind).toEqual("Storage");
-                expect(processedParam.diagnosticStorageAccounts[1].kind).toEqual("Storage");
+                expect(processedParam.diagnosticStorageAccounts[0].kind).toEqual('Storage');
+                expect(processedParam.diagnosticStorageAccounts[1].kind).toEqual('Storage');
             });
             it('validates that storageUri property is correctly updated in the diagnosticsProfile', () => {
                 let settings = _.cloneDeep(testSettings);
                 settings.diagnosticStorageAccounts.count = 2;
                 settings.vmCount = 5;
-                let process = virtualMachineSettings.__get__("process");
+                let process = virtualMachineSettings.__get__('process');
                 let processedParam = process(settings, buildingBlockSettings);
 
                 expect(processedParam.virtualMachines[0].properties.diagnosticsProfile.bootDiagnostics.storageUri).toEqual(`http://${processedParam.diagnosticStorageAccounts[0].name}.blob.core.windows.net`);
@@ -1354,7 +1354,7 @@ describe('virtualMachineSettings:', () => {
                 settings.diagnosticStorageAccounts.count = 4;
                 settings.diagnosticStorageAccounts.accounts = ['A', 'B'];
                 settings.vmCount = 8;
-                let process = virtualMachineSettings.__get__("process");
+                let process = virtualMachineSettings.__get__('process');
                 let processedParam = process(settings, buildingBlockSettings);
 
                 expect(processedParam.virtualMachines[0].properties.diagnosticsProfile.bootDiagnostics.storageUri).toEqual(`http://${settings.diagnosticStorageAccounts.accounts[0]}.blob.core.windows.net`);
@@ -1372,7 +1372,7 @@ describe('virtualMachineSettings:', () => {
             it('validate that names for nic is correctly applied', () => {
                 let settings = _.cloneDeep(testSettings);
 
-                let process = virtualMachineSettings.__get__("process");
+                let process = virtualMachineSettings.__get__('process');
                 let processedParam = process(settings, buildingBlockSettings);
 
                 expect(processedParam.nics.length).toEqual(4);
@@ -1384,7 +1384,7 @@ describe('virtualMachineSettings:', () => {
             it('validate that references for subnets are correctly computed and applied', () => {
                 let settings = _.cloneDeep(testSettings);
 
-                let process = virtualMachineSettings.__get__("process");
+                let process = virtualMachineSettings.__get__('process');
                 let processedParam = process(settings, buildingBlockSettings);
 
                 expect(processedParam.nics.length).toEqual(4);
@@ -1396,7 +1396,7 @@ describe('virtualMachineSettings:', () => {
             it('validate that pips are created for public nics', () => {
                 let settings = _.cloneDeep(testSettings);
 
-                let process = virtualMachineSettings.__get__("process");
+                let process = virtualMachineSettings.__get__('process');
                 let processedParam = process(settings, buildingBlockSettings);
 
                 expect(processedParam.pips.length).toEqual(2);
@@ -1406,7 +1406,7 @@ describe('virtualMachineSettings:', () => {
             it('validate that references for pips are correctly computed and applied', () => {
                 let settings = _.cloneDeep(testSettings);
 
-                let process = virtualMachineSettings.__get__("process");
+                let process = virtualMachineSettings.__get__('process');
                 let processedParam = process(settings, buildingBlockSettings);
 
                 expect(processedParam.pips.length).toEqual(2);
@@ -1417,7 +1417,7 @@ describe('virtualMachineSettings:', () => {
             it('validate that nic references are correctly computed and applied in vm stamps', () => {
                 let settings = _.cloneDeep(testSettings);
 
-                let process = virtualMachineSettings.__get__("process");
+                let process = virtualMachineSettings.__get__('process');
                 let processedParam = process(settings, buildingBlockSettings);
 
                 expect(processedParam.virtualMachines[0].properties.networkProfile.networkInterfaces[0].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/networkInterfaces/test-vm1-nic1');
@@ -1428,7 +1428,7 @@ describe('virtualMachineSettings:', () => {
             it('validate that primary property is correctly applied in nic stamps', () => {
                 let settings = _.cloneDeep(testSettings);
 
-                let process = virtualMachineSettings.__get__("process");
+                let process = virtualMachineSettings.__get__('process');
                 let processedParam = process(settings, buildingBlockSettings);
 
                 expect(processedParam.nics.length).toEqual(4);
@@ -1440,7 +1440,7 @@ describe('virtualMachineSettings:', () => {
             it('validate that nic property is created as per RP schema in the vm stamp', () => {
                 let settings = _.cloneDeep(testSettings);
 
-                let process = virtualMachineSettings.__get__("process");
+                let process = virtualMachineSettings.__get__('process');
                 let processedParam = process(settings, buildingBlockSettings);
 
                 expect(processedParam.virtualMachines[0].properties.hasOwnProperty('networkProfile')).toEqual(true);
@@ -1475,37 +1475,37 @@ describe('virtualMachineSettings:', () => {
         describe('windows:', () => {
             it('validates that for password osAuthenticationType, windowsConfiguration is added to the osProfile', () => {
                 let windowsSettings = _.cloneDeep(testSettings);
-                windowsSettings.osDisk.osType = "windows";
-                let process = virtualMachineSettings.__get__("process");
+                windowsSettings.osDisk.osType = 'windows';
+                let process = virtualMachineSettings.__get__('process');
                 let processedParam = process(windowsSettings, buildingBlockSettings);
                 expect(processedParam.virtualMachines[0].properties.osProfile.hasOwnProperty('windowsConfiguration')).toEqual(true);
                 expect(processedParam.virtualMachines[1].properties.osProfile.hasOwnProperty('windowsConfiguration')).toEqual(true);
             });
             it('validates that for password osAuthenticationType, vmAgent is configured in windowsConfiguration', () => {
                 let windowsSettings = _.cloneDeep(testSettings);
-                windowsSettings.osDisk.osType = "windows";
-                let process = virtualMachineSettings.__get__("process");
+                windowsSettings.osDisk.osType = 'windows';
+                let process = virtualMachineSettings.__get__('process');
                 let processedParam = process(windowsSettings, buildingBlockSettings);
                 expect(processedParam.virtualMachines[0].properties.osProfile.windowsConfiguration.provisionVmAgent).toEqual(true);
                 expect(processedParam.virtualMachines[1].properties.osProfile.windowsConfiguration.provisionVmAgent).toEqual(true);
             });
             it('validates that for password osAuthenticationType, adminPassword is set in the osProfile', () => {
                 let windowsSettings = _.cloneDeep(testSettings);
-                windowsSettings.osDisk.osType = "windows";
-                let process = virtualMachineSettings.__get__("process");
+                windowsSettings.osDisk.osType = 'windows';
+                let process = virtualMachineSettings.__get__('process');
                 let processedParam = process(windowsSettings, buildingBlockSettings);
-                expect(processedParam.virtualMachines[0].properties.osProfile.adminPassword).toEqual("$SECRET$");
-                expect(processedParam.virtualMachines[1].properties.osProfile.adminPassword).toEqual("$SECRET$");
+                expect(processedParam.virtualMachines[0].properties.osProfile.adminPassword).toEqual('$SECRET$');
+                expect(processedParam.virtualMachines[1].properties.osProfile.adminPassword).toEqual('$SECRET$');
                 expect(processedParam.secret).toEqual(windowsSettings.adminPassword);
             });
             it('validates that existingWindowsServerlicense is correctly set', () => {
-                let process = virtualMachineSettings.__get__("process");
+                let process = virtualMachineSettings.__get__('process');
                 let windowsSettings = _.cloneDeep(testSettings);
-                windowsSettings.osDisk.osType = "windows";
+                windowsSettings.osDisk.osType = 'windows';
 
                 windowsSettings.existingWindowsServerlicense = true;
                 let processedParam = process(windowsSettings, buildingBlockSettings);
-                expect(processedParam.virtualMachines[0].properties.licenseType).toEqual("Windows_Server");
+                expect(processedParam.virtualMachines[0].properties.licenseType).toEqual('Windows_Server');
 
                 windowsSettings.existingWindowsServerlicense = false;
                 processedParam = process(windowsSettings, buildingBlockSettings);
@@ -1515,8 +1515,8 @@ describe('virtualMachineSettings:', () => {
         describe('linux:', () => {
             it('validates that for password osAuthenticationType, linuxConfiguration in osProfile is set to null', () => {
                 let linuxSettings = _.cloneDeep(testSettings);
-                linuxSettings.osDisk.osType = "linux";
-                let process = virtualMachineSettings.__get__("process");
+                linuxSettings.osDisk.osType = 'linux';
+                let process = virtualMachineSettings.__get__('process');
                 let processedParam = process(linuxSettings, buildingBlockSettings);
                 expect(processedParam.virtualMachines[0].properties.osProfile.hasOwnProperty('linuxConfiguration')).toEqual(true);
                 expect(processedParam.virtualMachines[0].properties.osProfile.linuxConfiguration).toEqual(null);
@@ -1525,19 +1525,19 @@ describe('virtualMachineSettings:', () => {
             });
             it('validates that for password osAuthenticationType, adminPassword is set in the osProfile', () => {
                 let linuxSettings = _.cloneDeep(testSettings);
-                linuxSettings.osDisk.osType = "linux";
-                let process = virtualMachineSettings.__get__("process");
+                linuxSettings.osDisk.osType = 'linux';
+                let process = virtualMachineSettings.__get__('process');
                 let processedParam = process(linuxSettings, buildingBlockSettings);
-                expect(processedParam.virtualMachines[0].properties.osProfile.adminPassword).toEqual("$SECRET$");
-                expect(processedParam.virtualMachines[1].properties.osProfile.adminPassword).toEqual("$SECRET$");
+                expect(processedParam.virtualMachines[0].properties.osProfile.adminPassword).toEqual('$SECRET$');
+                expect(processedParam.virtualMachines[1].properties.osProfile.adminPassword).toEqual('$SECRET$');
                 expect(processedParam.secret).toEqual(linuxSettings.adminPassword);
             });
             it('validates that for ssh osAuthenticationType, linuxConfiguration is correctly added to the osProfile', () => {
                 let linuxSettings = _.cloneDeep(testSettings);
-                linuxSettings.osDisk.osType = "linux";
-                linuxSettings.osAuthenticationType = "ssh";
-                linuxSettings.sshPublicKey = "testKey";
-                let process = virtualMachineSettings.__get__("process");
+                linuxSettings.osDisk.osType = 'linux';
+                linuxSettings.osAuthenticationType = 'ssh';
+                linuxSettings.sshPublicKey = 'testKey';
+                let process = virtualMachineSettings.__get__('process');
                 let processedParam = process(linuxSettings, buildingBlockSettings);
                 expect(processedParam.virtualMachines[0].properties.osProfile.hasOwnProperty('linuxConfiguration')).toEqual(true);
                 expect(processedParam.virtualMachines[0].properties.osProfile.linuxConfiguration.disablePasswordAuthentication).toEqual(true);
@@ -1551,18 +1551,18 @@ describe('virtualMachineSettings:', () => {
             });
             it('validates that for ssh osAuthenticationType, adminPassword is set to null', () => {
                 let linuxSettings = _.cloneDeep(testSettings);
-                linuxSettings.osDisk.osType = "linux";
-                linuxSettings.osAuthenticationType = "ssh";
-                linuxSettings.sshPublicKey = "testKey";
-                let process = virtualMachineSettings.__get__("process");
+                linuxSettings.osDisk.osType = 'linux';
+                linuxSettings.osAuthenticationType = 'ssh';
+                linuxSettings.sshPublicKey = 'testKey';
+                let process = virtualMachineSettings.__get__('process');
                 let processedParam = process(linuxSettings, buildingBlockSettings);
                 expect(processedParam.virtualMachines[0].properties.osProfile.adminPassword).toEqual(null);
                 expect(processedParam.virtualMachines[1].properties.osProfile.adminPassword).toEqual(null);
             });
             it('validates that setting existingWindowsServerlicense is noop for linux vms', () => {
-                let process = virtualMachineSettings.__get__("process");
+                let process = virtualMachineSettings.__get__('process');
                 let linuxSettings = _.cloneDeep(testSettings);
-                linuxSettings.osDisk.osType = "linux";
+                linuxSettings.osDisk.osType = 'linux';
 
                 linuxSettings.existingWindowsServerlicense = true;
                 let processedParam = process(linuxSettings, buildingBlockSettings);

@@ -391,8 +391,8 @@ describe('expressRouteCircuitSettings', () => {
         };
 
         let buildingBlockSettings = {
-            subscriptionId: "00000000-0000-1000-8000-000000000000",
-            resourceGroupName: "test-rg"
+            subscriptionId: '00000000-0000-1000-8000-000000000000',
+            resourceGroupName: 'test-rg'
         };
 
         it('single expressRouteCircuit', () => {
@@ -463,7 +463,7 @@ describe('expressRouteCircuitSettings', () => {
             let settings = _.cloneDeep(expressRouteCircuit);
             delete settings.name;
             expect(() => {
-                let result = ercSettings.transform({
+                ercSettings.transform({
                     settings: settings,
                     buildingBlockSettings: buildingBlockSettings
                 });
@@ -475,7 +475,7 @@ describe('expressRouteCircuitSettings', () => {
             let bbSettings = _.cloneDeep(buildingBlockSettings);
             delete bbSettings.subscriptionId;
             expect(() => {
-                let result = ercSettings.transform({
+                ercSettings.transform({
                     settings: settings,
                     buildingBlockSettings: bbSettings
                 });

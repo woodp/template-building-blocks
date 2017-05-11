@@ -30,7 +30,7 @@ describe('resourceId function', () => {
 
         it('invalid subscriptionId', () => {
             expect(() => {
-                resources.resourceId("not-a-valid-guid", null, null, null, null);
+                resources.resourceId('NOT_VALID', null, null, null, null);
             }).toThrow(`subscriptionId: ${validationMessages.StringIsNotAValidGuid}`);
         });
     });
@@ -77,13 +77,13 @@ describe('resourceId function', () => {
         it('resourceType parts less than 2', () => {
             expect(() => {
                 resources.resourceId(subscriptionId, resourceGroupName, 'Microsoft.Network', null, null);
-            }).toThrow(`resourceType: Invalid length 1`);
+            }).toThrow('resourceType: Invalid length 1');
         });
 
         it('resourceType parts greater than 3', () => {
             expect(() => {
                 resources.resourceId(subscriptionId, resourceGroupName, 'Microsoft.Network/virtualNetworks/subnets/extra', null, null);
-            }).toThrow(`resourceType: Invalid length 4`);
+            }).toThrow('resourceType: Invalid length 4');
         });
     });
 

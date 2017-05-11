@@ -1,6 +1,5 @@
 describe('virtualNetworkSettings', () => {
     let rewire = require('rewire');
-    let resources = require('../core/resources.js');
     let virtualNetworkSettings = rewire('../core/virtualNetworkSettings.js');
     let _ = require('lodash');
     let validation = require('../core/validation.js');
@@ -12,12 +11,12 @@ describe('virtualNetworkSettings', () => {
             let subnetValidations = virtualNetworkSettings.__get__('virtualNetworkSettingsSubnetsValidations');
             let subnetsSettings = [
                 {
-                    name: "web",
-                    addressPrefix: "10.0.1.0/24"
+                    name: 'web',
+                    addressPrefix: '10.0.1.0/24'
                 },
                 {
-                    name: "biz",
-                    addressPrefix: "10.0.2.0/24"
+                    name: 'biz',
+                    addressPrefix: '10.0.2.0/24'
                 }
             ];
 
@@ -110,9 +109,9 @@ describe('virtualNetworkSettings', () => {
             let peeringValidations = virtualNetworkSettings.__get__('virtualNetworkSettingsPeeringValidations');
             let peeringSettings = [
                 {
-                    name: "another-provided-peering-name",
+                    name: 'another-provided-peering-name',
                     remoteVirtualNetwork: {
-                        name: "my-third-virtual-network"
+                        name: 'my-third-virtual-network'
                     },
                     allowForwardedTraffic: false,
                     allowGatewayTransit: false,
@@ -272,26 +271,26 @@ describe('virtualNetworkSettings', () => {
         describe('virtualNetworkValidations', () => {
             let virtualNetworkValidations = virtualNetworkSettingsValidations;
             let virtualNetworkSettings = {
-                name: "my-virtual-network",
+                name: 'my-virtual-network',
                 addressPrefixes: [
-                    "10.0.0.0/16"
+                    '10.0.0.0/16'
                 ],
                 subnets: [
-                {
-                    name: "web",
-                    addressPrefix: "10.0.1.0/24"
-                },
-                {
-                    name: "biz",
-                    addressPrefix: "10.0.2.0/24"
-                }
+                    {
+                        name: 'web',
+                        addressPrefix: '10.0.1.0/24'
+                    },
+                    {
+                        name: 'biz',
+                        addressPrefix: '10.0.2.0/24'
+                    }
                 ],
                 dnsServers: ['10.0.0.1'],
                 virtualNetworkPeerings: [
                     {
-                        name: "another-provided-peering-name",
+                        name: 'another-provided-peering-name',
                         remoteVirtualNetwork: {
-                            name: "my-third-virtual-network"
+                            name: 'my-third-virtual-network'
                         },
                         allowForwardedTraffic: false,
                         allowGatewayTransit: false,
@@ -488,22 +487,22 @@ describe('virtualNetworkSettings', () => {
 
         describe('customizer', () => {
             let virtualNetworkSettings = {
-                name: "my-virtual-network",
+                name: 'my-virtual-network',
                 addressPrefixes: [
-                    "10.0.0.0/16"
+                    '10.0.0.0/16'
                 ],
                 subnets: [
                     {
-                        name: "web",
-                        addressPrefix: "10.0.1.0/24"
+                        name: 'web',
+                        addressPrefix: '10.0.1.0/24'
                     }
                 ],
                 dnsServers: ['10.0.0.1'],
                 virtualNetworkPeerings: [
                     {
-                        name: "peering-name",
+                        name: 'peering-name',
                         remoteVirtualNetwork: {
-                            name: "my-other-virtual-network"
+                            name: 'my-other-virtual-network'
                         },
                         allowForwardedTraffic: false,
                         allowGatewayTransit: false,
@@ -562,34 +561,34 @@ describe('virtualNetworkSettings', () => {
     describe('transform', () => {
         let virtualNetworkSettingsWithPeering = [
             {
-                name: "my-virtual-network",
+                name: 'my-virtual-network',
                 addressPrefixes: [
-                    "10.0.0.0/16"
+                    '10.0.0.0/16'
                 ],
                 subnets: [
-                {
-                    name: "web",
-                    addressPrefix: "10.0.1.0/24"
-                },
-                {
-                    name: "biz",
-                    addressPrefix: "10.0.2.0/24"
-                }
+                    {
+                        name: 'web',
+                        addressPrefix: '10.0.1.0/24'
+                    },
+                    {
+                        name: 'biz',
+                        addressPrefix: '10.0.2.0/24'
+                    }
                 ],
                 dnsServers: [],
                 virtualNetworkPeerings: [
                     {
                         remoteVirtualNetwork: {
-                            name: "my-other-virtual-network"
+                            name: 'my-other-virtual-network'
                         },
                         allowGatewayTransit: true,
                         useRemoteGateways: false
                     },
                     {
-                        name: "provided-peering-name",
+                        name: 'provided-peering-name',
                         remoteVirtualNetwork: {
-                            name: "my-third-virtual-network",
-                            resourceGroupName: "different-resource-group"
+                            name: 'my-third-virtual-network',
+                            resourceGroupName: 'different-resource-group'
                         },
                         allowForwardedTraffic: false,
                         allowGatewayTransit: false,
@@ -598,27 +597,27 @@ describe('virtualNetworkSettings', () => {
                 ]
             },
             {
-                name: "my-other-virtual-network",
+                name: 'my-other-virtual-network',
                 addressPrefixes: [
-                "10.1.0.0/16"
+                    '10.1.0.0/16'
                 ],
                 subnets: [
-                {
-                    name: "web",
-                    addressPrefix: "10.1.1.0/24"
-                },
-                {
-                    name: "biz",
-                    addressPrefix: "10.1.2.0/24"
-                }
+                    {
+                        name: 'web',
+                        addressPrefix: '10.1.1.0/24'
+                    },
+                    {
+                        name: 'biz',
+                        addressPrefix: '10.1.2.0/24'
+                    }
                 ],
                 dnsServers: [],
                 virtualNetworkPeerings: [
                     {
-                        name: "another-provided-peering-name",
+                        name: 'another-provided-peering-name',
                         remoteVirtualNetwork: {
-                            name: "my-third-virtual-network",
-                            resourceGroupName: "different-resource-group"
+                            name: 'my-third-virtual-network',
+                            resourceGroupName: 'different-resource-group'
                         },
                         allowForwardedTraffic: false,
                         allowGatewayTransit: false,
@@ -627,18 +626,18 @@ describe('virtualNetworkSettings', () => {
                 ]
             },
             {
-                name: "my-third-virtual-network",
+                name: 'my-third-virtual-network',
                 addressPrefixes: [
-                    "10.2.0.0/16"
+                    '10.2.0.0/16'
                 ],
                 subnets: [
                     {
-                        name: "web",
-                        addressPrefix: "10.2.1.0/24"
+                        name: 'web',
+                        addressPrefix: '10.2.1.0/24'
                     },
                     {
-                        name: "biz",
-                        addressPrefix: "10.2.2.0/24"
+                        name: 'biz',
+                        addressPrefix: '10.2.2.0/24'
                     }
                 ],
                 dnsServers: [],
@@ -647,8 +646,8 @@ describe('virtualNetworkSettings', () => {
         ];
 
         let buildingBlockSettings = {
-            subscriptionId: "00000000-0000-1000-8000-000000000000",
-            resourceGroupName: "test-rg"
+            subscriptionId: '00000000-0000-1000-8000-000000000000',
+            resourceGroupName: 'test-rg'
         };
 
         it('single virtual network with no peers', () => {
@@ -659,6 +658,8 @@ describe('virtualNetworkSettings', () => {
                 settings: settings,
                 buildingBlockSettings: buildingBlockSettings
             });
+
+            expect(result.settings.virtualNetworks.length).toBe(1);
         });
 
         it('single virtual network with peers', () => {
@@ -669,6 +670,9 @@ describe('virtualNetworkSettings', () => {
                 settings: settings,
                 buildingBlockSettings: buildingBlockSettings
             });
+
+            expect(result.settings.virtualNetworks.length).toBe(1);
+            expect(result.settings.virtualNetworkPeerings.length).toBe(2);
         });
 
         it('multiple virtual network with peers', () => {
@@ -678,13 +682,16 @@ describe('virtualNetworkSettings', () => {
                 settings: settings,
                 buildingBlockSettings: buildingBlockSettings
             });
+
+            expect(result.settings.virtualNetworks.length).toBe(3);
+            expect(result.settings.virtualNetworkPeerings.length).toBe(3);
         });
 
         it('test settings validation errors', () => {
             let settings = _.cloneDeep(virtualNetworkSettingsWithPeering);
             delete settings[0].name;
             expect(() => {
-                let result = virtualNetworkSettings.transform({
+                virtualNetworkSettings.transform({
                     settings: settings,
                     buildingBlockSettings: buildingBlockSettings
                 });
@@ -696,7 +703,7 @@ describe('virtualNetworkSettings', () => {
             let bbSettings = _.cloneDeep(buildingBlockSettings);
             delete bbSettings.subscriptionId;
             expect(() => {
-                let result = virtualNetworkSettings.transform({
+                virtualNetworkSettings.transform({
                     settings: settings,
                     buildingBlockSettings: bbSettings
                 });
