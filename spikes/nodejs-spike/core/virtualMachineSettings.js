@@ -75,7 +75,7 @@ let encryptionSettingsValidations = {
 };
 
 let virtualMachineValidations = {
-    virtualNetwork: (value) => {
+    virtualNetwork: () => {
         let virtualNetworkValidations = {
             name: v.utilities.isNotNullOrWhitespace
         };
@@ -130,7 +130,8 @@ let virtualMachineValidations = {
                         result: false,
                         message: 'Value of image cannot be null or empty, if value of .osDisk.createOption is attach'
                     };
-                };
+                }
+
                 return { result: true };
             },
             osType: (value) => {
@@ -139,22 +140,22 @@ let virtualMachineValidations = {
                     message: `Valid values are ${validOSTypes.join(', ')}`
                 };
             },
-            diskSizeGB: (value, parent) => {
+            diskSizeGB: (value) => {
                 return _.isNil(value) ? {
                     result: true
                 } : {
-                        result: ((_.isFinite(value)) && value > 0),
-                        message: 'Value must be greater than 0'
-                    };
+                    result: ((_.isFinite(value)) && value > 0),
+                    message: 'Value must be greater than 0'
+                };
             },
-            encryptionSettings: (value, parent) => {
+            encryptionSettings: (value) => {
                 return _.isNil(value) ? {
                     result: true
                 } : {
-                        validations: encryptionSettingsValidations
-                    };
+                    validations: encryptionSettingsValidations
+                };
             }
-        }
+        };
 
         return {
             validations: osDiskValidations
@@ -165,23 +166,24 @@ let virtualMachineValidations = {
         let isManagedStorageAccounts = parent.storageAccounts.managed;
         let dataDiskValidations = {
             properties: {
-                caching: (value, parent) => {
+                caching: (value) => {
                     return {
                         result: isValidCachingType(value),
                         message: `Valid values are ${validCachingType.join(', ')}`
                     };
                 },
-                createOption: (value, parent) => {
+                createOption: (value) => {
                     if (!isValidCreateOptions(value)) {
                         return {
                             result: false,
                             message: `Valid values are ${validCreateOptions.join(', ')}`
                         };
-                    };
+                    }
+
                     if (isManagedStorageAccounts && value === 'attach') {
                         return {
                             result: false,
-                            message: `Value cannot be 'attach' with managed disks`
+                            message: 'Value cannot be attach with managed disks'
                         };
                     }
                     return { result: true };
@@ -190,19 +192,20 @@ let virtualMachineValidations = {
                     if (parent.createOption === 'attach' && _.isNullOrWhitespace(value)) {
                         return {
                             result: false,
-                            message: `Value of 'image' cannot be null or empty, if value of '.dataDisks.createOption' is 'attach'}`
+                            message: 'Value of image cannot be null or empty, if value of .dataDisks.createOption is attach'
                         };
-                    };
+                    }
+
                     return { result: true };
                 },
-                diskSizeGB: (value, parent) => {
+                diskSizeGB: (value) => {
                     return {
                         result: ((_.isFinite(value)) && value > 0),
                         message: 'Value must be greater than 0'
                     };
                 }
             },
-            count: (value, parent) => {
+            count: (value) => {
                 return {
                     result: ((_.isFinite(value))),
                     message: 'Invalid value for count'
@@ -223,7 +226,8 @@ let virtualMachineValidations = {
                 result: false,
                 message: 'Value must be Boolean'
             };
-        };
+        }
+
         if (parent.osDisk.osType !== 'windows' && value) {
             return {
                 result: false,
@@ -280,9 +284,9 @@ let virtualMachineValidations = {
 
     storageAccounts: storageSettings.storageValidations,
     diagnosticStorageAccounts: storageSettings.diagnosticValidations,
-    nics: (value, parent) => {
+    nics: (value) => {
         if ((!_.isNil(value)) && (value.length > 0)) {
-            let primaryNicCount = _.reduce(value, (accumulator, value, index, collection) => {
+            let primaryNicCount = _.reduce(value, (accumulator, value) => {
                 if (value.isPrimary === true) {
                     accumulator++;
                 }
@@ -310,14 +314,14 @@ let childResourceToMerge = {
     diagnosticStorageAccounts: storageSettings.mergeWithDefaults,
     nics: nicSettings.mergeWithDefaults,
     availabilitySet: avSetSettings.mergeWithDefaults
-}
+};
 
 let processorProperties = {
     existingWindowsServerlicense: (value, key, index, parent) => {
         if (parent.osDisk.osType === 'windows' && value) {
             return {
                 licenseType: 'Windows_Server'
-            }
+            };
         } else {
             return;
         }
@@ -333,21 +337,21 @@ let processorProperties = {
             availabilitySet: {
                 id: resources.resourceId(value.subscriptionId, value.resourceGroupName, 'Microsoft.Network/availabilitySets', value.name)
             }
-        }
+        };
     },
-    size: (value, key, index, parent) => {
+    size: (value) => {
         return {
             hardwareProfile: {
                 vmSize: value
             }
-        }
+        };
     },
-    imageReference: (value, key, index, parent) => {
+    imageReference: (value) => {
         return {
             storageProfile: {
                 imageReference: value
             }
-        }
+        };
     },
     osDisk: (value, key, index, parent, parentAccumulator) => {
         let instance = {
@@ -355,10 +359,12 @@ let processorProperties = {
             createOption: value.createOption,
             caching: value.caching,
             osType: value.osType
-        }
+        };
+
         if (value.hasOwnProperty('diskSizeGB')) {
             instance.diskSizeGB = value.diskSizeGB;
         }
+
         if (value.encryptionSettings) {
             instance.encryptionSettings = {
                 diskEncryptionKey: {
@@ -374,17 +380,17 @@ let processorProperties = {
                     }
                 },
                 enabled: true
-            }
+            };
         }
 
         if (value.createOption === 'attach') {
             instance.image = {
                 uri: value.image
-            }
+            };
         } else if (parent.storageAccounts.managed) {
             instance.managedDisk = {
                 storageAccountType: parent.storageAccounts.skuType
-            }
+            };
         } else {
             let storageAccounts = _.cloneDeep(parent.storageAccounts.accounts);
             parentAccumulator.storageAccounts.forEach((account) => {
@@ -393,14 +399,14 @@ let processorProperties = {
             let stroageAccountToUse = index % storageAccounts.length;
             instance.vhd = {
                 uri: `http://${storageAccounts[stroageAccountToUse]}.blob.core.windows.net/vhds/${parent.name}-os.vhd`
-            }
+            };
         }
 
         return {
             storageProfile: {
                 osDisk: instance
             }
-        }
+        };
     },
     dataDisks: (value, key, index, parent, parentAccumulator) => {
         let disks = [];
@@ -415,11 +421,11 @@ let processorProperties = {
             if (value.properties.createOption === 'attach') {
                 instance.image = {
                     uri: value.properties.image
-                }
+                };
             } else if (parent.storageAccounts.managed) {
                 instance.managedDisk = {
                     storageAccountType: parent.storageAccounts.skuType
-                }
+                };
             } else {
                 let storageAccounts = _.cloneDeep(parent.storageAccounts.accounts);
                 parentAccumulator.storageAccounts.forEach((account) => {
@@ -428,16 +434,16 @@ let processorProperties = {
                 let stroageAccountToUse = index % storageAccounts.length;
                 instance.vhd = {
                     uri: `http://${storageAccounts[stroageAccountToUse]}.blob.core.windows.net/vhds/${parent.name}-dataDisk${i + 1}.vhd`
-                }
+                };
             }
 
-            disks.push(instance)
+            disks.push(instance);
         }
         return {
             storageProfile: {
                 dataDisks: disks
             }
-        }
+        };
     },
     nics: (value, key, index, parent, parentAccumulator) => {
         let ntwkInterfaces = _.transform(parentAccumulator.nics, (result, n) => {
@@ -447,7 +453,7 @@ let processorProperties = {
                     properties: {
                         primary: n.primary
                     }
-                }
+                };
                 result.push(nicRef);
             }
             return result;
@@ -456,7 +462,7 @@ let processorProperties = {
             networkProfile: {
                 networkInterfaces: ntwkInterfaces
             }
-        }
+        };
     },
     diagnosticStorageAccounts: (value, key, index, parent, parentAccumulator) => {
         // get the diagonstic account name for the VM
@@ -476,12 +482,12 @@ let processorProperties = {
             }
         };
     },
-    computerNamePrefix: (value, key, index, parent) => {
+    computerNamePrefix: (value, key, index) => {
         return {
             osProfile: {
                 computerName: value.concat('-vm', index + 1)
             }
-        }
+        };
     },
     adminPassword: (value, key, index, parent) => {
         if (_.toLower(parent.osAuthenticationType) === 'password') {
@@ -493,14 +499,14 @@ let processorProperties = {
                             provisionVmAgent: true
                         }
                     }
-                }
+                };
             } else {
                 return {
                     osProfile: {
                         adminPassword: '$SECRET$',
                         linuxConfiguration: null
                     }
-                }
+                };
             }
         }
     },
@@ -521,17 +527,17 @@ let processorProperties = {
                         }
                     }
                 }
-            }
+            };
         }
     },
-    adminUsername: (value, key, index, parent) => {
+    adminUsername: (value) => {
         return {
             osProfile: {
                 adminUsername: value
             }
-        }
+        };
     }
-}
+};
 
 let processChildResources = {
     storageAccounts: (value, key, index, parent, accumulator) => {
@@ -568,7 +574,7 @@ let processChildResources = {
             accumulator['secret'] = parent.adminPassword;
         }
     },
-}
+};
 
 function processVMStamps(param, buildingBlockSettings) {
     // resource template do not use the vmCount property. Remove from the template
@@ -581,7 +587,7 @@ function processVMStamps(param, buildingBlockSettings) {
     return _.transform(_.castArray(param), (result, n) => {
         for (let i = 0; i < vmCount; i++) {
             let stamp = _.cloneDeep(n);
-            stamp.name = n.namePrefix.concat('-vm', i + 1)
+            stamp.name = n.namePrefix.concat('-vm', i + 1);
 
             // delete namePrefix property since we wont need it anymore
             delete stamp.namePrefix;
@@ -592,7 +598,7 @@ function processVMStamps(param, buildingBlockSettings) {
 }
 
 function process(param, buildingBlockSettings) {
-    let processedParams = _.transform(processVMStamps(param, buildingBlockSettings), (result, n, index, parent) => {
+    let processedParams = _.transform(processVMStamps(param, buildingBlockSettings), (result, n, index) => {
         for (let prop in n) {
             if (typeof processChildResources[prop] === 'function') {
                 processChildResources[prop](n[prop], prop, index, n, result);
@@ -608,10 +614,10 @@ function process(param, buildingBlockSettings) {
             return inner;
         }, { properties: {} }));
         return result;
-    }, { virtualMachines: [] })
+    }, { virtualMachines: [] });
 
     return processedParams;
-};
+}
 
 function createTemplateParameters(resources) {
     let templateParameters = {
@@ -621,7 +627,7 @@ function createTemplateParameters(resources) {
 
         }
     };
-    templateParameters.parameters = _.transform(resources, (result, value, key, obj) => {
+    templateParameters.parameters = _.transform(resources, (result, value, key) => {
         if (key === 'secret' && !_.isString(value)) {
             result[key] = value;
         } else {
@@ -631,7 +637,7 @@ function createTemplateParameters(resources) {
         return result;
     }, {});
     return templateParameters;
-};
+}
 
 function getTemplateParameters(param, buildingBlockSettings) {
     let processedParams = process(param, buildingBlockSettings);

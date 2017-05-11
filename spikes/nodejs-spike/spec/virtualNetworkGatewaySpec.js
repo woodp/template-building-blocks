@@ -1,6 +1,5 @@
 describe('virtualNetworkGatewaySettings', () => {
     let rewire = require('rewire');
-    let resources = require('../core/resources.js');
     let virtualNetworkGatewaySettings = rewire('../core/virtualNetworkGatewaySettings.js');
     let _ = require('lodash');
     let validation = require('../core/validation.js');
@@ -499,8 +498,8 @@ describe('virtualNetworkGatewaySettings', () => {
         };
 
         let buildingBlockSettings = {
-            subscriptionId: "00000000-0000-1000-8000-000000000000",
-            resourceGroupName: "test-rg"
+            subscriptionId: '00000000-0000-1000-8000-000000000000',
+            resourceGroupName: 'test-rg'
         };
 
         it('single virtualNetworkGateway', () => {
@@ -665,7 +664,7 @@ describe('virtualNetworkGatewaySettings', () => {
             let settings = _.cloneDeep(virtualNetworkGateway);
             delete settings.name;
             expect(() => {
-                let result = virtualNetworkGatewaySettings.transform({
+                virtualNetworkGatewaySettings.transform({
                     settings: settings,
                     buildingBlockSettings: buildingBlockSettings
                 });
@@ -677,7 +676,7 @@ describe('virtualNetworkGatewaySettings', () => {
             let bbSettings = _.cloneDeep(buildingBlockSettings);
             delete bbSettings.subscriptionId;
             expect(() => {
-                let result = virtualNetworkGatewaySettings.transform({
+                virtualNetworkGatewaySettings.transform({
                     settings: settings,
                     buildingBlockSettings: bbSettings
                 });

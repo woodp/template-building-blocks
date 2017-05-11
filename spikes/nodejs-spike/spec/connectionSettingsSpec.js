@@ -526,57 +526,57 @@ describe('connectionSettings', () => {
 
     describe('transform', () => {
         let fullConnectionSettings = {
-                name: 'my-connection',
-                routingWeight: 10,
-                sharedKey: 'mysecret',
-                virtualNetworkGateway: {
-                    name: 'vgw'
-                },
-                virtualNetworkGateway1: {
-                    name: 'vgw1'
-                },
-                virtualNetworkGateway2: {
-                    name: 'vgw2'
-                },
-                expressRouteCircuit: {
-                    name: 'my-er-circuit'
-                },
-                localNetworkGateway: {
-                    name: 'my-lgw',
-                    ipAddress: '40.50.60.70',
-                    addressPrefixes: ['10.0.1.0/24']
-                }
-            };
+            name: 'my-connection',
+            routingWeight: 10,
+            sharedKey: 'mysecret',
+            virtualNetworkGateway: {
+                name: 'vgw'
+            },
+            virtualNetworkGateway1: {
+                name: 'vgw1'
+            },
+            virtualNetworkGateway2: {
+                name: 'vgw2'
+            },
+            expressRouteCircuit: {
+                name: 'my-er-circuit'
+            },
+            localNetworkGateway: {
+                name: 'my-lgw',
+                ipAddress: '40.50.60.70',
+                addressPrefixes: ['10.0.1.0/24']
+            }
+        };
 
-            let ipsecConnectionSettings = {
-                name: fullConnectionSettings.name,
-                routingWeight: fullConnectionSettings.routingWeight,
-                connectionType: 'IPsec',
-                sharedKey: fullConnectionSettings.sharedKey,
-                virtualNetworkGateway: fullConnectionSettings.virtualNetworkGateway,
-                localNetworkGateway: fullConnectionSettings.localNetworkGateway
-            };
+        let ipsecConnectionSettings = {
+            name: fullConnectionSettings.name,
+            routingWeight: fullConnectionSettings.routingWeight,
+            connectionType: 'IPsec',
+            sharedKey: fullConnectionSettings.sharedKey,
+            virtualNetworkGateway: fullConnectionSettings.virtualNetworkGateway,
+            localNetworkGateway: fullConnectionSettings.localNetworkGateway
+        };
 
-            let expressRouteConnectionSettings = {
-                name: fullConnectionSettings.name,
-                routingWeight: fullConnectionSettings.routingWeight,
-                connectionType: 'ExpressRoute',
-                virtualNetworkGateway: fullConnectionSettings.virtualNetworkGateway,
-                expressRouteCircuit: fullConnectionSettings.expressRouteCircuit
-            };
+        let expressRouteConnectionSettings = {
+            name: fullConnectionSettings.name,
+            routingWeight: fullConnectionSettings.routingWeight,
+            connectionType: 'ExpressRoute',
+            virtualNetworkGateway: fullConnectionSettings.virtualNetworkGateway,
+            expressRouteCircuit: fullConnectionSettings.expressRouteCircuit
+        };
 
-            let vnet2VnetConnectionSettings = {
-                name: fullConnectionSettings.name,
-                routingWeight: fullConnectionSettings.routingWeight,
-                connectionType: 'Vnet2Vnet',
-                sharedKey: fullConnectionSettings.sharedKey,
-                virtualNetworkGateway1: fullConnectionSettings.virtualNetworkGateway1,
-                virtualNetworkGateway2: fullConnectionSettings.virtualNetworkGateway2
-            };
+        let vnet2VnetConnectionSettings = {
+            name: fullConnectionSettings.name,
+            routingWeight: fullConnectionSettings.routingWeight,
+            connectionType: 'Vnet2Vnet',
+            sharedKey: fullConnectionSettings.sharedKey,
+            virtualNetworkGateway1: fullConnectionSettings.virtualNetworkGateway1,
+            virtualNetworkGateway2: fullConnectionSettings.virtualNetworkGateway2
+        };
 
         let buildingBlockSettings = {
-            subscriptionId: "00000000-0000-1000-8000-000000000000",
-            resourceGroupName: "test-vnet-rg"
+            subscriptionId: '00000000-0000-1000-8000-000000000000',
+            resourceGroupName: 'test-vnet-rg'
         };
 
         it('IPsec settings', () => {
@@ -585,6 +585,7 @@ describe('connectionSettings', () => {
                 settings: settings,
                 buildingBlockSettings: buildingBlockSettings
             });
+            expect(result.settings.length).toBe(1);
         });
 
         it('ExpressRoute settings', () => {
@@ -593,6 +594,7 @@ describe('connectionSettings', () => {
                 settings: settings,
                 buildingBlockSettings: buildingBlockSettings
             });
+            expect(result.settings.length).toBe(1);
         });
 
         it('Vnet2Vnet settings', () => {
@@ -601,6 +603,7 @@ describe('connectionSettings', () => {
                 settings: settings,
                 buildingBlockSettings: buildingBlockSettings
             });
+            expect(result.settings.length).toBe(1);
         });
 
         it('IPsec and ExpressRoute settings', () => {
@@ -609,13 +612,14 @@ describe('connectionSettings', () => {
                 settings: settings,
                 buildingBlockSettings: buildingBlockSettings
             });
+            expect(result.settings.length).toBe(2);
         });
 
         it('test settings validation errors', () => {
             let settings = _.cloneDeep(ipsecConnectionSettings);
             delete settings.name;
             expect(() => {
-                let result = connectionSettings.transform({
+                connectionSettings.transform({
                     settings: settings,
                     buildingBlockSettings: buildingBlockSettings
                 });
@@ -627,7 +631,7 @@ describe('connectionSettings', () => {
             let bbSettings = _.cloneDeep(buildingBlockSettings);
             delete bbSettings.subscriptionId;
             expect(() => {
-                let result = connectionSettings.transform({
+                connectionSettings.transform({
                     settings: settings,
                     buildingBlockSettings: bbSettings
                 });

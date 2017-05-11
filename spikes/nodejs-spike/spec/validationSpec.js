@@ -1,13 +1,6 @@
 describe('validation', () => {
     let validation = require('../core/validation.js');
-    let validationMessages = require('../core/validationMessages.js');
 
-    // let subscriptionId = '689B3D5F-F473-405A-B3EB-7F59D418C682';
-    // let resourceGroupName = 'test-rg';
-    // let virtualNetworksResourceType = 'Microsoft.Network/virtualNetworks';
-    // let subnetsResourceType = `${virtualNetworksResourceType}/subnets`;
-    // let resourceName = 'my-virtual-network';
-    // let subresourceName = 'my-subnet';
     describe('utilities', () => {
         describe('isGuid', () => {
             let isGuid = validation.utilities.isGuid;
