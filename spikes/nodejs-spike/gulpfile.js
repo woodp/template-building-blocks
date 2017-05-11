@@ -33,7 +33,7 @@ gulp.task('run-tests', () => {
 });
 
 gulp.task('run-eslint', () => {
-    return gulp.src(['core/**/*.js'])
+    return gulp.src(['core/**/*.js', 'spec/*.js'])
         .pipe(eslint())
         .pipe(eslint.format())
         .pipe(eslint.failAfterError());
