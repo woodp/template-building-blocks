@@ -88,8 +88,15 @@ function ipToInt(ip) {
     return (ipl >>> 0);
 }
 
-function createPipParameters(parent) {
-    return pipSettings.processPipSettings(parent);
+function createPipParameters(parent, vmIndex) {
+    let settings = {
+        namePrefix: parent.name,
+        publicIPAllocationMethod: parent.publicIPAllocationMethod
+    };
+    if(v.utilities.isNotNullOrWhitespace(parent.domainNameLabelPrefix)) {
+        settings.domainNameLabel = `${parent.domainNameLabelPrefix}${vmIndex}`
+    }
+    return pipSettings.processPipSettings(settings);
 }
 
 function process(settings, parent, vmIndex) {
@@ -118,7 +125,7 @@ function process(settings, parent, vmIndex) {
         };
 
         if (n.isPublic) {
-            let pip = createPipParameters(n);
+            let pip = createPipParameters(n, vmIndex);
             result.pips = result.pips.concat(pip);
 
             instance.ipConfigurations[0].properties.publicIPAddress = {

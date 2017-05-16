@@ -4,19 +4,19 @@ function merge(settings) {
     return settings;
 }
 
-function process(parent) {
+function process(publicIPSettings) {
     let instance = {};
     return _.transform(_.castArray(instance), (result) => {
         instance = {
-            name: parent.name.concat('-pip'),
+            name: `${publicIPSettings.namePrefix}-pip`,
             properties: {
-                publicIPAllocationMethod: parent.publicIPAllocationMethod
+                publicIPAllocationMethod: publicIPSettings.publicIPAllocationMethod
             }
         };
 
-        if (parent.hasOwnProperty('domainNameLabelPrefix') && !_.isNullOrWhitespace(parent.domainNameLabelPrefix)) {
+        if (!_.isNullOrWhitespace(publicIPSettings.domainNameLabel)) {
             instance.properties.dnsSettings = {};
-            instance.properties.dnsSettings.domainNameLabel = parent.domainNameLabelPrefix;
+            instance.properties.dnsSettings.domainNameLabel = publicIPSettings.domainNameLabel;
         }
         result.push(instance);
         return result;
