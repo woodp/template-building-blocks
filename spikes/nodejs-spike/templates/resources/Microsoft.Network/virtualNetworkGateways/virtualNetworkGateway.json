@@ -13,7 +13,7 @@
       "type": "Microsoft.Network/virtualNetworkGateways",
       "apiVersion": "2016-06-01",
       "location": "[resourceGroup().location]",
-      "name": "[parameters('source').name",
+      "name": "[parameters('source').name]",
       "properties": "[parameters('source').properties]"
     }
   ],
