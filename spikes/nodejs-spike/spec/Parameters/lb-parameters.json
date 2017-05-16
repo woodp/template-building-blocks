@@ -1,0 +1,69 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "loadBalancerSettings": {
+            "value": {
+                "name": "bb-dev-biz-lb",
+                "frontendIPConfigurations": [
+                    {
+                        "name": "bb-dev-biz-lbfe1",
+                        "loadBalancerType": "public",
+                        "domainNameLabel": "",
+                        "internalLoadBalancerSettings": {
+                            "privateIPAddress": "10.0.2.100",
+                            "subnetName": "biz"
+                        }
+                    },
+                    {
+                        "name": "bb-dev-biz-lbfe1",
+                        "loadBalancerType": "public",
+                        "domainNameLabel": "tests",
+                        "internalLoadBalancerSettings": {
+                            "privateIPAddress": "10.0.2.100",
+                            "subnetName": "biz"
+                        }
+                    }
+                ],
+                "loadBalancingRules": [
+                    {
+                        "name": "lbr1",
+                        "frontendPort": 80,
+                        "backendPort": 80,
+                        "protocol": "Tcp",
+                        "backendPoolName": "lb-bep1",
+                        "frontendIPConfigurationName": "bb-dev-biz-lbfe1",
+                        "enableFloatingIP": false,
+                        "probeName": "lbp1"
+                    }
+                ],
+                "probes": [
+                    {
+                        "name": "lbp1",
+                        "port": 80,
+                        "protocol": "Http",
+                        "requestPath": "/"
+                    }
+                ],
+                "backendPools": [
+                    {
+                        "name": "lb-bep1",
+                        "nics": {
+                            "names": []
+                        }
+                    }
+                ],
+                "inboundNatRules": [],
+                "virtualNetwork": {
+                    "name": "ra-vnet"
+                }
+            }
+        },
+        "buildingBlockSettings": {
+            "value": {
+                "resourceGroupName": "rs-test1-rg",
+                "subscriptionId": "3b518fac-e5c8-4f59-8ed5-d70b626f8e10"
+            }
+        }
+    }
+}

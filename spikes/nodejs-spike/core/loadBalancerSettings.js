@@ -1,5 +1,7 @@
 let _ = require('../lodashMixins.js');
 let v = require('./validation.js');
+var resources = require('./resources.js');
+var pipSettings = require('./pipSettings.js');
 
 let validLoadBalancerTypes = ['Public', 'Internal'];
 let validProtocols = ['Tcp', 'Udp'];
@@ -226,3 +228,133 @@ let probeValidations = {
         return result;
     }
 };
+
+let processorProperties = {
+    frontendIPConfigurations: (value, key, parent, accumulator) => {
+        let feIpConfigs = [];
+        value.forEach((config, index) => {
+            if (config.loadBalancerType === 'public') {
+                feIpConfigs.push({
+                    name: config.name,
+                    properties: {
+                        privateIPAllocationMethod: 'Static',
+                        privateIPAddress: config.internalLoadBalancerSettings.privateIPAddress,
+                        subnet: 
+                    }
+                });
+            } else if (config.loadBalancerType === 'internal') {
+                feIpConfigs.push({
+                    name: config.name,
+                    properties: {
+                        privateIPAllocationMethod: 'Dynamic',
+                        publicIPAddress: {
+                            id: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/publicIPAddresses', accumulator.pips[index].name),
+                        }
+                    }
+                });
+            }
+        });
+        return { frontendIPConfigurations: feIpConfigs }
+    },
+    loadBalancingRules: (value, key, parent) => {
+        let lbRules = [];
+        value.forEach((rule) => {
+            lbRules.push({
+                name: rule.name,
+                properties: {
+                    frontendIPConfiguration: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/loadBalancers/frontendIPConfigurations', parent.name, value.frontendIPConfigurationName),
+                    backendAddressPool: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/loadBalancers/backendAddressPools', parent.name, value.backendPoolName),
+                    frontendPort: rule.frontendPort,
+                    backendPort: rule.backendPort,
+                    protocol: rule.protocol,
+                    enableFloatingIP: rule.enableFloatingIP,
+                    probe: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/loadBalancers/probes', parent.name, value.probeName),
+                }
+            });
+        });
+        return { loadBalancingRules: lbRules }
+    },
+    probes: (value, key, parent) => {
+        let probes = [];
+        value.forEach((probe) => {
+            probes.push({
+                name: probe.name,
+                properties: {
+                    port: probe.port,
+                    protocol: probe.protocol,
+                    requestPath: probe.requestPath,
+                    intervalInSeconds: probe.intervalInSeconds,
+                    numberOfProbes: probe.numberOfProbes
+                }
+            });
+        });
+        return { probes: probes }
+    },
+    backendPools: (value, key, parent) => {
+        return {
+        };
+    },
+    inboundNatRules: (value, key, parent) => {
+        return {
+        };
+    }
+};
+
+function processPipsForFrontendIPConfigurations(feIpconfig) {
+    let pips = [];
+    feIpconfig.forEach((config) => {
+        if (config.loadBalancerType === 'public') {
+            let settings = { namePrefix: config.name, publicIPAllocationMethod: 'Static', domainNameLabel: config.domainNameLabel };
+            pips = pips.concat(pipSettings.processPipSettings(settings));
+        }
+    });
+    return pips;
+}
+
+function processLBStamp(param, buildingBlockSettings) {
+    param = resources.setupResources(param, buildingBlockSettings, (parentKey) => {
+        return ((parentKey === null) || (parentKey === 'nics') || (parentKey === 'virtualNetwork'));
+    });
+
+    return param;
+}
+
+function process(param, buildingBlockSettings) {
+    let result = { loadBalancers: [] };
+    let processedLBStamp = processLBStamp(param, buildingBlockSettings);
+    result['pips'] = processPipsForFrontendIPConfigurations(processedLBStamp.frontendIPConfigurations);
+
+    result.loadBalancers.push(_.transform(processedLBStamp, (accumulator, value, key, obj) => {
+        if (typeof processorProperties[key] === 'function') {
+            _.merge(accumulator.properties, processorProperties[key](value, key, obj, _.cloneDeep(result)));
+        } else if (key === 'name') {
+            accumulator[key] = value;
+        }
+        return accumulator;
+    }, {}));
+}
+
+function createTemplateParameters(resources) {
+    let templateParameters = {
+        $schema: 'http://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#',
+        contentVersion: '1.0.0.0',
+        parameters: {
+
+        }
+    };
+    templateParameters.parameters = _.transform(resources, (result, value, key) => {
+        result[key] = {};
+        result[key].value = value;
+        return result;
+    }, {});
+    return templateParameters;
+}
+
+function getTemplateParameters(param, buildingBlockSettings) {
+    let processedParams = process(param, buildingBlockSettings);
+    return createTemplateParameters(processedParams);
+}
+
+exports.processLoadBalancerSettings = getTemplateParameters;
+//exports.mergeWithDefaults = merge;
+//exports.validations = validate;
