@@ -1,0 +1,93 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "deploymentContext": {
+      "type": "object",
+      "defaultValue": {
+        "parentTemplateUniqueString": "bbVNG"
+      }
+    },
+    "virtualNetworkGateways": {
+      "type": "array",
+      "metadata": {
+        "description": "Settings for virtual network gateways"
+      }
+    },
+    "publicIpAddresses": {
+      "type": "array",
+      "metadata": {
+        "description": "Settings for public IP addresses for virtual network gateways"
+      }
+    }
+  },
+  "variables": {
+    "location": "[resourceGroup().location]",
+    "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('virtualNetworkGateways')), string(parameters('publicIpAddresses'))))]",
+    "virtualNetworkGatewayTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/virtualNetworkGateways/virtualNetworkGateway.json')]",
+    "publicIpAddressTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/publicIPAddresses/publicIPAddress.json')]",
+    "iteratorTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/common/resources.json')]",
+    "virtualNetworkGatewayDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployVng-', variables('templateUniqueString'))]",
+    "publicIpAddressTemplateDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployPips-', variables('templateUniqueString'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "name": "[variables('publicIpAddressTemplateDeploymentName')]",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('iteratorTemplate')]"
+        },
+        "parameters": {
+          "deploymentContext": {
+            "value": {
+              "parentTemplateUniqueString": "[concat(variables('templateUniqueString'), '-deployPips')]"
+            }
+          },
+          "source": {
+            "value": "[parameters('publicIpAddresses')]"
+          },
+          "name": {
+            "value": "pip"
+          },
+          "resourceTemplatePath": {
+            "value": "[variables('publicIpAddressTemplate')]"
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2015-01-01",
+      "name": "[variables('virtualNetworkGatewayDeploymentName')]",
+      "dependsOn": [
+          "[variables('publicIpAddressTemplateDeploymentName')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('iteratorTemplate')]"
+        },
+        "parameters": {
+          "deploymentContext": {
+            "value": {
+              "parentTemplateUniqueString": "[concat(variables('templateUniqueString'), '-deployVng')]"
+            }
+          },
+          "source": {
+            "value": "[parameters('virtualNetworkGateways')]"
+          },
+          "name": {
+            "value": "vng"
+          },
+          "resourceTemplatePath": {
+            "value": "[variables('virtualNetworkGatewayTemplate')]"
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {}
+}
