@@ -79,3 +79,9 @@ exports.setupResources = function (settings, buildingBlockSettings, keyCallback)
     let clone = _.cloneDeep(settings);
     return getObject(clone, null, [buildingBlockSettings], keyCallback);
 };
+
+exports.resourceReferenceValidations = {
+    name: validation.utilities.isNotNullOrWhitespace,
+    subscriptionId: validation.utilities.isGuid,
+    resourceGroupName: validation.utilities.isNotNullOrWhitespace
+};

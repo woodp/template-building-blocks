@@ -3,15 +3,19 @@
 let _ = require('../lodashMixins.js');
 let validationMessages = require('./validationMessages.js');
 
-function merge(settings, defaultSettings, mergeCustomizer, childResources) {
+function merge(settings, defaultSettings, mergeCustomizer) {
 
-    let mergedSettings = (mergeCustomizer ? _.mergeWith({}, defaultSettings, settings, mergeCustomizer) : _.merge({}, defaultSettings, settings));
-    if(_.isNil(childResources)) return mergedSettings;
+    if (_.isPlainObject(settings)) {
+        let mergedSettings = (mergeCustomizer ? _.mergeWith({}, defaultSettings, settings, mergeCustomizer) : _.merge({}, defaultSettings, settings));
+        return mergedSettings;
+    } else if (_.isArray(settings)) {
+        let mergedSettings = _.transform(settings, (result, value) => {
+            let mergedSetting = (mergeCustomizer ? _.mergeWith({}, defaultSettings, value, mergeCustomizer) : _.merge({}, defaultSettings, value));
+            result.push(mergedSetting);
+        }, []);
 
-    for(let key in childResources){
-        mergedSettings[key] = childResources[key](mergedSettings[key], key);
+        return mergedSettings;
     }
-    return mergedSettings;
 }
 
 let toString = (value) => {
@@ -155,15 +159,7 @@ function reduce({validations, value, parentKey, parentValue, accumulator}) {
         } else {
             // We're just a value
             let result = validationWrapper(validations, value, parentValue);
-            if (_.isArray(result)) {
-                if (result.length > 0) {
-                    // An array of already materialized errors, so just add them.
-                    _.forEach(result, (value) => {
-                        accumulator.push(value);
-                    });
-                }
-            // } else if (((_.isBoolean(result)) && (!result)) || ((_.isBoolean(result.result)) && (!result.result))) {
-            } else if ((_.isBoolean(result.result)) && (!result.result)) {
+            if ((_.isBoolean(result.result)) && (!result.result)) {
                 let {message} = result;
                 accumulator.push({
                     name: `${parentKey}`,
@@ -208,6 +204,11 @@ let utilities = {
     isGuid: (guid) => guidRegex.test(guid),
     isStringInArray: (value, array) => _.indexOf(array, value) > -1,
     isNotNullOrWhitespace: (value) => !_.isNullOrWhitespace(value),
+    isObjectForResourceId: (obj) => {
+        // Omit the three fields we need.  If the length of the result is !== 0, this is likely a "full" object, so we can use the "full" validations
+        let remainingKeys = _.keys(_.omit(obj, ['subscriptionId', 'resourceGroupName', 'name']));
+        return (remainingKeys.length === 0);
+    },
     networking: {
         isValidIpAddress: function (value) {
             return ipAddressRegex.test(value);
