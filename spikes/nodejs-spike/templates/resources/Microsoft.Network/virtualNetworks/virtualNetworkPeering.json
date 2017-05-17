@@ -3,7 +3,7 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "source": {
-      "type": "array"
+      "type": "object"
     }
   },
   "variables": {
@@ -13,12 +13,8 @@
       "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
       "apiVersion": "2016-06-01",
       "location": "[resourceGroup().location]",
-      "name": "[parameters('source')[copyIndex()].name]",
-      "copy": {
-        "name": "iterator",
-        "count": "[length(parameters('source'))]"
-      },
-      "properties": "[parameters('source')[copyIndex()].properties]"
+      "name": "[parameters('source').name]",
+      "properties": "[parameters('source').properties]"
     }
   ],
   "outputs": {

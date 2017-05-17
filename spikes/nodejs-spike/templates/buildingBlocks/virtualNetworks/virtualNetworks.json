@@ -20,11 +20,8 @@
     "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('virtualNetworkSettings')), string(parameters('virtualNetworkPeerings'))))]",
     "location": "[resourceGroup().location]",
     "virtualNetworksTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/virtualNetworks/virtualNetworks.json')]",
-    "virtualNetworkPeeringsTemplates": [
-      "[uri(deployment().properties.templateLink.uri, '../../resources/common/nop-array.json')]",
-      "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/virtualNetworks/virtualNetworkPeerings.json')]"
-    ],
-    "virtualNetworkPeeringsTemplate": "[variables('virtualNetworkPeeringsTemplates')[mod(add(length(parameters('virtualNetworkPeerings')), 2), add(length(parameters('virtualNetworkPeerings')), 1))]]",
+    "iteratorTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/common/resources.json')]",
+    "virtualNetworkPeeringTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/virtualNetworks/virtualNetworkPeering.json')]",
     "virtualNetworksDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployVNet-', variables('templateUniqueString'))]",
     "virtualNetworkPeeringsDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployVNetPeering-', variables('templateUniqueString'))]"
   },
@@ -50,16 +47,27 @@
       "apiVersion": "2015-01-01",
       "name": "[variables('virtualNetworkPeeringsDeploymentName')]",
       "dependsOn": [
-        "[variables('virtualNetworksDeploymentName')]"
+          "[variables('virtualNetworksDeploymentName')]"
       ],
       "properties": {
         "mode": "Incremental",
         "templateLink": {
-          "uri": "[variables('virtualNetworkPeeringsTemplate')]"
+          "uri": "[variables('iteratorTemplate')]"
         },
         "parameters": {
+          "deploymentContext": {
+            "value": {
+              "parentTemplateUniqueString": "[concat(variables('templateUniqueString'), '-deployVNetPeering')]"
+            }
+          },
           "source": {
             "value": "[parameters('virtualNetworkPeerings')]"
+          },
+          "name": {
+            "value": "vnp"
+          },
+          "resourceTemplatePath": {
+            "value": "[variables('virtualNetworkPeeringTemplate')]"
           }
         }
       }
