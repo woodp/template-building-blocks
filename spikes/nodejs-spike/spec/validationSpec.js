@@ -96,6 +96,51 @@ describe('validation', () => {
             });
         });
 
+        describe('isObjectForResourceId', () => {
+            let isObjectForResourceId = validation.utilities.isObjectForResourceId;
+            it('undefined', () => {
+                expect(isObjectForResourceId()).toEqual(true);
+            });
+
+            it('null', () => {
+                expect(isObjectForResourceId(null)).toEqual(true);
+            });
+
+            it('empty', () => {
+                expect(isObjectForResourceId({})).toEqual(true);
+            });
+
+            it('only name', () => {
+                expect(isObjectForResourceId({
+                    name: 'my-name'
+                })).toEqual(true);
+            });
+
+            it('name and resourceGroupName', () => {
+                expect(isObjectForResourceId({
+                    resourceGroupName: 'test-rg',
+                    name: 'my-name'
+                })).toEqual(true);
+            });
+
+            it('name, resourceGroupName, and subscriptionId', () => {
+                expect(isObjectForResourceId({
+                    subscriptionId: '00000000-0000-1000-8000-000000000000',
+                    resourceGroupName: 'test-rg',
+                    name: 'my-name'
+                })).toEqual(true);
+            });
+
+            it('extra field', () => {
+                expect(isObjectForResourceId({
+                    subscriptionId: '00000000-0000-1000-8000-000000000000',
+                    resourceGroupName: 'test-rg',
+                    name: 'my-name',
+                    extra: 'NOT_VALID'
+                })).toEqual(false);
+            });
+        });
+
         describe('networking', () => {
             describe('isValidIpAddress', () => {
                 let isValidIpAddress = validation.utilities.networking.isValidIpAddress;

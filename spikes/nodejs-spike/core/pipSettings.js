@@ -1,9 +1,5 @@
 let _ = require('../lodashMixins.js');
 
-function merge(settings) {
-    return settings;
-}
-
 function process(publicIPSettings) {
     let instance = {};
     return _.transform(_.castArray(instance), (result) => {
@@ -24,4 +20,3 @@ function process(publicIPSettings) {
 }
 
 exports.processPipSettings = process;
-exports.mergeWithDefaults = merge;

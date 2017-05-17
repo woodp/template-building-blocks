@@ -1403,6 +1403,17 @@ describe('virtualMachineSettings:', () => {
                 expect(processedParam.pips[0].name).toEqual('test-vm1-nic1-pip');
                 expect(processedParam.pips[1].name).toEqual('test-vm2-nic1-pip');
             });
+            it('validate that pips are created with domainNameLabel for public nics', () => {
+                let settings = _.cloneDeep(testSettings);
+                settings.nics[0].domainNameLabelPrefix = 'mydomain-vm';
+
+                let process = virtualMachineSettings.__get__('process');
+                let processedParam = process(settings, buildingBlockSettings);
+
+                expect(processedParam.pips.length).toEqual(2);
+                expect(processedParam.pips[0].properties.dnsSettings.domainNameLabel).toEqual('mydomain-vm0');
+                expect(processedParam.pips[1].properties.dnsSettings.domainNameLabel).toEqual('mydomain-vm1');
+            });
             it('validate that references for pips are correctly computed and applied', () => {
                 let settings = _.cloneDeep(testSettings);
 

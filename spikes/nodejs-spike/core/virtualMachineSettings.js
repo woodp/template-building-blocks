@@ -23,7 +23,20 @@ function merge(settings) {
     let defaultsFile = defaultsPath.concat(settings.osDisk.osType, '.json');
     let defaults = JSON.parse(fs.readFileSync(defaultsFile, 'UTF-8'));
 
-    return v.merge(settings, defaults, defaultsCustomizer, childResourceToMerge);
+    let merged = v.merge(settings, defaults, defaultsCustomizer);
+    merged = v.merge(merged, {}, (objValue, srcValue, key) => {
+        if (key === 'nics') {
+            return nicSettings.mergeWithDefaults(srcValue);
+        } else if (key === 'storageAccounts') {
+            return storageSettings.mergeWithDefaults(srcValue);
+        } else if (key === 'diagnosticStorageAccounts') {
+            return storageSettings.mergeWithDefaults(srcValue);
+        } else if (key === 'availabilitySet') {
+            return avSetSettings.mergeWithDefaults(srcValue);
+        }
+    });
+
+    return merged;
 }
 
 let validOSAuthenticationTypes = ['ssh', 'password'];
@@ -307,13 +320,6 @@ let virtualMachineValidations = {
         };
     },
     availabilitySet: avSetSettings.validations
-};
-
-let childResourceToMerge = {
-    storageAccounts: storageSettings.mergeWithDefaults,
-    diagnosticStorageAccounts: storageSettings.mergeWithDefaults,
-    nics: nicSettings.mergeWithDefaults,
-    availabilitySet: avSetSettings.mergeWithDefaults
 };
 
 let processorProperties = {

@@ -9,10 +9,7 @@ const defaultsPath = './defaults/networkInterfaceSettings.json';
 
 function merge(settings) {
     let defaultsStamp = JSON.parse(fs.readFileSync(defaultsPath, 'UTF-8'));
-    let defaults = [];
-    for (let i = 0; i < settings.length; i++) {
-        defaults.push(v.merge(settings[i], defaultsStamp));
-    }
+    let defaults = v.merge(settings, defaultsStamp);
     return defaults;
 }
 
@@ -94,7 +91,7 @@ function createPipParameters(parent, vmIndex) {
         publicIPAllocationMethod: parent.publicIPAllocationMethod
     };
     if(v.utilities.isNotNullOrWhitespace(parent.domainNameLabelPrefix)) {
-        settings.domainNameLabel = `${parent.domainNameLabelPrefix}${vmIndex}`
+        settings.domainNameLabel = `${parent.domainNameLabelPrefix}${vmIndex}`;
     }
     return pipSettings.processPipSettings(settings);
 }
