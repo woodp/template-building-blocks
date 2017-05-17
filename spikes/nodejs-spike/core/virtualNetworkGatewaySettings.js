@@ -3,6 +3,7 @@
 let _ = require('../lodashMixins.js');
 let v = require('./validation.js');
 let r = require('./resources.js');
+let publicIpAddress = require('./publicIpAddressSettings.js');
 
 let virtualNetworkGatewaySettingsDefaults = {
     gatewayType: 'Vpn',
@@ -25,10 +26,6 @@ let isValidVpnType = (vpnType) => {
 
 let isValidSku = (sku) => {
     return v.utilities.isStringInArray(sku, validSkus);
-};
-
-let publicIpAddressValidations = {
-    name: v.utilities.isNotNullOrWhitespace
 };
 
 let bgpSettingsValidations = {
@@ -60,6 +57,8 @@ let bgpSettingsValidations = {
 
 let virtualNetworkGatewaySettingsValidations = {
     name: v.utilities.isNotNullOrWhitespace,
+    subscriptionId: v.utilities.isGuid,
+    resourceGroupName: v.utilities.isNotNullOrWhitespace,
     gatewayType: (value) => {
         return {
             result: isValidGatewayType(value),
@@ -86,14 +85,19 @@ let virtualNetworkGatewaySettingsValidations = {
             validations: bgpSettingsValidations
         };
     },
-    virtualNetwork: {
-        name: v.utilities.isNotNullOrWhitespace
+    virtualNetwork: r.resourceReferenceValidations,
+    isPublic: (value) => {
+        return _.isUndefined(value) ? {
+            result: true
+        } : {
+            validations: v.validationUtilities.isBoolean
+        };
     },
     publicIpAddress: (value) => {
         return _.isNil(value) ? {
             result: true
         } : {
-            validations: publicIpAddressValidations
+            validations: publicIpAddress.validations
         };
     }
 };
@@ -141,28 +145,51 @@ function transform(settings) {
     return result;
 }
 
+let merge = ({settings, buildingBlockSettings, defaultSettings = virtualNetworkGatewaySettingsDefaults}) => {
+    let merged = _.map(settings, (setting) => {
+        // If needed, we need to build up a publicIpAddress from the information we have here so it can be merged and validated.
+        if (setting.isPublic) {
+            let publicIpAddress = {
+                name: `${setting.name}-pip`,
+                publicIPAllocationMethod: 'Dynamic'
+            };
+
+            if (!_.isNil(setting.publicIPAddressVersion)) {
+                publicIpAddress.publicIPAddressVersion = setting.publicIPAddressVersion;
+            }
+
+            if (!_.isNil(setting.domainNameLabel)) {
+                publicIpAddress.domainNameLabel = setting.domainNameLabel;
+            }
+
+            setting.publicIpAddress = publicIpAddress;
+        }
+
+        return setting;
+    });
+
+    merged = r.setupResources(merged, buildingBlockSettings, (parentKey) => {
+        return ((parentKey === null) || (parentKey === 'virtualNetwork') || (parentKey === 'publicIpAddress'));
+    });
+
+    return v.merge(merged, defaultSettings, (objValue, srcValue, key) => {
+        if ((key === 'publicIpAddress') && (srcValue)) {
+            return publicIpAddress.merge({
+                setting: srcValue
+            });
+        }
+    });
+};
+
 exports.transform = function ({ settings, buildingBlockSettings }) {
     if (_.isPlainObject(settings)) {
         settings = [settings];
     }
 
-    let results = _.transform(settings, (result, setting) => {
-        let merged = v.merge(setting, virtualNetworkGatewaySettingsDefaults);
-        let errors = v.validate({
-            settings: merged,
-            validations: virtualNetworkGatewaySettingsValidations
-        });
-        if (errors.length > 0) {
-            throw new Error(JSON.stringify(errors));
-        }
-
-        result.push(merged);
-    }, []);
-
     let buildingBlockErrors = v.validate({
         settings: buildingBlockSettings,
         validations: {
-            subscriptionId: v.utilities.isNotNullOrWhitespace,
+            subscriptionId: v.utilities.isGuid,
             resourceGroupName: v.utilities.isNotNullOrWhitespace,
         }
     });
@@ -171,13 +198,35 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
         throw new Error(JSON.stringify(buildingBlockErrors));
     }
 
-    results = _.transform(results, (result, setting) => {
-        setting = r.setupResources(setting, buildingBlockSettings, (parentKey) => {
-            return ((parentKey === null) || (parentKey === 'virtualNetwork') || (parentKey === 'publicIpAddress'));
-        });
-        setting = transform(setting);
-        result.push(setting);
-    }, []);
+    let results = merge({
+        settings: settings,
+        buildingBlockSettings: buildingBlockSettings
+    });
 
-    return { settings: results };
+    let errors = v.validate({
+        settings: results,
+        validations: virtualNetworkGatewaySettingsValidations
+    });
+
+    if (errors.length > 0) {
+        throw new Error(JSON.stringify(errors));
+    }
+
+    results = _.transform(results, (result, setting) => {
+        if (setting.publicIpAddress) {
+            let pip = publicIpAddress.transform({
+                settings: setting.publicIpAddress,
+                buildingBlockSettings: buildingBlockSettings
+            });
+            result.publicIpAddresses.push(pip[0]);
+        }
+
+        setting = transform(setting);
+        result.virtualNetworkGateways.push(setting);
+    }, {
+        virtualNetworkGateways: [],
+        publicIpAddresses: []
+    });
+
+    return results;
 };
