@@ -27,7 +27,6 @@
     "virtualNetworkGatewayTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/virtualNetworkGateways/virtualNetworkGateway.json')]",
     "publicIpAddressTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/publicIPAddresses/publicIPAddress.json')]",
     "iteratorTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/common/resources.json')]",
-    "virtualNetworkGatewayDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployVng-', variables('templateUniqueString'))]",
     "publicIpAddressTemplateDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployPips-', variables('templateUniqueString'))]"
   },
   "resources": [
@@ -61,10 +60,14 @@
     {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2015-01-01",
-      "name": "[variables('virtualNetworkGatewayDeploymentName')]",
+      "name": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployVng', copyIndex(), '-', variables('templateUniqueString'))]",
       "dependsOn": [
           "[variables('publicIpAddressTemplateDeploymentName')]"
       ],
+      "copy": {
+        "name": "vngIterator",
+        "count": "[length(parameters('virtualNetworkGateways'))]"
+      },
       "properties": {
         "mode": "Incremental",
         "templateLink": {
@@ -73,11 +76,11 @@
         "parameters": {
           "deploymentContext": {
             "value": {
-              "parentTemplateUniqueString": "[concat(variables('templateUniqueString'), '-deployVng')]"
+              "parentTemplateUniqueString": "[concat(variables('templateUniqueString'), '-deployVng', copyIndex())]"
             }
           },
           "source": {
-            "value": "[parameters('virtualNetworkGateways')]"
+            "value": "[parameters('virtualNetworkGateways')[copyIndex()]]"
           },
           "name": {
             "value": "vng"
