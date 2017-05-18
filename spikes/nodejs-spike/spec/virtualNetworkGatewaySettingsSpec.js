@@ -508,7 +508,8 @@ describe('virtualNetworkGatewaySettings', () => {
                     validations: vngValidations
                 });
 
-                expect(errors.length).toEqual(0);
+                expect(errors.length).toEqual(1);
+                expect(errors[0].name).toEqual('.isPublic');
             });
 
             it('isPublic null', () => {
@@ -561,6 +562,40 @@ describe('virtualNetworkGatewaySettings', () => {
 
                 expect(errors.length).toEqual(1);
                 expect(errors[0].name).toBe('.publicIpAddress.publicIPAddressVersion');
+            });
+
+            it('isPublic true with gatewayType ExpressRoute', () => {
+                let settings = _.cloneDeep(vngSettings);
+                settings.gatewayType = 'ExpressRoute';
+                // Merge will set this
+                settings.publicIpAddress = {
+                    name: `${settings.name}-pip`,
+                    subscriptionId: '00000000-0000-1000-8000-000000000000',
+                    resourceGroupName: 'test-rg',
+                    publicIPAllocationMethod: 'Static',
+                    publicIPAddressVersion: 'IPv4'
+                };
+
+                let errors = validation.validate({
+                    settings: settings,
+                    validations: vngValidations
+                });
+
+                expect(errors.length).toEqual(0);
+            });
+
+            it('isPublic false with gatewayType ExpressRoute', () => {
+                let settings = _.cloneDeep(vngSettings);
+                settings.isPublic = false;
+                settings.gatewayType = 'ExpressRoute';
+
+                let errors = validation.validate({
+                    settings: settings,
+                    validations: vngValidations
+                });
+
+                expect(errors.length).toEqual(1);
+                expect(errors[0].name).toEqual('.isPublic');
             });
 
             it('virtualNetwork undefined', () => {
@@ -664,7 +699,8 @@ describe('virtualNetworkGatewaySettings', () => {
 
             expect(result.virtualNetworkGateways.length).toBe(1);
             expect(result.publicIpAddresses.length).toBe(1);
-            let gateway = result.virtualNetworkGateways[0];
+            expect(result.virtualNetworkGateways[0].length).toBe(1);
+            let gateway = result.virtualNetworkGateways[0][0];
             expect(gateway.hasOwnProperty('id')).toBe(true);
             expect(gateway.name).toBe(settings.name);
             expect(gateway.resourceGroupName).toBe(buildingBlockSettings.resourceGroupName);
@@ -705,8 +741,9 @@ describe('virtualNetworkGatewaySettings', () => {
             });
 
             expect(result.virtualNetworkGateways.length).toBe(1);
+            expect(result.virtualNetworkGateways[0].length).toBe(1);
             expect(result.publicIpAddresses.length).toBe(1);
-            let gateway = result.virtualNetworkGateways[0];
+            let gateway = result.virtualNetworkGateways[0][0];
             expect(gateway.hasOwnProperty('id')).toBe(true);
             expect(gateway.name).toBe(settings.name);
             expect(gateway.resourceGroupName).toBe(buildingBlockSettings.resourceGroupName);
@@ -748,8 +785,9 @@ describe('virtualNetworkGatewaySettings', () => {
             });
 
             expect(result.virtualNetworkGateways.length).toBe(1);
+            expect(result.virtualNetworkGateways[0].length).toBe(1);
             expect(result.publicIpAddresses.length).toBe(0);
-            let gateway = result.virtualNetworkGateways[0];
+            let gateway = result.virtualNetworkGateways[0][0];
             expect(gateway.hasOwnProperty('id')).toBe(true);
             expect(gateway.name).toBe(settings.name);
             expect(gateway.resourceGroupName).toBe(buildingBlockSettings.resourceGroupName);
@@ -793,8 +831,9 @@ describe('virtualNetworkGatewaySettings', () => {
             });
 
             expect(result.virtualNetworkGateways.length).toBe(1);
+            expect(result.virtualNetworkGateways[0].length).toBe(1);
             expect(result.publicIpAddresses.length).toBe(1);
-            let gateway = result.virtualNetworkGateways[0];
+            let gateway = result.virtualNetworkGateways[0][0];
             expect(gateway.hasOwnProperty('id')).toBe(true);
             expect(gateway.name).toBe(settings.name);
             expect(gateway.resourceGroupName).toBe(buildingBlockSettings.resourceGroupName);
@@ -842,8 +881,9 @@ describe('virtualNetworkGatewaySettings', () => {
             });
 
             expect(result.virtualNetworkGateways.length).toBe(1);
+            expect(result.virtualNetworkGateways[0].length).toBe(1);
             expect(result.publicIpAddresses.length).toBe(1);
-            let gateway = result.virtualNetworkGateways[0];
+            let gateway = result.virtualNetworkGateways[0][0];
             expect(gateway.hasOwnProperty('id')).toBe(true);
             expect(gateway.name).toBe(settings.name);
             expect(gateway.resourceGroupName).toBe(buildingBlockSettings.resourceGroupName);
@@ -889,8 +929,9 @@ describe('virtualNetworkGatewaySettings', () => {
             });
 
             expect(result.virtualNetworkGateways.length).toBe(1);
+            expect(result.virtualNetworkGateways[0].length).toBe(1);
             expect(result.publicIpAddresses.length).toBe(1);
-            let gateway = result.virtualNetworkGateways[0];
+            let gateway = result.virtualNetworkGateways[0][0];
             expect(gateway.hasOwnProperty('id')).toBe(true);
             expect(gateway.name).toBe(settings.name);
             expect(gateway.resourceGroupName).toBe(buildingBlockSettings.resourceGroupName);
@@ -919,6 +960,27 @@ describe('virtualNetworkGatewaySettings', () => {
 
             let pipSettingsResult = result.publicIpAddresses[0];
             expect(pipSettingsResult.properties.publicIPAllocationMethod).toBe('Dynamic');
+        });
+
+        it('ExpressRoute and Vpn virtualNetworkGateway on same subnet', () => {
+            let vpnSettings = _.cloneDeep(virtualNetworkGateway);
+            vpnSettings.name = 'my-vpn-gw';
+            let expressRouteSettings = _.cloneDeep(virtualNetworkGateway);
+            expressRouteSettings.gatewayType = 'ExpressRoute';
+            expressRouteSettings.name = 'my-er-gw';
+
+            let result = virtualNetworkGatewaySettings.transform({
+                settings: [vpnSettings, expressRouteSettings],
+                buildingBlockSettings: buildingBlockSettings
+            });
+
+            expect(result.virtualNetworkGateways.length).toBe(1);
+            expect(result.virtualNetworkGateways[0].length).toBe(2);
+            expect(result.publicIpAddresses.length).toBe(2);
+            let expressRouteGateway = result.virtualNetworkGateways[0][0];
+            expect(expressRouteGateway.properties.vpnType).toBe(expressRouteSettings.vpnType);
+            let vpnGateway = result.virtualNetworkGateways[0][1];
+            expect(vpnGateway.properties.vpnType).toBe(vpnSettings.vpnType);
         });
 
         it('test settings validation errors', () => {
