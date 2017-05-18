@@ -24,7 +24,7 @@
   "variables": {
     "location": "[resourceGroup().location]",
     "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('virtualNetworkGateways')), string(parameters('publicIpAddresses'))))]",
-    "virtualNetworkGatewayTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/virtualNetworkGateways/virtualNetworkGateway.json')]",
+    "virtualNetworkGatewaysTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/virtualNetworkGateways/virtualNetworkGateways.json')]",
     "publicIpAddressTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/publicIPAddresses/publicIPAddress.json')]",
     "iteratorTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/common/resources.json')]",
     "publicIpAddressTemplateDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployPips-', variables('templateUniqueString'))]"
@@ -71,22 +71,11 @@
       "properties": {
         "mode": "Incremental",
         "templateLink": {
-          "uri": "[variables('iteratorTemplate')]"
+          "uri": "[variables('virtualNetworkGatewaysTemplate')]"
         },
         "parameters": {
-          "deploymentContext": {
-            "value": {
-              "parentTemplateUniqueString": "[concat(variables('templateUniqueString'), '-deployVng', copyIndex())]"
-            }
-          },
           "source": {
             "value": "[parameters('virtualNetworkGateways')[copyIndex()]]"
-          },
-          "name": {
-            "value": "vng"
-          },
-          "resourceTemplatePath": {
-            "value": "[variables('virtualNetworkGatewayTemplate')]"
           }
         }
       }
