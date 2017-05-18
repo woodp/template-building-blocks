@@ -45,10 +45,6 @@ describe('connectionSettings', () => {
         it('ExpressRoute', () => {
             expect(isValidConnectionType('ExpressRoute')).toEqual(true);
         });
-
-        it('VPNClient', () => {
-            expect(isValidConnectionType('VPNClient')).toEqual(true);
-        });
     });
 
     describe('merge', () => {
@@ -586,6 +582,13 @@ describe('connectionSettings', () => {
                 buildingBlockSettings: buildingBlockSettings
             });
             expect(result.settings.length).toBe(1);
+            let connectionSetting = result.settings[0];
+            expect(connectionSetting.name).toBe(settings.name);
+            expect(connectionSetting.properties.connectionType).toBe(settings.connectionType);
+            expect(connectionSetting.properties.routingWeight).toBe(settings.routingWeight);
+            expect(connectionSetting.properties.sharedKey).toBe(settings.sharedKey);
+            expect(_.endsWith(connectionSetting.properties.virtualNetworkGateway1.id, `/virtualNetworkGateways/${fullConnectionSettings.virtualNetworkGateway.name}`)).toBe(true);
+            expect(_.endsWith(connectionSetting.properties.localNetworkGateway2.id, `/localNetworkGateways/${fullConnectionSettings.localNetworkGateway.name}`)).toBe(true);
         });
 
         it('ExpressRoute settings', () => {
@@ -595,6 +598,13 @@ describe('connectionSettings', () => {
                 buildingBlockSettings: buildingBlockSettings
             });
             expect(result.settings.length).toBe(1);
+            let connectionSetting = result.settings[0];
+            expect(connectionSetting.name).toBe(settings.name);
+            expect(connectionSetting.properties.connectionType).toBe(settings.connectionType);
+            expect(connectionSetting.properties.routingWeight).toBe(settings.routingWeight);
+            expect(connectionSetting.properties.sharedKey).toBeUndefined();
+            expect(_.endsWith(connectionSetting.properties.virtualNetworkGateway1.id, `/virtualNetworkGateways/${fullConnectionSettings.virtualNetworkGateway.name}`)).toBe(true);
+            expect(_.endsWith(connectionSetting.properties.peer.id, `/expressRouteCircuits/${fullConnectionSettings.expressRouteCircuit.name}`)).toBe(true);
         });
 
         it('Vnet2Vnet settings', () => {
@@ -604,6 +614,13 @@ describe('connectionSettings', () => {
                 buildingBlockSettings: buildingBlockSettings
             });
             expect(result.settings.length).toBe(1);
+            let connectionSetting = result.settings[0];
+            expect(connectionSetting.name).toBe(settings.name);
+            expect(connectionSetting.properties.connectionType).toBe(settings.connectionType);
+            expect(connectionSetting.properties.routingWeight).toBe(settings.routingWeight);
+            expect(connectionSetting.properties.sharedKey).toBe(settings.sharedKey);
+            expect(_.endsWith(connectionSetting.properties.virtualNetworkGateway1.id, `/virtualNetworkGateways/${fullConnectionSettings.virtualNetworkGateway1.name}`)).toBe(true);
+            expect(_.endsWith(connectionSetting.properties.virtualNetworkGateway2.id, `/virtualNetworkGateways/${fullConnectionSettings.virtualNetworkGateway2.name}`)).toBe(true);
         });
 
         it('IPsec and ExpressRoute settings', () => {
@@ -613,6 +630,23 @@ describe('connectionSettings', () => {
                 buildingBlockSettings: buildingBlockSettings
             });
             expect(result.settings.length).toBe(2);
+            let connectionSetting = result.settings[0];
+            let setting = settings[0];
+            expect(connectionSetting.name).toBe(setting.name);
+            expect(connectionSetting.properties.connectionType).toBe(setting.connectionType);
+            expect(connectionSetting.properties.routingWeight).toBe(setting.routingWeight);
+            expect(connectionSetting.properties.sharedKey).toBe(setting.sharedKey);
+            expect(_.endsWith(connectionSetting.properties.virtualNetworkGateway1.id, `/virtualNetworkGateways/${fullConnectionSettings.virtualNetworkGateway.name}`)).toBe(true);
+            expect(_.endsWith(connectionSetting.properties.localNetworkGateway2.id, `/localNetworkGateways/${fullConnectionSettings.localNetworkGateway.name}`)).toBe(true);
+
+            connectionSetting = result.settings[1];
+            setting = settings[1];
+            expect(connectionSetting.name).toBe(setting.name);
+            expect(connectionSetting.properties.connectionType).toBe(setting.connectionType);
+            expect(connectionSetting.properties.routingWeight).toBe(setting.routingWeight);
+            expect(connectionSetting.properties.sharedKey).toBeUndefined();
+            expect(_.endsWith(connectionSetting.properties.virtualNetworkGateway1.id, `/virtualNetworkGateways/${fullConnectionSettings.virtualNetworkGateway.name}`)).toBe(true);
+            expect(_.endsWith(connectionSetting.properties.peer.id, `/expressRouteCircuits/${fullConnectionSettings.expressRouteCircuit.name}`)).toBe(true);
         });
 
         it('test settings validation errors', () => {

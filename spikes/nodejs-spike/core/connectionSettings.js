@@ -7,7 +7,7 @@ let r = require('./resources.js');
 let connectionSettingsDefaults = {
 };
 
-let validConnectionTypes = ['IPsec', 'Vnet2Vnet', 'ExpressRoute', 'VPNClient'];
+let validConnectionTypes = ['IPsec', 'Vnet2Vnet', 'ExpressRoute'];
 
 let isValidConnectionType = (connectionType) => {
     return v.utilities.isStringInArray(connectionType, validConnectionTypes);
@@ -219,7 +219,8 @@ function transform(settings) {
         }
     };
 
-    if (settings.connectionType === 'IPsec') {
+    switch (settings.connectionType) {
+    case 'IPsec': {
         result.properties.sharedKey = settings.sharedKey;
         result.properties.virtualNetworkGateway1 = {
             id: r.resourceId(settings.virtualNetworkGateway.subscriptionId, settings.virtualNetworkGateway.resourceGroupName,
@@ -229,7 +230,9 @@ function transform(settings) {
             id: r.resourceId(settings.localNetworkGateway.subscriptionId, settings.localNetworkGateway.resourceGroupName,
                 'Microsoft.Network/localNetworkGateways', settings.localNetworkGateway.name)
         };
-    } else if (settings.connectionType === 'Vnet2Vnet') {
+        break;
+    }
+    case 'Vnet2Vnet': {
         result.properties.sharedKey = settings.sharedKey;
         result.properties.virtualNetworkGateway1 = {
             id: r.resourceId(settings.virtualNetworkGateway1.subscriptionId, settings.virtualNetworkGateway1.resourceGroupName,
@@ -239,7 +242,9 @@ function transform(settings) {
             id: r.resourceId(settings.virtualNetworkGateway2.subscriptionId, settings.virtualNetworkGateway2.resourceGroupName,
                 'Microsoft.Network/virtualNetworkGateways', settings.virtualNetworkGateway2.name)
         };
-    } else if (settings.connectionType === 'ExpressRoute') {
+        break;
+    }
+    case 'ExpressRoute': {
         result.properties.virtualNetworkGateway1 = {
             id: r.resourceId(settings.virtualNetworkGateway.subscriptionId, settings.virtualNetworkGateway.resourceGroupName,
                 'Microsoft.Network/virtualNetworkGateways', settings.virtualNetworkGateway.name)
@@ -248,6 +253,8 @@ function transform(settings) {
             id: r.resourceId(settings.expressRouteCircuit.subscriptionId, settings.expressRouteCircuit.resourceGroupName,
                 'Microsoft.Network/expressRouteCircuits', settings.expressRouteCircuit.name)
         };
+        break;
+    }
     }
 
     return result;
