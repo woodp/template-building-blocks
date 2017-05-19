@@ -18,7 +18,7 @@ let bgpSettingsValidations = {
         return _.isNil(value) ? {
             result: true
         } : {
-            result: !_.isNullOrWhitespace(value),
+            result: !v.utilities.isNullOrWhitespace(value),
             message: 'Value cannot be null, empty, or only whitespace'
         };
     },

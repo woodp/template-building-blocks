@@ -33,7 +33,7 @@ function getObject(collection, parentKey, stack, callback) {
 }
 
 exports.resourceId = function (subscriptionId, resourceGroupName, resourceType, resourceName, subresourceName) {
-    if (_.isNullOrWhitespace(subscriptionId)) {
+    if (validation.utilities.isNullOrWhitespace(subscriptionId)) {
         throw `subscriptionId: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`;
     }
 
@@ -41,11 +41,11 @@ exports.resourceId = function (subscriptionId, resourceGroupName, resourceType, 
         throw `subscriptionId: ${validationMessages.StringIsNotAValidGuid}`;
     }
 
-    if (_.isNullOrWhitespace(resourceGroupName)) {
+    if (validation.utilities.isNullOrWhitespace(resourceGroupName)) {
         throw `resourceGroupName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`;
     }
 
-    if (_.isNullOrWhitespace(resourceType)) {
+    if (validation.utilities.isNullOrWhitespace(resourceType)) {
         throw `resourceType: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`;
     }
 
@@ -54,16 +54,16 @@ exports.resourceId = function (subscriptionId, resourceGroupName, resourceType, 
         throw `resourceType: Invalid length ${resourceTypeParts.length}`;
     }
 
-    if ((resourceTypeParts.length === 2) && (_.isNullOrWhitespace(resourceName))) {
+    if ((resourceTypeParts.length === 2) && (validation.utilities.isNullOrWhitespace(resourceName))) {
         throw `resourceName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`;
     }
 
     // This is not strictly necessary, but could save from some misuse
-    if ((resourceTypeParts.length === 2) && (!_.isNullOrWhitespace(subresourceName))) {
+    if ((resourceTypeParts.length === 2) && (!validation.utilities.isNullOrWhitespace(subresourceName))) {
         throw `subresourceName: ${validationMessages.resources.SubresourceNameShouldNotBeSpecifiedForTopLevelResourceType}`;
     }
 
-    if ((resourceTypeParts.length === 3) && (_.isNullOrWhitespace(subresourceName))) {
+    if ((resourceTypeParts.length === 3) && (validation.utilities.isNullOrWhitespace(subresourceName))) {
         throw `subresourceName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`;
     }
 

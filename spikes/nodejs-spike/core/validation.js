@@ -15,6 +15,9 @@ function merge(settings, defaultSettings, mergeCustomizer) {
         }, []);
 
         return mergedSettings;
+    } else {
+        // We only support plain objects and arrays right now, so we should throw an exception.
+        throw new Error('Merge only supports plain objects and arrays');
     }
 }
 
@@ -86,29 +89,7 @@ function reduce({validations, value, parentKey, parentValue, accumulator}) {
                     message: `Invalid value: ${toString(value)}.` + (message ? '  ' + message : '')
                 });
             } else {
-                // let localValidations = validations;
-                // if (result.validations) {
-                //     // We got back more validations to run.  Since we are in an array, we'll replace the one we have with this one.
-                //     // reduce({
-                //     //     validations: result.validations,
-                //     //     value: value,
-                //     //     parentKey: `${parentKey}`,
-                //     //     parentValue: parentValue,
-                //     //     accumulator: accumulator
-                //     // });
-                //     localValidations = result.validations;
-                // }
                 _.reduce(value, (accumulator, item, index) => {
-                    //let result = validationWrapper(localValidations, item, parentValue);
-                    // if (localValidations) {
-                    //     if (!_.isFunction(localValidations)) {
-                    //         localValidations = {
-                    //             validations: localValidations
-                    //         };
-                    //     }
-                    // }
-
-
                     // We got back more validations to run
                     reduce({
                         validations: result.validations,
@@ -117,41 +98,6 @@ function reduce({validations, value, parentKey, parentValue, accumulator}) {
                         parentValue: parentValue,
                         accumulator: accumulator
                     });
-
-
-
-                    // let result = _.isFunction(localValidations) ? validationWrapper(localValidations, item, parentValue) : {
-                    //     validations: localValidations
-                    // };
-                    // // We can either get a boolean, an object with the error, or an array of objects with errors.
-                    // // We may be able to wrap this later, but let's brute force it for now
-                    // if ((_.isArray(result)) && (result.length > 0)) {
-                    //     // An array of already materialized errors, so just add them.
-                    //     _.forEach(result, (value) => {
-                    //         accumulator.push(value);
-                    //     });
-                    // //} else if (((_.isBoolean(result)) && (!result)) || ((_.isBoolean(result.result)) && (!result.result))) {
-                    // } else if ((_.isBoolean(result.result)) && (!result.result)) {
-                    //     let {message, name} = result;
-                    //     accumulator.push({
-                    //         name: name ? name : `${parentKey}[${index}]`,
-                    //         message: `Invalid value: ${toString(item)}.` + (message ? '  ' + message : '')
-                    //     });
-                    // } else if (result.validations) {
-                    //     // We got back more validations to run
-                    //     reduce({
-                    //         validations: result.validations,
-                    //         value: value,
-                    //         parentKey: `${parentKey}`,
-                    //         parentValue: parentValue,
-                    //         accumulator: accumulator
-                    //     });
-                    // }
-
-
-
-
-
 
                     return accumulator;
                 }, accumulator);
@@ -203,7 +149,12 @@ let guidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-
 let utilities = {
     isGuid: (guid) => guidRegex.test(guid),
     isStringInArray: (value, array) => _.indexOf(array, value) > -1,
-    isNotNullOrWhitespace: (value) => !_.isNullOrWhitespace(value),
+    isNullOrWhitespace: (value) => {
+        value = _.toString(value);
+        return !value || !value.trim();
+    },
+    // Slated for removal
+    isNotNullOrWhitespace: (value) => !utilities.isNullOrWhitespace(value),
     isObjectForResourceId: (obj) => {
         // Omit the three fields we need.  If the length of the result is !== 0, this is likely a "full" object, so we can use the "full" validations
         let remainingKeys = _.keys(_.omit(obj, ['subscriptionId', 'resourceGroupName', 'name']));
@@ -262,6 +213,12 @@ let validationUtilities = {
         return {
             result: utilities.networking.isValidCidr(value),
             message: 'Value is not a valid CIDR'
+        };
+    },
+    isNotNullOrWhitespace: (value) => {
+        return {
+            result: !utilities.isNullOrWhitespace(value),
+            message: 'Value cannot be undefined, null, empty, or only whitespace'
         };
     }
 };
