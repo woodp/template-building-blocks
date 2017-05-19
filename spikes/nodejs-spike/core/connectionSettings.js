@@ -3,6 +3,7 @@
 let _ = require('../lodashMixins.js');
 let v = require('./validation.js');
 let r = require('./resources.js');
+let localNetworkGateway = require('./localNetworkGatewaySettings.js');
 
 let connectionSettingsDefaults = {
 };
@@ -260,15 +261,15 @@ function transform(settings) {
     return result;
 }
 
-function merge({settings}) {
-    return v.merge(settings, connectionSettingsDefaults);
-}
 
-function validate({settings}) {
-    return v.validate({
-        settings: settings,
-        validations: connectionSettingsValidations
+let merge = ({settings, buildingBlockSettings, defaultSettings = connectionSettingsDefaults}) => {
+    let merged = r.setupResources(settings, buildingBlockSettings, (parentKey) => {
+         return ((parentKey === null) ||
+                (v.utilities.isStringInArray(parentKey,
+                ['virtualNetworkGateway', 'localNetworkGateway', 'expressRouteCircuit', 'virtualNetworkGateway1', 'virtualNetworkGateway2'])));
     });
+
+    return v.merge(merged, defaultSettings);
 }
 
 exports.transform = function ({ settings, buildingBlockSettings }) {
@@ -276,20 +277,10 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
         settings = [settings];
     }
 
-    let results = _.transform(settings, (result, setting) => {
-        let merged = merge({settings: setting});
-        let errors = validate({settings: merged});
-        if (errors.length > 0) {
-            throw new Error(JSON.stringify(errors));
-        }
-
-        result.push(merged);
-    }, []);
-
     let buildingBlockErrors = v.validate({
         settings: buildingBlockSettings,
         validations: {
-            subscriptionId: v.utilities.isNotNullOrWhitespace,
+            subscriptionId: v.utilities.isGuid,
             resourceGroupName: v.utilities.isNotNullOrWhitespace,
         }
     });
@@ -298,15 +289,35 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
         throw new Error(JSON.stringify(buildingBlockErrors));
     }
 
-    results = _.transform(results, (result, setting) => {
-        setting = r.setupResources(setting, buildingBlockSettings, (parentKey) => {
-            return ((parentKey === null) ||
-                (v.utilities.isStringInArray(parentKey,
-                ['virtualNetworkGateway', 'localNetworkGateway', 'expressRouteCircuit', 'virtualNetworkGateway1', 'virtualNetworkGateway2'])));
-        });
-        setting = transform(setting);
-        result.push(setting);
-    }, []);
+    let results = merge({
+        settings: settings,
+        buildingBlockSettings: buildingBlockSettings
+    });
 
-    return { settings: results };
+    let errors = v.validate({
+        settings: results,
+        validations: connectionSettingsValidations
+    });
+
+    if (errors.length > 0) {
+        throw new Error(JSON.stringify(errors));
+    }
+
+    results = _.transform(results, (result, setting) => {
+        if (setting.localNetworkGateway) {
+            let lng = localNetworkGateway.transform({
+                settings: setting.localNetworkGateway,
+                buildingBlockSettings: buildingBlockSettings
+            });
+            result.localNetworkGateways.push(lng.localNetworkGateways[0]);
+        }
+
+        setting = transform(setting);
+        result.connections.push(setting);
+    }, {
+        connections: [],
+        localNetworkGateways: []
+    });
+
+    return results;
 };

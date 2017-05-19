@@ -148,30 +148,25 @@ let mergeCustomizer = function (objValue, srcValue, key) {
     }
 };
 
+let merge = ({settings, buildingBlockSettings, defaultSettings = virtualNetworkSettingsDefaults}) => {
+    let merged = r.setupResources(settings, buildingBlockSettings, (parentKey) => {
+        return ((parentKey === null) || (parentKey === 'remoteVirtualNetwork'));
+    });
+
+    merged = v.merge(merged, defaultSettings, mergeCustomizer);
+    return merged;
+};
+
 exports.transform = function ({ settings, buildingBlockSettings }) {
     if (_.isPlainObject(settings)) {
         settings = [settings];
     }
 
-    let results = _.transform(settings, (result, setting) => {
-        let merged = v.merge(setting, virtualNetworkSettingsDefaults, mergeCustomizer);
-        let errors = v.validate({
-            settings: merged,
-            validations: virtualNetworkSettingsValidations
-        });
-
-        if (errors.length > 0) {
-            throw new Error(JSON.stringify(errors));
-        }
-
-        result.push(merged);
-    }, []);
-
     let buildingBlockErrors = v.validate({
         settings: buildingBlockSettings,
         validations: {
-            subscriptionId: v.utilities.isNotNullOrWhitespace,
-            resourceGroupName: v.utilities.isNotNullOrWhitespace
+            subscriptionId: v.utilities.isGuid,
+            resourceGroupName: v.utilities.isNotNullOrWhitespace,
         }
     });
 
@@ -179,11 +174,21 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
         throw new Error(JSON.stringify(buildingBlockErrors));
     }
 
-    results = _.transform(results, (result, setting) => {
-        setting = r.setupResources(setting, buildingBlockSettings, (parentKey) => {
-            return ((parentKey === null) || (parentKey === 'remoteVirtualNetwork'));
-        });
+    let results = merge({
+        settings: settings,
+        buildingBlockSettings: buildingBlockSettings
+    });
 
+    let errors = v.validate({
+        settings: results,
+        validations: virtualNetworkSettingsValidations
+    });
+
+    if (errors.length > 0) {
+        throw new Error(JSON.stringify(errors));
+    }
+
+    results = _.transform(results, (result, setting) => {
         result.virtualNetworks.push(transform(setting));
         if ((setting.virtualNetworkPeerings) && (setting.virtualNetworkPeerings.length > 0)) {
             result.virtualNetworkPeerings = result.virtualNetworkPeerings.concat(_.transform(setting.virtualNetworkPeerings,
@@ -196,5 +201,5 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
         virtualNetworkPeerings: []
     });
 
-    return { settings: results };
+    return results;
 };

@@ -391,10 +391,10 @@ describe('publicIpAddressSettings', () => {
                 buildingBlockSettings: buildingBlockSettings
             });
 
-            expect(result.length).toBe(1);
-            let settingsResult = result[0];
+            expect(result.publicIpAddresses.length).toBe(1);
+            let settingsResult = result.publicIpAddresses[0];
             expect(settingsResult.hasOwnProperty('id')).toBe(true);
-            expect(settingsResult.hasOwnProperty('name')).toBe(true);
+            expect(settingsResult.name).toBe(settings.name);
             expect(settingsResult.hasOwnProperty('resourceGroupName')).toBe(true);
             expect(settingsResult.hasOwnProperty('subscriptionId')).toBe(true);
 
@@ -415,10 +415,10 @@ describe('publicIpAddressSettings', () => {
                 buildingBlockSettings: buildingBlockSettings
             });
 
-            expect(result.length).toBe(1);
-            let settingsResult = result[0];
+            expect(result.publicIpAddresses.length).toBe(1);
+            let settingsResult = result.publicIpAddresses[0];
             expect(settingsResult.hasOwnProperty('id')).toBe(true);
-            expect(settingsResult.hasOwnProperty('name')).toBe(true);
+            expect(settingsResult.name).toBe(settings.name);
             expect(settingsResult.hasOwnProperty('resourceGroupName')).toBe(true);
             expect(settingsResult.hasOwnProperty('subscriptionId')).toBe(true);
 
@@ -436,10 +436,10 @@ describe('publicIpAddressSettings', () => {
                 buildingBlockSettings: buildingBlockSettings
             });
 
-            expect(result.length).toBe(1);
-            let settingsResult = result[0];
+            expect(result.publicIpAddresses.length).toBe(1);
+            let settingsResult = result.publicIpAddresses[0];
             expect(settingsResult.hasOwnProperty('id')).toBe(true);
-            expect(settingsResult.hasOwnProperty('name')).toBe(true);
+            expect(settingsResult.name).toBe(settings.name);
             expect(settingsResult.hasOwnProperty('resourceGroupName')).toBe(true);
             expect(settingsResult.hasOwnProperty('subscriptionId')).toBe(true);
 
@@ -458,10 +458,10 @@ describe('publicIpAddressSettings', () => {
                 buildingBlockSettings: buildingBlockSettings
             });
 
-            expect(result.length).toBe(1);
-            let settingsResult = result[0];
+            expect(result.publicIpAddresses.length).toBe(1);
+            let settingsResult = result.publicIpAddresses[0];
             expect(settingsResult.hasOwnProperty('id')).toBe(true);
-            expect(settingsResult.hasOwnProperty('name')).toBe(true);
+            expect(settingsResult.name).toBe(settings.name);
             expect(settingsResult.hasOwnProperty('resourceGroupName')).toBe(true);
             expect(settingsResult.hasOwnProperty('subscriptionId')).toBe(true);
 
@@ -479,10 +479,10 @@ describe('publicIpAddressSettings', () => {
                 buildingBlockSettings: buildingBlockSettings
             });
 
-            expect(result.length).toBe(1);
-            let settingsResult = result[0];
+            expect(result.publicIpAddresses.length).toBe(1);
+            let settingsResult = result.publicIpAddresses[0];
             expect(settingsResult.hasOwnProperty('id')).toBe(true);
-            expect(settingsResult.hasOwnProperty('name')).toBe(true);
+            expect(settingsResult.name).toBe(settings.name);
             expect(settingsResult.hasOwnProperty('resourceGroupName')).toBe(true);
             expect(settingsResult.hasOwnProperty('subscriptionId')).toBe(true);
 

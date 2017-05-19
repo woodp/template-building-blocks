@@ -48,9 +48,9 @@ describe('connectionSettings', () => {
     });
 
     describe('merge', () => {
-        let merge = connectionSettings.__get__('merge');
+        let connectionSettingsDefaults = connectionSettings.__get__('connectionSettingsDefaults');
         it('valid', () => {
-            let result = merge({settings: {}});
+            let result = validation.merge({}, connectionSettingsDefaults);
             expect(result).toEqual({});
         });
     });
@@ -581,14 +581,20 @@ describe('connectionSettings', () => {
                 settings: settings,
                 buildingBlockSettings: buildingBlockSettings
             });
-            expect(result.settings.length).toBe(1);
-            let connectionSetting = result.settings[0];
+            expect(result.connections.length).toEqual(1);
+            expect(result.localNetworkGateways.length).toEqual(1);
+            let connectionSetting = result.connections[0];
             expect(connectionSetting.name).toBe(settings.name);
             expect(connectionSetting.properties.connectionType).toBe(settings.connectionType);
             expect(connectionSetting.properties.routingWeight).toBe(settings.routingWeight);
             expect(connectionSetting.properties.sharedKey).toBe(settings.sharedKey);
             expect(_.endsWith(connectionSetting.properties.virtualNetworkGateway1.id, `/virtualNetworkGateways/${fullConnectionSettings.virtualNetworkGateway.name}`)).toBe(true);
             expect(_.endsWith(connectionSetting.properties.localNetworkGateway2.id, `/localNetworkGateways/${fullConnectionSettings.localNetworkGateway.name}`)).toBe(true);
+            let localNetworkGateway = result.localNetworkGateways[0];
+            expect(localNetworkGateway.name).toEqual(settings.localNetworkGateway.name);
+            expect(localNetworkGateway.properties.gatewayIpAddress).toEqual(settings.localNetworkGateway.ipAddress);
+            expect(localNetworkGateway.properties.localNetworkAddressSpace.addressPrefixes.length).toEqual(1);
+            expect(localNetworkGateway.properties.localNetworkAddressSpace.addressPrefixes[0]).toEqual(settings.localNetworkGateway.addressPrefixes[0]);
         });
 
         it('ExpressRoute settings', () => {
@@ -597,8 +603,9 @@ describe('connectionSettings', () => {
                 settings: settings,
                 buildingBlockSettings: buildingBlockSettings
             });
-            expect(result.settings.length).toBe(1);
-            let connectionSetting = result.settings[0];
+            expect(result.connections.length).toBe(1);
+            expect(result.localNetworkGateways.length).toEqual(0);
+            let connectionSetting = result.connections[0];
             expect(connectionSetting.name).toBe(settings.name);
             expect(connectionSetting.properties.connectionType).toBe(settings.connectionType);
             expect(connectionSetting.properties.routingWeight).toBe(settings.routingWeight);
@@ -613,8 +620,9 @@ describe('connectionSettings', () => {
                 settings: settings,
                 buildingBlockSettings: buildingBlockSettings
             });
-            expect(result.settings.length).toBe(1);
-            let connectionSetting = result.settings[0];
+            expect(result.connections.length).toBe(1);
+            expect(result.localNetworkGateways.length).toEqual(0);
+            let connectionSetting = result.connections[0];
             expect(connectionSetting.name).toBe(settings.name);
             expect(connectionSetting.properties.connectionType).toBe(settings.connectionType);
             expect(connectionSetting.properties.routingWeight).toBe(settings.routingWeight);
@@ -629,8 +637,9 @@ describe('connectionSettings', () => {
                 settings: settings,
                 buildingBlockSettings: buildingBlockSettings
             });
-            expect(result.settings.length).toBe(2);
-            let connectionSetting = result.settings[0];
+            expect(result.connections.length).toBe(2);
+            expect(result.localNetworkGateways.length).toEqual(1);
+            let connectionSetting = result.connections[0];
             let setting = settings[0];
             expect(connectionSetting.name).toBe(setting.name);
             expect(connectionSetting.properties.connectionType).toBe(setting.connectionType);
@@ -639,7 +648,7 @@ describe('connectionSettings', () => {
             expect(_.endsWith(connectionSetting.properties.virtualNetworkGateway1.id, `/virtualNetworkGateways/${fullConnectionSettings.virtualNetworkGateway.name}`)).toBe(true);
             expect(_.endsWith(connectionSetting.properties.localNetworkGateway2.id, `/localNetworkGateways/${fullConnectionSettings.localNetworkGateway.name}`)).toBe(true);
 
-            connectionSetting = result.settings[1];
+            connectionSetting = result.connections[1];
             setting = settings[1];
             expect(connectionSetting.name).toBe(setting.name);
             expect(connectionSetting.properties.connectionType).toBe(setting.connectionType);

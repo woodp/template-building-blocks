@@ -659,7 +659,7 @@ describe('virtualNetworkSettings', () => {
                 buildingBlockSettings: buildingBlockSettings
             });
 
-            expect(result.settings.virtualNetworks.length).toBe(1);
+            expect(result.virtualNetworks.length).toBe(1);
         });
 
         it('single virtual network with peers', () => {
@@ -671,8 +671,8 @@ describe('virtualNetworkSettings', () => {
                 buildingBlockSettings: buildingBlockSettings
             });
 
-            expect(result.settings.virtualNetworks.length).toBe(1);
-            expect(result.settings.virtualNetworkPeerings.length).toBe(2);
+            expect(result.virtualNetworks.length).toBe(1);
+            expect(result.virtualNetworkPeerings.length).toBe(2);
         });
 
         it('multiple virtual network with peers', () => {
@@ -683,8 +683,8 @@ describe('virtualNetworkSettings', () => {
                 buildingBlockSettings: buildingBlockSettings
             });
 
-            expect(result.settings.virtualNetworks.length).toBe(3);
-            expect(result.settings.virtualNetworkPeerings.length).toBe(3);
+            expect(result.virtualNetworks.length).toBe(3);
+            expect(result.virtualNetworkPeerings.length).toBe(3);
         });
 
         it('test settings validation errors', () => {

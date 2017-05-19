@@ -90,15 +90,12 @@ function transform(settings) {
     return result;
 }
 
-let merge = ({setting, buildingBlockSettings, defaultSettings = publicIpAddressSettingsDefaults}) => {
-    let merged = v.merge(setting, defaultSettings);
+let merge = ({settings, buildingBlockSettings, defaultSettings = publicIpAddressSettingsDefaults}) => {
+    let merged = r.setupResources(settings, buildingBlockSettings, (parentKey) => {
+        return (parentKey === null);
+    });
 
-    if (buildingBlockSettings) {
-        merged = r.setupResources(merged, buildingBlockSettings, (parentKey) => {
-            return (parentKey === null);
-        });
-    }
-
+    merged = v.merge(merged, defaultSettings);
     return merged;
 };
 
@@ -119,48 +116,27 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
         throw new Error(JSON.stringify(buildingBlockErrors));
     }
 
-    let results = _.transform(settings, (result, setting) => {
-        //let merged = v.merge(setting, publicIpAddressSettingsDefaults);
-        let merged = merge({
-            setting: setting,
-            buildingBlockSettings: buildingBlockSettings
-        });
-        // merged = r.setupResources(merged, buildingBlockSettings, (parentKey) => {
-        //     return (parentKey === null);
-        // });
-        let errors = v.validate({
-            settings: merged,
-            validations: publicIpAddressValidations
-        });
-        if (errors.length > 0) {
-            throw new Error(JSON.stringify(errors));
-        }
+    let results = merge({
+        settings: settings,
+        buildingBlockSettings: buildingBlockSettings
+    });
 
-        result.push(merged);
-    }, []);
+    let errors = v.validate({
+        settings: results,
+        validations: publicIpAddressValidations
+    });
 
-    // let buildingBlockErrors = v.validate({
-    //     settings: buildingBlockSettings,
-    //     validations: {
-    //         subscriptionId: v.utilities.isNotNullOrWhitespace,
-    //         resourceGroupName: v.utilities.isNotNullOrWhitespace,
-    //     }
-    // });
+    if (errors.length > 0) {
+        throw new Error(JSON.stringify(errors));
+    }
 
-    // if (buildingBlockErrors.length > 0) {
-    //     throw new Error(JSON.stringify(buildingBlockErrors));
-    // }
+    results = _.map(results, (setting) => {
+        return transform(setting);
+    });
 
-    results = _.transform(results, (result, setting) => {
-        // setting = r.setupResources(setting, buildingBlockSettings, (parentKey) => {
-        //     return (parentKey === null);
-        // });
-
-        setting = transform(setting);
-        result.push(setting);
-    }, []);
-
-    return results;
+    return {
+        publicIpAddresses: results
+    };
 };
 
 exports.merge = merge;

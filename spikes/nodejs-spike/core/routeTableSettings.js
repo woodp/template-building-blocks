@@ -145,29 +145,24 @@ function transform(settings) {
     };
 }
 
+let merge = ({settings, buildingBlockSettings, defaultSettings = routeTableSettingsDefaults}) => {
+    let merged = r.setupResources(settings, buildingBlockSettings, (parentKey) => {
+        return ((parentKey === null) || (parentKey === 'virtualNetworks'));
+    });
+
+    merged = v.merge(merged, defaultSettings, mergeCustomizer);
+    return merged;
+};
+
 exports.transform = function ({ settings, buildingBlockSettings }) {
     if (_.isPlainObject(settings)) {
         settings = [settings];
     }
 
-    let results = _.transform(settings, (result, setting) => {
-        let merged = v.merge(setting, routeTableSettingsDefaults, mergeCustomizer);
-        let errors = v.validate({
-            settings: merged,
-            validations: routeTableSettingsValidations
-        });
-
-        if (errors.length > 0) {
-            throw new Error(JSON.stringify(errors));
-        }
-
-        result.push(merged);
-    }, []);
-
     let buildingBlockErrors = v.validate({
         settings: buildingBlockSettings,
         validations: {
-            subscriptionId: v.utilities.isNotNullOrWhitespace,
+            subscriptionId: v.utilities.isGuid,
             resourceGroupName: v.utilities.isNotNullOrWhitespace,
         }
     });
@@ -176,13 +171,25 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
         throw new Error(JSON.stringify(buildingBlockErrors));
     }
 
-    results = _.transform(results, (result, setting) => {
-        setting = r.setupResources(setting, buildingBlockSettings, (parentKey) => {
-            return ((parentKey === null) || (parentKey === 'virtualNetworks'));
-        });
-        setting = transform(setting);
-        result.push(setting);
-    }, []);
+    let results = merge({
+        settings: settings,
+        buildingBlockSettings: buildingBlockSettings
+    });
 
-    return { settings: results };
+    let errors = v.validate({
+        settings: results,
+        validations: routeTableSettingsValidations
+    });
+
+    if (errors.length > 0) {
+        throw new Error(JSON.stringify(errors));
+    }
+
+    results = _.map(results, (setting) => {
+        return transform(setting);
+    });
+
+    return {
+        routeTables: results
+    };
 };
