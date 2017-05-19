@@ -10,12 +10,14 @@
     },
     "virtualNetworkGateways": {
       "type": "array",
+      "defaultValue": [],
       "metadata": {
         "description": "Settings for virtual network gateways"
       }
     },
     "publicIpAddresses": {
       "type": "array",
+      "defaultValue": [],
       "metadata": {
         "description": "Settings for public IP addresses for virtual network gateways"
       }
@@ -27,7 +29,11 @@
     "virtualNetworkGatewaysTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/virtualNetworkGateways/virtualNetworkGateways.json')]",
     "publicIpAddressTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/publicIPAddresses/publicIPAddress.json')]",
     "iteratorTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/common/resources.json')]",
-    "publicIpAddressTemplateDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployPips-', variables('templateUniqueString'))]"
+    "publicIpAddressTemplateDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployPips-', variables('templateUniqueString'))]",
+    "gateways": {
+      "true": "[parameters('virtualNetworkGateways')]",
+      "false": [{}]
+    }
   },
   "resources": [
     {
@@ -61,12 +67,13 @@
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2015-01-01",
       "name": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployVng', copyIndex(), '-', variables('templateUniqueString'))]",
+      "condition": "[greater(length(parameters('virtualNetworkGateways')), 0)]",
       "dependsOn": [
           "[variables('publicIpAddressTemplateDeploymentName')]"
       ],
       "copy": {
         "name": "vngIterator",
-        "count": "[length(parameters('virtualNetworkGateways'))]"
+        "count": "[length(variables('gateways')[string(greater(length(parameters('virtualNetworkGateways')), 0))])]"
       },
       "properties": {
         "mode": "Incremental",
@@ -75,7 +82,7 @@
         },
         "parameters": {
           "source": {
-            "value": "[parameters('virtualNetworkGateways')[copyIndex()]]"
+            "value": "[variables('gateways')[string(greater(length(parameters('virtualNetworkGateways')), 0))][copyIndex()]]"
           }
         }
       }
