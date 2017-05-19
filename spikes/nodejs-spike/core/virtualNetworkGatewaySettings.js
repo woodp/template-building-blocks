@@ -57,7 +57,7 @@ let bgpSettingsValidations = {
 
 let virtualNetworkGatewaySettingsValidations = {
     name: v.utilities.isNotNullOrWhitespace,
-    subscriptionId: v.utilities.isGuid,
+    subscriptionId: v.validationUtilities.isGuid,
     resourceGroupName: v.utilities.isNotNullOrWhitespace,
     gatewayType: (value) => {
         return {
@@ -86,12 +86,20 @@ let virtualNetworkGatewaySettingsValidations = {
         };
     },
     virtualNetwork: r.resourceReferenceValidations,
-    isPublic: (value) => {
-        return _.isUndefined(value) ? {
-            result: true
-        } : {
-            validations: v.validationUtilities.isBoolean
-        };
+    isPublic: (value, parent) => {
+        // If this isn't a boolean, then just return the error.  Otherwise, if this is an ExpressRoute gateway, isPublic must be true.
+        let result = v.validationUtilities.isBoolean(value);
+        if (result.result) {
+            // We have a valid boolean, so we can use the value.
+            if ((parent.gatewayType === 'ExpressRoute') && (!value)) {
+                result = {
+                    result: false,
+                    message: 'Value must be true for an ExpressRoute Virtual Network Gateway'
+                };
+            }
+        }
+        
+        return result;
     },
     publicIpAddress: (value) => {
         return _.isNil(value) ? {
@@ -172,13 +180,18 @@ let merge = ({settings, buildingBlockSettings, defaultSettings = virtualNetworkG
         return ((parentKey === null) || (parentKey === 'virtualNetwork') || (parentKey === 'publicIpAddress'));
     });
 
-    return v.merge(merged, defaultSettings, (objValue, srcValue, key) => {
+    merged = v.merge(merged, defaultSettings, (objValue, srcValue, key) => {
         if ((key === 'publicIpAddress') && (srcValue)) {
-            return publicIpAddress.merge({
-                setting: srcValue
+            let results = publicIpAddress.merge({
+                settings: srcValue,
+                buildingBlockSettings: buildingBlockSettings
             });
+
+            return results;
         }
     });
+
+    return merged;
 };
 
 exports.transform = function ({ settings, buildingBlockSettings }) {
@@ -189,7 +202,7 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
     let buildingBlockErrors = v.validate({
         settings: buildingBlockSettings,
         validations: {
-            subscriptionId: v.utilities.isGuid,
+            subscriptionId: v.validationUtilities.isGuid,
             resourceGroupName: v.utilities.isNotNullOrWhitespace,
         }
     });
@@ -218,7 +231,7 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
                 settings: setting.publicIpAddress,
                 buildingBlockSettings: buildingBlockSettings
             });
-            result.publicIpAddresses.push(pip[0]);
+            result.publicIpAddresses.push(pip.publicIpAddresses[0]);
         }
 
         setting = transform(setting);
@@ -227,6 +240,17 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
         virtualNetworkGateways: [],
         publicIpAddresses: []
     });
+
+    // We need to reshape the results a bit since there could be both an ExpressRoute and Vpn gateway for the same virtual network
+    // If this is the case, the ExpressRoute gateway MUST be created first, so we'll put it at the front of the array.
+    results.virtualNetworkGateways = _.values(_.transform(results.virtualNetworkGateways, (result, setting) => {
+        if (_.isUndefined(result[setting.properties.ipConfigurations[0].properties.subnet.id])) {
+            result[setting.properties.ipConfigurations[0].properties.subnet.id] = [];
+        }
+
+        let proto = (setting.properties.gatewayType === 'ExpressRoute') ? Array.prototype.unshift : Array.prototype.push;
+        proto.call(result[setting.properties.ipConfigurations[0].properties.subnet.id], setting);
+    }, {}));
 
     return results;
 };
