@@ -25,7 +25,7 @@ let virtualNetworkPeeringsSettingsDefaults = {
 
 let virtualNetworkSettingsSubnetsValidations = {
     name: v.utilities.isNotNullOrWhitespace,
-    addressPrefix: v.utilities.networking.isValidCidr
+    addressPrefix: v.validationUtilities.isValidCidr
 };
 
 let virtualNetworkSettingsPeeringValidations = {
@@ -52,7 +52,7 @@ let virtualNetworkSettingsPeeringValidations = {
 
 let virtualNetworkSettingsValidations = {
     name: v.utilities.isNotNullOrWhitespace,
-    addressPrefixes: v.utilities.networking.isValidCidr,
+    addressPrefixes: v.validationUtilities.isValidCidr,
     subnets: virtualNetworkSettingsSubnetsValidations,
     dnsServers: (value) => {
         // An empty array is okay
@@ -67,7 +67,7 @@ let virtualNetworkSettingsValidations = {
             };
         } else if (value.length > 0) {
             result = {
-                validations: v.utilities.networking.isValidIpAddress
+                validations: v.validationUtilities.isValidIpAddress
             };
         }
 
@@ -165,7 +165,7 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
     let buildingBlockErrors = v.validate({
         settings: buildingBlockSettings,
         validations: {
-            subscriptionId: v.utilities.isGuid,
+            subscriptionId: v.validationUtilities.isGuid,
             resourceGroupName: v.utilities.isNotNullOrWhitespace,
         }
     });

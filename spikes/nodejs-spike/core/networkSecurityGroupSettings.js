@@ -209,7 +209,7 @@ exports.transform = function ({settings, buildingBlockSettings}) {
     let buildingBlockErrors = v.validate({
         settings: buildingBlockSettings,
         validations: {
-            subscriptionId: v.utilities.isGuid,
+            subscriptionId: v.validationUtilities.isGuid,
             resourceGroupName: v.utilities.isNotNullOrWhitespace,
         }
     });

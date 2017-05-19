@@ -16,8 +16,8 @@ let isValidConnectionType = (connectionType) => {
 
 let localNetworkGatewayValidations = {
     name: v.utilities.isNotNullOrWhitespace,
-    ipAddress: v.utilities.networking.isValidIpAddress,
-    addressPrefixes: v.utilities.networking.isValidCidr
+    ipAddress: v.validationUtilities.isValidIpAddress,
+    addressPrefixes: v.validationUtilities.isValidCidr
 };
 
 let expressRouteCircuitValidations = {
@@ -264,13 +264,13 @@ function transform(settings) {
 
 let merge = ({settings, buildingBlockSettings, defaultSettings = connectionSettingsDefaults}) => {
     let merged = r.setupResources(settings, buildingBlockSettings, (parentKey) => {
-         return ((parentKey === null) ||
-                (v.utilities.isStringInArray(parentKey,
-                ['virtualNetworkGateway', 'localNetworkGateway', 'expressRouteCircuit', 'virtualNetworkGateway1', 'virtualNetworkGateway2'])));
+        return ((parentKey === null) ||
+               (v.utilities.isStringInArray(parentKey,
+               ['virtualNetworkGateway', 'localNetworkGateway', 'expressRouteCircuit', 'virtualNetworkGateway1', 'virtualNetworkGateway2'])));
     });
 
     return v.merge(merged, defaultSettings);
-}
+};
 
 exports.transform = function ({ settings, buildingBlockSettings }) {
     if (_.isPlainObject(settings)) {
@@ -280,7 +280,7 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
     let buildingBlockErrors = v.validate({
         settings: buildingBlockSettings,
         validations: {
-            subscriptionId: v.utilities.isGuid,
+            subscriptionId: v.validationUtilities.isGuid,
             resourceGroupName: v.utilities.isNotNullOrWhitespace,
         }
     });

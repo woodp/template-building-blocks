@@ -17,7 +17,7 @@ let isValidNextHopType = (nextHopType) => {
 
 let routeValidations = {
     name: v.utilities.isNotNullOrWhitespace,
-    addressPrefix: v.utilities.networking.isValidCidr,
+    addressPrefix: v.validationUtilities.isValidCidr,
     nextHopType: (value) => {
         return {
             result: isValidNextHopType(value),
@@ -162,7 +162,7 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
     let buildingBlockErrors = v.validate({
         settings: buildingBlockSettings,
         validations: {
-            subscriptionId: v.utilities.isGuid,
+            subscriptionId: v.validationUtilities.isGuid,
             resourceGroupName: v.utilities.isNotNullOrWhitespace,
         }
     });

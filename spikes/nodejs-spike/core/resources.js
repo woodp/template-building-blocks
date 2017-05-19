@@ -82,6 +82,6 @@ exports.setupResources = function (settings, buildingBlockSettings, keyCallback)
 
 exports.resourceReferenceValidations = {
     name: validation.utilities.isNotNullOrWhitespace,
-    subscriptionId: validation.utilities.isGuid,
+    subscriptionId: validation.validationUtilities.isGuid,
     resourceGroupName: validation.utilities.isNotNullOrWhitespace
 };

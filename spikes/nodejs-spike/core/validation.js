@@ -245,6 +245,24 @@ let validationUtilities = {
             result: _.isBoolean(value),
             message: 'Value must be Boolean'
         };
+    },
+    isGuid: (value) => {
+        return {
+            result: utilities.isGuid(value),
+            message: 'Value is not a valid GUID'
+        };
+    },
+    isValidIpAddress: (value) => {
+        return {
+            result: utilities.networking.isValidIpAddress(value),
+            message: 'Value is not a valid IP Address'
+        };
+    },
+    isValidCidr: (value) => {
+        return {
+            result: utilities.networking.isValidCidr(value),
+            message: 'Value is not a valid CIDR'
+        };
     }
 };
 
