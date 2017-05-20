@@ -1,4 +1,6 @@
-let _ = require('../lodashMixins.js');
+'use strict';
+
+let _ = require('lodash');
 let v = require('./validation.js');
 let r = require('./resources.js');
 
@@ -18,8 +20,7 @@ let bgpSettingsValidations = {
         return _.isNil(value) ? {
             result: true
         } : {
-            result: !v.utilities.isNullOrWhitespace(value),
-            message: 'Value cannot be null, empty, or only whitespace'
+            validations: v.validationUtilities.isNotNullOrWhitespace
         };
     },
     peerWeight: (value) => {

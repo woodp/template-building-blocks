@@ -1,6 +1,6 @@
 'use strict';
 
-let _ = require('../lodashMixins.js');
+let _ = require('lodash');
 let validationMessages = require('./validationMessages.js');
 
 function merge(settings, defaultSettings, mergeCustomizer) {

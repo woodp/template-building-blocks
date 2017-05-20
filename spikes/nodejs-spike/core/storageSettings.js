@@ -1,6 +1,7 @@
+'use strict';
 
 var fs = require('fs');
-var _ = require('../lodashMixins.js');
+var _ = require('lodash');
 let v = require('./validation.js');
 let murmurHash = require('murmurhash-native').murmurHash64;
 

@@ -1,7 +1,7 @@
 describe('storageSettings:', () => {
     let rewire = require('rewire');
     let storageSettings = rewire('../core/storageSettings.js');
-    let _ = require('../lodashMixins.js');
+    let _ = require('lodash');
 
     describe('storage accounts merge:', () => {
 

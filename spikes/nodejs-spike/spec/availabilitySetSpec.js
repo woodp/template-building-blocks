@@ -1,7 +1,7 @@
 describe('availabilitySetSettings:', () => {
     let rewire = require('rewire');
     let availabilitySetSettings = rewire('../core/availabilitySetSettings.js');
-    let _ = require('../lodashMixins.js');
+    let _ = require('lodash');
 
     describe('merge:', () => {
 

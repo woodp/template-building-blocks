@@ -1,6 +1,6 @@
 'use strict';
 
-let _ = require('../lodashMixins.js');
+let _ = require('lodash');
 let validation = require('./validation.js');
 let validationMessages = require('./validationMessages.js');
 

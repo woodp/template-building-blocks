@@ -1,6 +1,7 @@
+'use strict';
 
 var fs = require('fs');
-var _ = require('../lodashMixins.js');
+var _ = require('lodash');
 var pipSettings = require('./pipSettings.js');
 var resources = require('./resources.js');
 let v = require('./validation.js');

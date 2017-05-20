@@ -1,7 +1,7 @@
 describe('networkInterfaceSettings:', () => {
     let rewire = require('rewire');
     let networkInterfaceSettings = rewire('../core/networkInterfaceSettings.js');
-    let _ = require('../lodashMixins.js');
+    let _ = require('lodash');
     let v = require('../core/validation.js');
 
     describe('merge:', () => {

@@ -1,4 +1,6 @@
-let _ = require('../lodashMixins.js');
+'use strict';
+
+let _ = require('lodash');
 let v = require('./validation.js');
 let r = require('./resources.js');
 
