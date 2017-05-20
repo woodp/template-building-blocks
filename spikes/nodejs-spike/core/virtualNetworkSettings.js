@@ -24,7 +24,7 @@ let virtualNetworkPeeringsSettingsDefaults = {
 };
 
 let virtualNetworkSettingsSubnetsValidations = {
-    name: v.utilities.isNotNullOrWhitespace,
+    name: v.validationUtilities.isNotNullOrWhitespace,
     addressPrefix: v.validationUtilities.isValidCidr
 };
 
@@ -37,13 +37,12 @@ let virtualNetworkSettingsPeeringValidations = {
             };
         } else {
             return {
-                result: v.utilities.isNotNullOrWhitespace(value),
-                message: 'name must not be null or only whitespace'
+                validations: v.validationUtilities.isNotNullOrWhitespace
             };
         }
     },
     remoteVirtualNetwork: {
-        name: v.utilities.isNotNullOrWhitespace
+        name: v.validationUtilities.isNotNullOrWhitespace
     },
     allowForwardedTraffic: _.isBoolean,
     allowGatewayTransit: _.isBoolean,
@@ -51,7 +50,7 @@ let virtualNetworkSettingsPeeringValidations = {
 };
 
 let virtualNetworkSettingsValidations = {
-    name: v.utilities.isNotNullOrWhitespace,
+    name: v.validationUtilities.isNotNullOrWhitespace,
     addressPrefixes: v.validationUtilities.isValidCidr,
     subnets: virtualNetworkSettingsSubnetsValidations,
     dnsServers: (value) => {
@@ -166,7 +165,7 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
         settings: buildingBlockSettings,
         validations: {
             subscriptionId: v.validationUtilities.isGuid,
-            resourceGroupName: v.utilities.isNotNullOrWhitespace,
+            resourceGroupName: v.validationUtilities.isNotNullOrWhitespace,
         }
     });
 

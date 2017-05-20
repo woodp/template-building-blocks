@@ -22,7 +22,7 @@ let isValidSkuFamily = (family) => {
 };
 
 let expressRouteCircuitSettingsValidations = {
-    name: v.utilities.isNotNullOrWhitespace,
+    name: v.validationUtilities.isNotNullOrWhitespace,
     skuTier: (value) => {
         return {
             result: isValidSkuTier(value),
@@ -35,10 +35,10 @@ let expressRouteCircuitSettingsValidations = {
             message: `Valid values are ${validSkuFamilies.join(',')}`
         };
     },
-    serviceProviderName: v.utilities.isNotNullOrWhitespace,
-    peeringLocation: v.utilities.isNotNullOrWhitespace,
+    serviceProviderName: v.validationUtilities.isNotNullOrWhitespace,
+    peeringLocation: v.validationUtilities.isNotNullOrWhitespace,
     bandwidthInMbps: _.isFinite,
-    allowClassicOperations: _.isBoolean
+    allowClassicOperations: v.validationUtilities.isBoolean
 };
 
 function transform(settings) {
@@ -65,29 +65,24 @@ function transform(settings) {
     return result;
 }
 
+let merge = ({settings, buildingBlockSettings, defaultSettings = expressRouteCircuitSettingsDefaults}) => {
+    let merged = r.setupResources(settings, buildingBlockSettings, (parentKey) => {
+        return (parentKey === null);
+    });
+
+    return v.merge(merged, defaultSettings);
+};
+
 exports.transform = function ({ settings, buildingBlockSettings }) {
     if (_.isPlainObject(settings)) {
         settings = [settings];
     }
 
-    let results = _.transform(settings, (result, setting) => {
-        let merged = v.merge(setting, expressRouteCircuitSettingsDefaults);
-        let errors = v.validate({
-            settings: merged,
-            validations: expressRouteCircuitSettingsValidations
-        });
-        if (errors.length > 0) {
-            throw new Error(JSON.stringify(errors));
-        }
-
-        result.push(merged);
-    }, []);
-
     let buildingBlockErrors = v.validate({
         settings: buildingBlockSettings,
         validations: {
-            subscriptionId: v.utilities.isNotNullOrWhitespace,
-            resourceGroupName: v.utilities.isNotNullOrWhitespace,
+            subscriptionId: v.validationUtilities.isGuid,
+            resourceGroupName: v.validationUtilities.isNotNullOrWhitespace,
         }
     });
 
@@ -95,13 +90,25 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
         throw new Error(JSON.stringify(buildingBlockErrors));
     }
 
-    results = _.transform(results, (result, setting) => {
-        setting = r.setupResources(setting, buildingBlockSettings, (parentKey) => {
-            return (parentKey === null);
-        });
-        setting = transform(setting);
-        result.push(setting);
-    }, []);
+    let results = merge({
+        settings: settings,
+        buildingBlockSettings: buildingBlockSettings
+    });
 
-    return { settings: results };
+    let errors = v.validate({
+        settings: results,
+        validations: expressRouteCircuitSettingsValidations
+    });
+
+    if (errors.length > 0) {
+        throw new Error(JSON.stringify(errors));
+    }
+
+    results = _.map(results, (setting) => {
+        return transform(setting);
+    });
+
+    return {
+        expressRouteCircuits: results
+    };
 };

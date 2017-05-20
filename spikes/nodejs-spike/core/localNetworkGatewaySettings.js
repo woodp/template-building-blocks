@@ -33,7 +33,7 @@ let bgpSettingsValidations = {
 };
 
 let localNetworkGatewayValidations = {
-    name: v.utilities.isNotNullOrWhitespace,
+    name: v.validationUtilities.isNotNullOrWhitespace,
     addressPrefixes: v.validationUtilities.isValidCidr,
     ipAddress: v.validationUtilities.isValidIpAddress,
     bgpSettings: (value) => {
@@ -85,7 +85,7 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
         settings: buildingBlockSettings,
         validations: {
             subscriptionId: v.validationUtilities.isGuid,
-            resourceGroupName: v.utilities.isNotNullOrWhitespace,
+            resourceGroupName: v.validationUtilities.isNotNullOrWhitespace,
         }
     });
 

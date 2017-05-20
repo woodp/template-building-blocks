@@ -16,7 +16,7 @@ let isValidNextHopType = (nextHopType) => {
 };
 
 let routeValidations = {
-    name: v.utilities.isNotNullOrWhitespace,
+    name: v.validationUtilities.isNotNullOrWhitespace,
     addressPrefix: v.validationUtilities.isValidCidr,
     nextHopType: (value) => {
         return {
@@ -30,7 +30,7 @@ let routeValidations = {
 };
 
 let virtualNetworkValidations = {
-    name: v.utilities.isNotNullOrWhitespace,
+    name: v.validationUtilities.isNotNullOrWhitespace,
     subnets: (value) => {
         if ((_.isNil(value)) || (value.length === 0)) {
             return {
@@ -39,14 +39,14 @@ let virtualNetworkValidations = {
             };
         } else {
             return {
-                validations: v.utilities.isNotNullOrWhitespace
+                validations: v.validationUtilities.isNotNullOrWhitespace
             };
         }
     }
 };
 
 let routeTableSettingsValidations = {
-    name: v.utilities.isNotNullOrWhitespace,
+    name: v.validationUtilities.isNotNullOrWhitespace,
     routes: (value) => {
         if ((_.isNil(value)) || (value.length === 0)) {
             return {
@@ -57,7 +57,7 @@ let routeTableSettingsValidations = {
 
         // Validate route names
         let names = _.reduce(value, (accumulator, value) => {
-            if (v.utilities.isNotNullOrWhitespace(value.name)) {
+            if (!v.utilities.isNullOrWhitespace(value.name)) {
                 if (!accumulator[value.name]) {
                     accumulator[value.name] = 0;
                 }
@@ -163,7 +163,7 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
         settings: buildingBlockSettings,
         validations: {
             subscriptionId: v.validationUtilities.isGuid,
-            resourceGroupName: v.utilities.isNotNullOrWhitespace,
+            resourceGroupName: v.validationUtilities.isNotNullOrWhitespace,
         }
     });
 

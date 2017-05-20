@@ -56,9 +56,9 @@ let bgpSettingsValidations = {
 };
 
 let virtualNetworkGatewaySettingsValidations = {
-    name: v.utilities.isNotNullOrWhitespace,
+    name: v.validationUtilities.isNotNullOrWhitespace,
     subscriptionId: v.validationUtilities.isGuid,
-    resourceGroupName: v.utilities.isNotNullOrWhitespace,
+    resourceGroupName: v.validationUtilities.isNotNullOrWhitespace,
     gatewayType: (value) => {
         return {
             result: isValidGatewayType(value),
@@ -203,7 +203,7 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
         settings: buildingBlockSettings,
         validations: {
             subscriptionId: v.validationUtilities.isGuid,
-            resourceGroupName: v.utilities.isNotNullOrWhitespace,
+            resourceGroupName: v.validationUtilities.isNotNullOrWhitespace,
         }
     });
 

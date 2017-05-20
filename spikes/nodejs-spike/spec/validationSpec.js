@@ -74,26 +74,26 @@ describe('validation', () => {
             });
         });
 
-        describe('isNotNullOrWhitespace', () => {
-            let isNotNullOrWhitespace = validation.utilities.isNotNullOrWhitespace;
+        describe('isNullOrWhitespace', () => {
+            let isNullOrWhitespace = validation.utilities.isNullOrWhitespace;
             it('undefined', () => {
-                expect(isNotNullOrWhitespace()).toEqual(false);
+                expect(isNullOrWhitespace()).toEqual(true);
             });
 
             it('null', () => {
-                expect(isNotNullOrWhitespace(null)).toEqual(false);
+                expect(isNullOrWhitespace(null)).toEqual(true);
             });
 
             it('empty', () => {
-                expect(isNotNullOrWhitespace('')).toEqual(false);
+                expect(isNullOrWhitespace('')).toEqual(true);
             });
 
             it('whitespace', () => {
-                expect(isNotNullOrWhitespace(' ')).toEqual(false);
+                expect(isNullOrWhitespace(' ')).toEqual(true);
             });
 
             it('valid', () => {
-                expect(isNotNullOrWhitespace('valid')).toEqual(true);
+                expect(isNullOrWhitespace('valid')).toEqual(false);
             });
         });
 

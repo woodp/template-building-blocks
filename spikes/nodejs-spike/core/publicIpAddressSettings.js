@@ -19,9 +19,9 @@ let isValidIPAddressVersion = (ipAddressVersion) => {
 };
 
 let publicIpAddressValidations = {
-    name: v.utilities.isNotNullOrWhitespace,
+    name: v.validationUtilities.isNotNullOrWhitespace,
     subscriptionId: v.validationUtilities.isGuid,
-    resourceGroupName: v.utilities.isNotNullOrWhitespace,
+    resourceGroupName: v.validationUtilities.isNotNullOrWhitespace,
     publicIPAllocationMethod: (value) => {
         return {
             result: isValidIPAllocationMethod(value),
@@ -43,8 +43,7 @@ let publicIpAddressValidations = {
         return _.isUndefined(value) ? {
             result: true
         } : {
-            result: v.utilities.isNotNullOrWhitespace(value),
-            message: 'Value must not be null, empty, or only whitespace'
+            validations: v.validationUtilities.isNotNullOrWhitespace
         };
     },
     reverseFqdn: (value, parent) => {
@@ -54,8 +53,7 @@ let publicIpAddressValidations = {
             result: false,
             message: 'reverseFqdn cannot be set if publicIPAddressVersion is IPv6'
         } : {
-            result: v.utilities.isNotNullOrWhitespace(value),
-            message: 'Value must not be null, empty, or only whitespace'
+            validations: v.validationUtilities.isNotNullOrWhitespace
         };
     }
 };
@@ -108,7 +106,7 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
         settings: buildingBlockSettings,
         validations: {
             subscriptionId: v.validationUtilities.isGuid,
-            resourceGroupName: v.utilities.isNotNullOrWhitespace,
+            resourceGroupName: v.validationUtilities.isNotNullOrWhitespace,
         }
     });
 

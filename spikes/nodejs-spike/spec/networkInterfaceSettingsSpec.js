@@ -158,13 +158,13 @@ describe('networkInterfaceSettings:', () => {
             let validation = networkInterfaceSettings.__get__('networkInterfaceValidations').subnetName;
             it('validate name canot be an empty string.', () => {
                 let result = validation('', nicParam);
-                expect(result).toEqual(false);
+                expect(result.result).toEqual(false);
 
                 result = validation('test', nicParam);
-                expect(result).toEqual(true);
+                expect(result.result).toEqual(true);
 
                 result = validation(null, nicParam);
-                expect(result).toEqual(false);
+                expect(result.result).toEqual(false);
             });
         });
         describe('dnsServers:', () => {

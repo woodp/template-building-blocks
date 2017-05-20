@@ -39,7 +39,7 @@ let isValidAccess = (access) => {
 };
 
 let networkSecurityGroupSettingsSecurityRulesValidations = {
-    name: v.utilities.isNotNullOrWhitespace,
+    name: v.validationUtilities.isNotNullOrWhitespace,
     protocol: (value) => {
         return {
             result: isValidProtocol(value),
@@ -76,7 +76,7 @@ let networkSecurityGroupSettingsSecurityRulesValidations = {
 };
 
 let virtualNetworkValidations = {
-    name: v.utilities.isNotNullOrWhitespace,
+    name: v.validationUtilities.isNotNullOrWhitespace,
     subnets: (value) => {
         if ((_.isNil(value)) || (value.length === 0)) {
             return {
@@ -85,18 +85,18 @@ let virtualNetworkValidations = {
             };
         } else {
             return {
-                validations: v.utilities.isNotNullOrWhitespace
+                validations: v.validationUtilities.isNotNullOrWhitespace
             };
         }
     }
 };
 
 let networkInterfaceValidations = {
-    name: v.utilities.isNotNullOrWhitespace
+    name: v.validationUtilities.isNotNullOrWhitespace
 };
 
 let networkSecurityGroupSettingsValidations = {
-    name: v.utilities.isNotNullOrWhitespace,
+    name: v.validationUtilities.isNotNullOrWhitespace,
     securityRules: (value) => {
         // We allow empty arrays
         let result = {
@@ -210,7 +210,7 @@ exports.transform = function ({settings, buildingBlockSettings}) {
         settings: buildingBlockSettings,
         validations: {
             subscriptionId: v.validationUtilities.isGuid,
-            resourceGroupName: v.utilities.isNotNullOrWhitespace,
+            resourceGroupName: v.validationUtilities.isNotNullOrWhitespace,
         }
     });
 

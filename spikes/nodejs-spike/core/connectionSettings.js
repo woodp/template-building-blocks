@@ -15,21 +15,21 @@ let isValidConnectionType = (connectionType) => {
 };
 
 let localNetworkGatewayValidations = {
-    name: v.utilities.isNotNullOrWhitespace,
+    name: v.validationUtilities.isNotNullOrWhitespace,
     ipAddress: v.validationUtilities.isValidIpAddress,
     addressPrefixes: v.validationUtilities.isValidCidr
 };
 
 let expressRouteCircuitValidations = {
-    name: v.utilities.isNotNullOrWhitespace
+    name: v.validationUtilities.isNotNullOrWhitespace
 };
 
 let virtualNetworkGatewayValidations = {
-    name: v.utilities.isNotNullOrWhitespace
+    name: v.validationUtilities.isNotNullOrWhitespace
 };
 
 let connectionSettingsValidations = {
-    name: v.utilities.isNotNullOrWhitespace,
+    name: v.validationUtilities.isNotNullOrWhitespace,
     connectionType: (value) => {
         return {
             result: isValidConnectionType(value),
@@ -54,8 +54,7 @@ let connectionSettingsValidations = {
                 }
             } else {
                 result = {
-                    result: v.utilities.isNotNullOrWhitespace(value),
-                    message: 'sharedKey cannot be null, empty, or only whitespace'
+                    validations: v.validationUtilities.isNotNullOrWhitespace
                 };
             }
         }
@@ -281,7 +280,7 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
         settings: buildingBlockSettings,
         validations: {
             subscriptionId: v.validationUtilities.isGuid,
-            resourceGroupName: v.utilities.isNotNullOrWhitespace,
+            resourceGroupName: v.validationUtilities.isNotNullOrWhitespace,
         }
     });
 

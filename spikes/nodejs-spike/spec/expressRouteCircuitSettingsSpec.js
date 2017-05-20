@@ -402,29 +402,24 @@ describe('expressRouteCircuitSettings', () => {
                 buildingBlockSettings: buildingBlockSettings
             });
 
-            expect(result.settings.length).toBe(1);
-            let settingsResult = result.settings[0];
+            expect(result.expressRouteCircuits.length).toBe(1);
+            let settingsResult = result.expressRouteCircuits[0];
             expect(settingsResult.hasOwnProperty('id')).toBe(true);
-            expect(settingsResult.hasOwnProperty('name')).toBe(true);
+            expect(settingsResult.name).toEqual(settings.name);
             expect(settingsResult.hasOwnProperty('resourceGroupName')).toBe(true);
             expect(settingsResult.hasOwnProperty('subscriptionId')).toBe(true);
 
-            expect(settingsResult.hasOwnProperty('sku')).toBe(true);
             let skuResult = settingsResult.sku;
-            expect(skuResult.hasOwnProperty('tier')).toBe(true);
-            expect(skuResult.hasOwnProperty('family')).toBe(true);
-            expect(skuResult.name).toEqual(`${skuResult.tier}_${skuResult.family}`);
+            expect(skuResult.tier).toEqual(settings.skuTier);
+            expect(skuResult.family).toEqual(settings.skuFamily);
+            expect(skuResult.name).toEqual(`${settings.skuTier}_${settings.skuFamily}`);
 
-            expect(settingsResult.hasOwnProperty('properties')).toBe(true);
-            let propertiesResult = settingsResult.properties;
-            
-            expect(propertiesResult.hasOwnProperty('serviceProviderProperties')).toBe(true);
-            let serviceProviderPropertiesResult = propertiesResult.serviceProviderProperties;
-            expect(serviceProviderPropertiesResult.hasOwnProperty('serviceProviderName')).toBe(true);
-            expect(serviceProviderPropertiesResult.hasOwnProperty('peeringLocation')).toBe(true);
-            expect(serviceProviderPropertiesResult.hasOwnProperty('peeringLocation')).toBe(true);
+            expect(settingsResult.properties.allowClassicOperations).toEqual(settings.allowClassicOperations);
 
-            expect(propertiesResult.hasOwnProperty('allowClassicOperations')).toBe(true);
+            let serviceProviderPropertiesResult = settingsResult.properties.serviceProviderProperties;
+            expect(serviceProviderPropertiesResult.serviceProviderName).toEqual(settings.serviceProviderName);
+            expect(serviceProviderPropertiesResult.peeringLocation).toEqual(settings.peeringLocation);
+            expect(serviceProviderPropertiesResult.bandwidthInMbps).toEqual(settings.bandwidthInMbps);
         });
 
         it('array expressRouteCircuits', () => {
@@ -434,29 +429,24 @@ describe('expressRouteCircuitSettings', () => {
                 buildingBlockSettings: buildingBlockSettings
             });
 
-            expect(result.settings.length).toBe(1);
-            let settingsResult = result.settings[0];
+            expect(result.expressRouteCircuits.length).toBe(1);
+            let settingsResult = result.expressRouteCircuits[0];
             expect(settingsResult.hasOwnProperty('id')).toBe(true);
-            expect(settingsResult.hasOwnProperty('name')).toBe(true);
+            expect(settingsResult.name).toEqual(settings.name);
             expect(settingsResult.hasOwnProperty('resourceGroupName')).toBe(true);
             expect(settingsResult.hasOwnProperty('subscriptionId')).toBe(true);
 
-            expect(settingsResult.hasOwnProperty('sku')).toBe(true);
             let skuResult = settingsResult.sku;
-            expect(skuResult.hasOwnProperty('tier')).toBe(true);
-            expect(skuResult.hasOwnProperty('family')).toBe(true);
-            expect(skuResult.name).toEqual(`${skuResult.tier}_${skuResult.family}`);
+            expect(skuResult.tier).toEqual(settings.skuTier);
+            expect(skuResult.family).toEqual(settings.skuFamily);
+            expect(skuResult.name).toEqual(`${settings.skuTier}_${settings.skuFamily}`);
 
-            expect(settingsResult.hasOwnProperty('properties')).toBe(true);
-            let propertiesResult = settingsResult.properties;
-            
-            expect(propertiesResult.hasOwnProperty('serviceProviderProperties')).toBe(true);
-            let serviceProviderPropertiesResult = propertiesResult.serviceProviderProperties;
-            expect(serviceProviderPropertiesResult.hasOwnProperty('serviceProviderName')).toBe(true);
-            expect(serviceProviderPropertiesResult.hasOwnProperty('peeringLocation')).toBe(true);
-            expect(serviceProviderPropertiesResult.hasOwnProperty('peeringLocation')).toBe(true);
+            expect(settingsResult.properties.allowClassicOperations).toEqual(settings.allowClassicOperations);
 
-            expect(propertiesResult.hasOwnProperty('allowClassicOperations')).toBe(true);
+            let serviceProviderPropertiesResult = settingsResult.properties.serviceProviderProperties;
+            expect(serviceProviderPropertiesResult.serviceProviderName).toEqual(settings.serviceProviderName);
+            expect(serviceProviderPropertiesResult.peeringLocation).toEqual(settings.peeringLocation);
+            expect(serviceProviderPropertiesResult.bandwidthInMbps).toEqual(settings.bandwidthInMbps);
         });
 
         it('test settings validation errors', () => {

@@ -78,19 +78,19 @@ function defaultsCustomizer(objValue, srcValue, key) {
 let encryptionSettingsValidations = {
     enabled: _.isBoolean,
     diskEncryptionKey: {
-        secretUrl: v.utilities.isNotNullOrWhitespace,
-        sourceVaultName: v.utilities.isNotNullOrWhitespace
+        secretUrl: v.validationUtilities.isNotNullOrWhitespace,
+        sourceVaultName: v.validationUtilities.isNotNullOrWhitespace
     },
     keyEncryptionKey: {
-        keyUrl: v.utilities.isNotNullOrWhitespace,
-        sourceVaultName: v.utilities.isNotNullOrWhitespace
+        keyUrl: v.validationUtilities.isNotNullOrWhitespace,
+        sourceVaultName: v.validationUtilities.isNotNullOrWhitespace
     }
 };
 
 let virtualMachineValidations = {
     virtualNetwork: () => {
         let virtualNetworkValidations = {
-            name: v.utilities.isNotNullOrWhitespace
+            name: v.validationUtilities.isNotNullOrWhitespace
         };
 
         return {
@@ -103,14 +103,14 @@ let virtualMachineValidations = {
             message: 'Value must be greater than 0'
         };
     },
-    namePrefix: v.utilities.isNotNullOrWhitespace,
+    namePrefix: v.validationUtilities.isNotNullOrWhitespace,
     computerNamePrefix: (value) => {
         return {
-            result: v.utilities.isNotNullOrWhitespace(value) && (value.length < 7),
+            result: (!v.utilities.isNullOrWhitespace(value)) && (value.length < 7),
             message: 'Value cannot be longer than 6 characters'
         };
     },
-    size: v.utilities.isNotNullOrWhitespace,
+    size: v.validationUtilities.isNotNullOrWhitespace,
     osDisk: (value, parent) => {
         // We will need this, so we'll capture here.
         let isManagedStorageAccounts = parent.storageAccounts.managed;
@@ -249,7 +249,7 @@ let virtualMachineValidations = {
         }
         return { result: true };
     },
-    adminUsername: v.utilities.isNotNullOrWhitespace,
+    adminUsername: v.validationUtilities.isNotNullOrWhitespace,
     osAuthenticationType: (value, parent) => {
         let result = {
             result: true

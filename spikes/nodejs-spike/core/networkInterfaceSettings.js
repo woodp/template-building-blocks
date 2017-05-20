@@ -21,7 +21,7 @@ let isValidIPAllocationMethod = (ipAllocationMethod) => {
 
 let networkInterfaceValidations = {
     enableIPForwarding: v.validationUtilities.isBoolean,
-    subnetName: v.utilities.isNotNullOrWhitespace,
+    subnetName: v.validationUtilities.isNotNullOrWhitespace,
     privateIPAllocationMethod: (value, parent) => {
         let result = {
             result: true
@@ -90,7 +90,7 @@ function createPipParameters(parent, vmIndex) {
         namePrefix: parent.name,
         publicIPAllocationMethod: parent.publicIPAllocationMethod
     };
-    if(v.utilities.isNotNullOrWhitespace(parent.domainNameLabelPrefix)) {
+    if(!v.utilities.isNullOrWhitespace(parent.domainNameLabelPrefix)) {
         settings.domainNameLabel = `${parent.domainNameLabelPrefix}${vmIndex}`;
     }
     return pipSettings.processPipSettings(settings);
