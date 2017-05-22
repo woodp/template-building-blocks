@@ -69,7 +69,7 @@ let networkSecurityGroupSettingsSecurityRulesValidations = {
     priority: (value) => {
         return {
             result: isValidPriority(value),
-            message: `Valid value is between 100 and 4096, inclusive`
+            message: 'Valid value is between 100 and 4096, inclusive'
         };
     },
     access: (value) => {
@@ -199,7 +199,7 @@ function transform(settings) {
 
 let merge = ({settings, buildingBlockSettings, defaultSettings = networkSecurityGroupSettingsDefaults}) => {
     let merged = r.setupResources(settings, buildingBlockSettings, (parentKey) => {
-        return ((parentKey === null) || (parentKey === 'virtualNetworks') || (parentKey === 'networkInterfaces'));
+        return ((parentKey === null) || (v.utilities.isStringInArray(parentKey, ['virtualNetworks', 'networkInterfaces'])));
     });
 
     merged = v.merge(merged, defaultSettings, mergeCustomizer);

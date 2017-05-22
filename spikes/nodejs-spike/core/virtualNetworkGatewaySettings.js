@@ -177,7 +177,7 @@ let merge = ({settings, buildingBlockSettings, defaultSettings = virtualNetworkG
     });
 
     merged = r.setupResources(merged, buildingBlockSettings, (parentKey) => {
-        return ((parentKey === null) || (parentKey === 'virtualNetwork') || (parentKey === 'publicIpAddress'));
+        return ((parentKey === null) || (v.utilities.isStringInArray(parentKey, ['virtualNetwork', 'publicIpAddress'])));
     });
 
     merged = v.merge(merged, defaultSettings, (objValue, srcValue, key) => {
