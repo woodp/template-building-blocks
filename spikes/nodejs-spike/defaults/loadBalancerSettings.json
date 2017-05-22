@@ -1,0 +1,101 @@
+{
+                "name": "bb-lb",
+                "frontendIPConfigurations": [
+                    {
+                        "name": "lb-feConfig",
+                        "loadBalancerType": "public"
+                    }
+                ],
+                "loadBalancingRules": [
+                    {
+                        "name": "lbRule1",
+                        "frontendPort": 80,
+                        "backendPort": 80,
+                        "protocol": "Tcp",
+                        "backendPoolName": "lb-BEP1",
+                        "frontendIPConfigurationName": "lb-feConfig",
+                        "enableFloatingIP": false,
+                        "probeName": "lb-Probe1"
+                    },
+                    {
+                        "name": "lbRule2",
+                        "frontendPort": 443,
+                        "backendPort": 443,
+                        "protocol": "Tcp",
+                        "backendPoolName": "lb-BEP1",
+                        "frontendIPConfigurationName": "lb-feConfig",
+                        "enableFloatingIP": false,
+                        "probeName": "lb-Probe1"
+                    }
+                ],
+                "probes": [
+                    {
+                        "name": "lb-Probe1",
+                        "port": 80,
+                        "protocol": "Http",
+                        "requestPath": "/",
+                        "intervalInSeconds": 15,
+                        "numberOfProbes": 2
+                    }
+                ],
+                "backendPools": [
+                    {
+                        "name": "lb-BEP1",
+                        "nics": {
+                            "vmIndex": [
+                                0
+                            ],
+                            "nicIndex": 0
+                        }
+                    }
+                ],
+                "inboundNatRules": [
+                    {
+                        "name": "lb-NatRule1",
+                        "frontendIPConfigurationName": "lb-feConfig",
+                        "startingFrontendPort": 50001,
+                        "backendPort": 3389,
+                        "enableFloatingIP": false,
+                        "protocol": "Tcp",
+                        "idleTimeoutInMinutes": 4,
+                        "nics": {
+                            "vmIndex": [
+                                0,
+                                1
+                            ],
+                            "nicIndex": 0
+                        }
+                    }
+                ],
+                "backendVirtualMachinesSettings": {
+                    "vmCount": 2,
+                    "namePrefix": "test",
+                    "size": "Standard_DS2",
+                    "computerNamePrefix": "test",
+                    "osAuthenticationType": "password",
+                    "storageAccounts": {
+                        "count": 1,
+                        "managed": false
+                    },
+                    "diagnosticStorageAccounts": {
+                        "count": 1
+                    },
+                    "nics": [
+                        {
+                            "isPrimary": false,
+                            "privateIPAllocationMethod": "Dynamic"
+                        }
+                    ],
+                    "osDisk": {
+                        "osType": "windows"
+                    },
+                    "dataDisks": {
+                        "count": 0
+                    },
+                    "availabilitySet": {
+                        "useExistingAvailabilitySet": false,
+                        "name": "test-as"
+                    }
+                }
+            }
+        }
