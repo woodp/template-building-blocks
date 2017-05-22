@@ -81,7 +81,7 @@ function reduce({validations, value, parentKey, parentValue, accumulator}) {
         // Otherwise, just call the validation
         if (_.isArray(value)) {
             // Since we don't know if this is a function for the array as a whole, or the individual elements, we need to do a check here.
-            let result = validationWrapper(validations, value, parentValue);
+            let result = validations(value, parentValue);
             if ((_.isBoolean(result.result)) && (!result.result)) {
                 let {message} = result;
                 accumulator.push({
@@ -104,7 +104,7 @@ function reduce({validations, value, parentKey, parentValue, accumulator}) {
             }
         } else {
             // We're just a value
-            let result = validationWrapper(validations, value, parentValue);
+            let result = validations(value, parentValue);
             if ((_.isBoolean(result.result)) && (!result.result)) {
                 let {message} = result;
                 accumulator.push({
@@ -127,20 +127,6 @@ function reduce({validations, value, parentKey, parentValue, accumulator}) {
     return accumulator;
 }
 
-let validationWrapper = (validation, value, parent) => {
-
-    let r = validation(value, parent);
-    // We need to check the result and mutate accordingly.
-    // If the result is just a boolean, this was a true/false function, so we need to wrap the result in an object with a default message so we can destructure
-    // If the result is an object, this is likely a user-defined function so it could return custom messages.
-    if (_.isBoolean(r)) {
-        return { result: r };
-    } else {
-        // Hopefully it's the right shape!
-        return r;
-    }
-};
-
 let cidrRegex = /^(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(?:\/([0-9]|[1-2][0-9]|3[0-2]))$/;
 let ipAddressRegex = /^(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/;
 
@@ -153,8 +139,6 @@ let utilities = {
         value = _.toString(value);
         return !value || !value.trim();
     },
-    // Slated for removal
-    isNotNullOrWhitespace: (value) => !utilities.isNullOrWhitespace(value),
     isObjectForResourceId: (obj) => {
         // Omit the three fields we need.  If the length of the result is !== 0, this is likely a "full" object, so we can use the "full" validations
         let remainingKeys = _.keys(_.omit(obj, ['subscriptionId', 'resourceGroupName', 'name']));
@@ -213,6 +197,12 @@ let validationUtilities = {
         return {
             result: utilities.networking.isValidCidr(value),
             message: 'Value is not a valid CIDR'
+        };
+    },
+    isValidPortRange: (value) => {
+        return {
+            result: utilities.networking.isValidPortRange(value),
+            message: 'Value must be a single integer, a range of integers between 1-65535 in the form low-high, or * for any port'
         };
     },
     isNotNullOrWhitespace: (value) => {

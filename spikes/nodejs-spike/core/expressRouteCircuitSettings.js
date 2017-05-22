@@ -37,7 +37,12 @@ let expressRouteCircuitSettingsValidations = {
     },
     serviceProviderName: v.validationUtilities.isNotNullOrWhitespace,
     peeringLocation: v.validationUtilities.isNotNullOrWhitespace,
-    bandwidthInMbps: _.isFinite,
+    bandwidthInMbps: (value) => {
+        return {
+            result: _.isFinite(value),
+            message: 'Value must be a finite number'
+        };
+    },
     allowClassicOperations: v.validationUtilities.isBoolean
 };
 

@@ -71,7 +71,7 @@ let virtualNetworkGatewaySettingsValidations = {
             message: `Valid values are ${validVpnTypes.join(',')}`
         };
     },
-    enableBgp: _.isBoolean,
+    enableBgp: v.validationUtilities.isBoolean,
     sku: (value) => {
         return {
             result: isValidSku(value),

@@ -46,8 +46,8 @@ let networkSecurityGroupSettingsSecurityRulesValidations = {
             message: `Valid values are ${validProtocols.join(',')}`
         };
     },
-    sourcePortRange: v.utilities.networking.isValidPortRange,
-    destinationPortRange: v.utilities.networking.isValidPortRange,
+    sourcePortRange: v.validationUtilities.isValidPortRange,
+    destinationPortRange: v.validationUtilities.isValidPortRange,
     sourceAddressPrefix: (value) => {
         return {
             result: isValidAddressPrefix(value),
@@ -66,7 +66,12 @@ let networkSecurityGroupSettingsSecurityRulesValidations = {
             message: `Valid values are ${validDirections.join(',')}`
         };
     },
-    priority: isValidPriority,
+    priority: (value) => {
+        return {
+            result: isValidPriority(value),
+            message: `Valid value is between 100 and 4096, inclusive`
+        };
+    },
     access: (value) => {
         return {
             result: isValidAccess(value),

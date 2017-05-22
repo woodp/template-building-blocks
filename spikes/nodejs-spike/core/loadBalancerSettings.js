@@ -32,7 +32,7 @@ let isValidProbeProtocol = (probeProtocol) => {
 };
 
 let frontendIPConfigurationValidations = {
-    name: v.utilities.isNotNullOrWhitespace,
+    name: v.validationUtilities.isNotNullOrWhitespace,
     privateIPAddress: (value, parent) => {
         let result = {
             result: true
@@ -61,7 +61,7 @@ let frontendIPConfigurationValidations = {
 };
 
 let loadBalancingRuleValidations = {
-    name: v.utilities.isNotNullOrWhitespace,
+    name: v.validationUtilities.isNotNullOrWhitespace,
     protocol: (value) => {
         return {
             result: isValidProtocol(value),
@@ -109,7 +109,7 @@ let loadBalancingRuleValidations = {
 };
 
 let inboundNatRuleValidations = {
-    name: v.utilities.isNotNullOrWhitespace,
+    name: v.validationUtilities.isNotNullOrWhitespace,
     protocol: (value) => {
         return {
             result: isValidProtocol(value),
@@ -151,7 +151,7 @@ let inboundNatRuleValidations = {
 };
 
 let inboundNatPoolValidations = {
-    name: v.utilities.isNotNullOrWhitespace,
+    name: v.validationUtilities.isNotNullOrWhitespace,
     protocol: (value) => {
         return {
             result: isValidProtocol(value),
@@ -179,12 +179,12 @@ let inboundNatPoolValidations = {
 };
 
 let outboundNatRuleValidations = {
-    name: v.utilities.isNotNullOrWhitespace,
+    name: v.validationUtilities.isNotNullOrWhitespace,
     allocatedOutboundPorts: _.isFinite
 };
 
 let probeValidations = {
-    name: v.utilities.isNotNullOrWhitespace,
+    name: v.validationUtilities.isNotNullOrWhitespace,
     protocol: (value) => {
         return {
             result: isValidProbeProtocol(value),

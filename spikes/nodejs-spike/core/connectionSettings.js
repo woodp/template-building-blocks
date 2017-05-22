@@ -36,7 +36,12 @@ let connectionSettingsValidations = {
             message: `Valid values are ${validConnectionTypes.join(',')}`
         };
     },
-    routingWeight: _.isFinite,
+    routingWeight: (value) => {
+        return {
+            result: _.isFinite(value),
+            message: 'Value must be a finite number'
+        };
+    },
     sharedKey: (value, parent) => {
         let result = {
             result: true

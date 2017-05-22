@@ -25,7 +25,17 @@ let routeValidations = {
         };
     },
     nextHopIpAddress: (value, parent) => {
-        return (parent.nextHopType !== 'VirtualAppliance') || ((parent.nextHopType === 'VirtualAppliance') && (v.utilities.networking.isValidIpAddress(value)));
+        let result = {
+            result: true
+        };
+
+        if (parent.nextHopType === 'VirtualAppliance') {
+            result = {
+                validations: v.validationUtilities.isValidIpAddress
+            };
+        }
+        
+        return result;
     }
 };
 

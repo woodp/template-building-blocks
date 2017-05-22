@@ -44,9 +44,9 @@ let virtualNetworkSettingsPeeringValidations = {
     remoteVirtualNetwork: {
         name: v.validationUtilities.isNotNullOrWhitespace
     },
-    allowForwardedTraffic: _.isBoolean,
-    allowGatewayTransit: _.isBoolean,
-    useRemoteGateways: _.isBoolean
+    allowForwardedTraffic: v.validationUtilities.isBoolean,
+    allowGatewayTransit: v.validationUtilities.isBoolean,
+    useRemoteGateways: v.validationUtilities.isBoolean
 };
 
 let virtualNetworkSettingsValidations = {

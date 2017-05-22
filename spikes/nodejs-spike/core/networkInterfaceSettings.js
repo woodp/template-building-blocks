@@ -62,7 +62,7 @@ let networkInterfaceValidations = {
             };
         } else {
             return {
-                validations: v.utilities.networking.isValidIpAddress
+                validations: v.validationUtilities.isValidIpAddress
             };
         }
     }
