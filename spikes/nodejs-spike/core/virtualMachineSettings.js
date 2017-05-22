@@ -655,5 +655,6 @@ function mergeAndProcess(param, buildingBlockSettings) {
 }
 
 exports.processVirtualMachineSettings = mergeAndProcess;
+exports.mergeWithDefaults = merge;
 exports.validations = validate;
 exports.getTemplateParameters = getTemplateParameters;
