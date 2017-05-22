@@ -1,6 +1,7 @@
+'use strict';
 
 var fs = require('fs');
-var _ = require('../lodashMixins.js');
+var _ = require('lodash');
 let v = require('./validation.js');
 
 const defaultsPath = './defaults/availabilitySetSettings.json';
@@ -25,7 +26,7 @@ let availabilitySetValidations = {
             message: 'Value must be greater than 0 and less tham 20'
         };
     },
-    name: v.utilities.isNotNullOrWhitespace,
+    name: v.validationUtilities.isNotNullOrWhitespace
 };
 
 function process(settings, parent) {

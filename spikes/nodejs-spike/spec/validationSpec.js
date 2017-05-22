@@ -1,5 +1,6 @@
 describe('validation', () => {
     let validation = require('../core/validation.js');
+    let _ = require('lodash');
 
     describe('utilities', () => {
         describe('isGuid', () => {
@@ -25,7 +26,7 @@ describe('validation', () => {
             });
 
             it('invalid value', () => {
-                expect(isGuid('NOT_A_VALID_GUID')).toEqual(false);
+                expect(isGuid('NOT_VALID')).toEqual(false);
             });
 
             it('too many parts', () => {
@@ -65,7 +66,7 @@ describe('validation', () => {
             });
 
             it('invalid value', () => {
-                expect(isStringInArray('NOT_A_VALID_VALUE', validValues)).toEqual(false);
+                expect(isStringInArray('NOT_VALID', validValues)).toEqual(false);
             });
 
             it('valid', () => {
@@ -73,26 +74,26 @@ describe('validation', () => {
             });
         });
 
-        describe('isNotNullOrWhitespace', () => {
-            let isNotNullOrWhitespace = validation.utilities.isNotNullOrWhitespace;
+        describe('isNullOrWhitespace', () => {
+            let isNullOrWhitespace = validation.utilities.isNullOrWhitespace;
             it('undefined', () => {
-                expect(isNotNullOrWhitespace()).toEqual(false);
+                expect(isNullOrWhitespace()).toEqual(true);
             });
 
             it('null', () => {
-                expect(isNotNullOrWhitespace(null)).toEqual(false);
+                expect(isNullOrWhitespace(null)).toEqual(true);
             });
 
             it('empty', () => {
-                expect(isNotNullOrWhitespace('')).toEqual(false);
+                expect(isNullOrWhitespace('')).toEqual(true);
             });
 
             it('whitespace', () => {
-                expect(isNotNullOrWhitespace(' ')).toEqual(false);
+                expect(isNullOrWhitespace(' ')).toEqual(true);
             });
 
             it('valid', () => {
-                expect(isNotNullOrWhitespace('valid')).toEqual(true);
+                expect(isNullOrWhitespace('valid')).toEqual(false);
             });
         });
 
@@ -165,7 +166,7 @@ describe('validation', () => {
                 });
 
                 it('invalid value', () => {
-                    expect(isValidIpAddress('NOT_A_VALID_IP_ADDRESS')).toEqual(false);
+                    expect(isValidIpAddress('NOT_VALID')).toEqual(false);
                 });
 
                 it('too many parts', () => {
@@ -204,7 +205,7 @@ describe('validation', () => {
                 });
 
                 it('invalid value', () => {
-                    expect(isValidCidr('NOT_A_VALID_IP_ADDRESS')).toEqual(false);
+                    expect(isValidCidr('NOT_VALID')).toEqual(false);
                 });
 
                 it('no mask', () => {
@@ -295,67 +296,232 @@ describe('validation', () => {
             it('undefined', () => {
                 let validationResult = isBoolean();
                 expect(validationResult.result).toEqual(false);
+                expect(validationResult.message).toBeDefined();
             });
 
             it('null', () => {
                 let validationResult = isBoolean(null);
                 expect(validationResult.result).toEqual(false);
+                expect(validationResult.message).toBeDefined();
             });
 
             it('empty', () => {
                 let validationResult = isBoolean('');
                 expect(validationResult.result).toEqual(false);
+                expect(validationResult.message).toBeDefined();
             });
 
             it('whitespace', () => {
                 let validationResult = isBoolean(' ');
                 expect(validationResult.result).toEqual(false);
+                expect(validationResult.message).toBeDefined();
             });
 
-            it('string', () => {
-                let validationResult = isBoolean('true');
+            it('invalid', () => {
+                let validationResult = isBoolean('NOT_VALID');
                 expect(validationResult.result).toEqual(false);
+                expect(validationResult.message).toBeDefined();
             });
 
             it('valid', () => {
                 let validationResult = isBoolean(true);
                 expect(validationResult.result).toEqual(true);
+                expect(validationResult.message).toBeDefined();
+            });
+        });
+
+        describe('isGuid', () => {
+            let isGuid = validation.validationUtilities.isGuid;
+            it('undefined', () => {
+                let validationResult = isGuid();
+                expect(validationResult.result).toEqual(false);
+                expect(validationResult.message).toBeDefined();
+            });
+
+            it('null', () => {
+                let validationResult = isGuid(null);
+                expect(validationResult.result).toEqual(false);
+                expect(validationResult.message).toBeDefined();
+            });
+
+            it('empty', () => {
+                let validationResult = isGuid('');
+                expect(validationResult.result).toEqual(false);
+                expect(validationResult.message).toBeDefined();
+            });
+
+            it('whitespace', () => {
+                let validationResult = isGuid(' ');
+                expect(validationResult.result).toEqual(false);
+                expect(validationResult.message).toBeDefined();
+            });
+
+            it('invalid', () => {
+                let validationResult = isGuid('NOT_VALID');
+                expect(validationResult.result).toEqual(false);
+                expect(validationResult.message).toBeDefined();
+            });
+
+            it('valid', () => {
+                let validationResult = isGuid('00000000-0000-1000-8000-000000000000');
+                expect(validationResult.result).toEqual(true);
+                expect(validationResult.message).toBeDefined();
+            });
+        });
+
+        describe('isValidIpAddress', () => {
+            let isValidIpAddress = validation.validationUtilities.isValidIpAddress;
+            it('undefined', () => {
+                let validationResult = isValidIpAddress();
+                expect(validationResult.result).toEqual(false);
+                expect(validationResult.message).toBeDefined();
+            });
+
+            it('null', () => {
+                let validationResult = isValidIpAddress(null);
+                expect(validationResult.result).toEqual(false);
+                expect(validationResult.message).toBeDefined();
+            });
+
+            it('empty', () => {
+                let validationResult = isValidIpAddress('');
+                expect(validationResult.result).toEqual(false);
+                expect(validationResult.message).toBeDefined();
+            });
+
+            it('whitespace', () => {
+                let validationResult = isValidIpAddress(' ');
+                expect(validationResult.result).toEqual(false);
+                expect(validationResult.message).toBeDefined();
+            });
+
+            it('invalid', () => {
+                let validationResult = isValidIpAddress('NOT_VALID');
+                expect(validationResult.result).toEqual(false);
+                expect(validationResult.message).toBeDefined();
+            });
+
+            it('valid', () => {
+                let validationResult = isValidIpAddress('10.0.0.1');
+                expect(validationResult.result).toEqual(true);
+                expect(validationResult.message).toBeDefined();
+            });
+        });
+
+        describe('isValidCidr', () => {
+            let isValidCidr = validation.validationUtilities.isValidCidr;
+            it('undefined', () => {
+                let validationResult = isValidCidr();
+                expect(validationResult.result).toEqual(false);
+                expect(validationResult.message).toBeDefined();
+            });
+
+            it('null', () => {
+                let validationResult = isValidCidr(null);
+                expect(validationResult.result).toEqual(false);
+                expect(validationResult.message).toBeDefined();
+            });
+
+            it('empty', () => {
+                let validationResult = isValidCidr('');
+                expect(validationResult.result).toEqual(false);
+                expect(validationResult.message).toBeDefined();
+            });
+
+            it('whitespace', () => {
+                let validationResult = isValidCidr(' ');
+                expect(validationResult.result).toEqual(false);
+                expect(validationResult.message).toBeDefined();
+            });
+
+            it('invalid', () => {
+                let validationResult = isValidCidr('NOT_VALID');
+                expect(validationResult.result).toEqual(false);
+                expect(validationResult.message).toBeDefined();
+            });
+
+            it('valid', () => {
+                let validationResult = isValidCidr('10.0.0.1/24');
+                expect(validationResult.result).toEqual(true);
+                expect(validationResult.message).toBeDefined();
+            });
+        });
+
+        describe('isNotNullOrWhitespace', () => {
+            let isNotNullOrWhitespace = validation.validationUtilities.isNotNullOrWhitespace;
+            it('undefined', () => {
+                let validationResult = isNotNullOrWhitespace();
+                expect(validationResult.result).toEqual(false);
+                expect(validationResult.message).toBeDefined();
+            });
+
+            it('null', () => {
+                let validationResult = isNotNullOrWhitespace(null);
+                expect(validationResult.result).toEqual(false);
+                expect(validationResult.message).toBeDefined();
+            });
+
+            it('empty', () => {
+                let validationResult = isNotNullOrWhitespace('');
+                expect(validationResult.result).toEqual(false);
+                expect(validationResult.message).toBeDefined();
+            });
+
+            it('whitespace', () => {
+                let validationResult = isNotNullOrWhitespace(' ');
+                expect(validationResult.result).toEqual(false);
+                expect(validationResult.message).toBeDefined();
+            });
+
+            it('valid', () => {
+                let validationResult = isNotNullOrWhitespace('VALID');
+                expect(validationResult.result).toEqual(true);
+                expect(validationResult.message).toBeDefined();
             });
         });
     });
 
-    describe('validationUtilities', () => {
-        describe('isBoolean', () => {
-            let isBoolean = validation.validationUtilities.isBoolean;
-            it('undefined', () => {
-                let validationResult = isBoolean();
-                expect(validationResult.result).toEqual(false);
+    describe('merge', () => {
+        it('invalid settings type', () => {
+            expect(() => {
+                validation.merge(1, {});
+            }).toThrow();
+        });
+    });
+
+    describe('validate', () => {
+        it('array with message', () => {
+            let result = validation.validate({
+                settings: ['value'],
+                validations: (value) => {
+                    return {
+                        result: _.isFinite(value),
+                        message: 'Value must be a finite number'
+                    };
+                },
+                parentKey: '.myarray',
+                parentValue: null
             });
 
-            it('null', () => {
-                let validationResult = isBoolean(null);
-                expect(validationResult.result).toEqual(false);
+            expect(result.length).toEqual(1);
+            expect(result[0].name).toEqual('.myarray');
+        });
+
+        it('array without message', () => {
+            let result = validation.validate({
+                settings: ['value'],
+                validations: (value) => {
+                    return {
+                        result: _.isFinite(value)
+                    };
+                },
+                parentKey: '.myarray',
+                parentValue: null
             });
 
-            it('empty', () => {
-                let validationResult = isBoolean('');
-                expect(validationResult.result).toEqual(false);
-            });
-
-            it('whitespace', () => {
-                let validationResult = isBoolean(' ');
-                expect(validationResult.result).toEqual(false);
-            });
-
-            it('string', () => {
-                let validationResult = isBoolean('true');
-                expect(validationResult.result).toEqual(false);
-            });
-
-            it('valid', () => {
-                let validationResult = isBoolean(true);
-                expect(validationResult.result).toEqual(true);
-            });
+            expect(result.length).toEqual(1);
+            expect(result[0].name).toEqual('.myarray');
+            expect(_.endsWith(result[0].message, '.')).toEqual(true);
         });
     });
 });

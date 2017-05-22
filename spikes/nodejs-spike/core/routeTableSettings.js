@@ -1,6 +1,6 @@
 'use strict';
 
-let _ = require('../lodashMixins.js');
+let _ = require('lodash');
 let v = require('./validation.js');
 let r = require('./resources.js');
 
@@ -16,8 +16,8 @@ let isValidNextHopType = (nextHopType) => {
 };
 
 let routeValidations = {
-    name: v.utilities.isNotNullOrWhitespace,
-    addressPrefix: v.utilities.networking.isValidCidr,
+    name: v.validationUtilities.isNotNullOrWhitespace,
+    addressPrefix: v.validationUtilities.isValidCidr,
     nextHopType: (value) => {
         return {
             result: isValidNextHopType(value),
@@ -25,12 +25,22 @@ let routeValidations = {
         };
     },
     nextHopIpAddress: (value, parent) => {
-        return (parent.nextHopType !== 'VirtualAppliance') || ((parent.nextHopType === 'VirtualAppliance') && (v.utilities.networking.isValidIpAddress(value)));
+        let result = {
+            result: true
+        };
+
+        if (parent.nextHopType === 'VirtualAppliance') {
+            result = {
+                validations: v.validationUtilities.isValidIpAddress
+            };
+        }
+        
+        return result;
     }
 };
 
 let virtualNetworkValidations = {
-    name: v.utilities.isNotNullOrWhitespace,
+    name: v.validationUtilities.isNotNullOrWhitespace,
     subnets: (value) => {
         if ((_.isNil(value)) || (value.length === 0)) {
             return {
@@ -39,14 +49,14 @@ let virtualNetworkValidations = {
             };
         } else {
             return {
-                validations: v.utilities.isNotNullOrWhitespace
+                validations: v.validationUtilities.isNotNullOrWhitespace
             };
         }
     }
 };
 
 let routeTableSettingsValidations = {
-    name: v.utilities.isNotNullOrWhitespace,
+    name: v.validationUtilities.isNotNullOrWhitespace,
     routes: (value) => {
         if ((_.isNil(value)) || (value.length === 0)) {
             return {
@@ -57,7 +67,7 @@ let routeTableSettingsValidations = {
 
         // Validate route names
         let names = _.reduce(value, (accumulator, value) => {
-            if (v.utilities.isNotNullOrWhitespace(value.name)) {
+            if (!v.utilities.isNullOrWhitespace(value.name)) {
                 if (!accumulator[value.name]) {
                     accumulator[value.name] = 0;
                 }
@@ -145,30 +155,25 @@ function transform(settings) {
     };
 }
 
+let merge = ({settings, buildingBlockSettings, defaultSettings = routeTableSettingsDefaults}) => {
+    let merged = r.setupResources(settings, buildingBlockSettings, (parentKey) => {
+        return ((parentKey === null) || (parentKey === 'virtualNetworks'));
+    });
+
+    merged = v.merge(merged, defaultSettings, mergeCustomizer);
+    return merged;
+};
+
 exports.transform = function ({ settings, buildingBlockSettings }) {
     if (_.isPlainObject(settings)) {
         settings = [settings];
     }
 
-    let results = _.transform(settings, (result, setting) => {
-        let merged = v.merge(setting, routeTableSettingsDefaults, mergeCustomizer);
-        let errors = v.validate({
-            settings: merged,
-            validations: routeTableSettingsValidations
-        });
-
-        if (errors.length > 0) {
-            throw new Error(JSON.stringify(errors));
-        }
-
-        result.push(merged);
-    }, []);
-
     let buildingBlockErrors = v.validate({
         settings: buildingBlockSettings,
         validations: {
-            subscriptionId: v.utilities.isNotNullOrWhitespace,
-            resourceGroupName: v.utilities.isNotNullOrWhitespace,
+            subscriptionId: v.validationUtilities.isGuid,
+            resourceGroupName: v.validationUtilities.isNotNullOrWhitespace,
         }
     });
 
@@ -176,13 +181,25 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
         throw new Error(JSON.stringify(buildingBlockErrors));
     }
 
-    results = _.transform(results, (result, setting) => {
-        setting = r.setupResources(setting, buildingBlockSettings, (parentKey) => {
-            return ((parentKey === null) || (parentKey === 'virtualNetworks'));
-        });
-        setting = transform(setting);
-        result.push(setting);
-    }, []);
+    let results = merge({
+        settings: settings,
+        buildingBlockSettings: buildingBlockSettings
+    });
 
-    return { settings: results };
+    let errors = v.validate({
+        settings: results,
+        validations: routeTableSettingsValidations
+    });
+
+    if (errors.length > 0) {
+        throw new Error(JSON.stringify(errors));
+    }
+
+    results = _.map(results, (setting) => {
+        return transform(setting);
+    });
+
+    return {
+        routeTables: results
+    };
 };

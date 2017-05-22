@@ -1,41 +1,47 @@
 'use strict';
 
-let _ = require('../lodashMixins.js');
+let _ = require('lodash');
 let v = require('./validation.js');
 let r = require('./resources.js');
+let localNetworkGateway = require('./localNetworkGatewaySettings.js');
 
 let connectionSettingsDefaults = {
 };
 
-let validConnectionTypes = ['IPsec', 'Vnet2Vnet', 'ExpressRoute', 'VPNClient'];
+let validConnectionTypes = ['IPsec', 'Vnet2Vnet', 'ExpressRoute'];
 
 let isValidConnectionType = (connectionType) => {
     return v.utilities.isStringInArray(connectionType, validConnectionTypes);
 };
 
 let localNetworkGatewayValidations = {
-    name: v.utilities.isNotNullOrWhitespace,
-    ipAddress: v.utilities.networking.isValidIpAddress,
-    addressPrefixes: v.utilities.networking.isValidCidr
+    name: v.validationUtilities.isNotNullOrWhitespace,
+    ipAddress: v.validationUtilities.isValidIpAddress,
+    addressPrefixes: v.validationUtilities.isValidCidr
 };
 
 let expressRouteCircuitValidations = {
-    name: v.utilities.isNotNullOrWhitespace
+    name: v.validationUtilities.isNotNullOrWhitespace
 };
 
 let virtualNetworkGatewayValidations = {
-    name: v.utilities.isNotNullOrWhitespace
+    name: v.validationUtilities.isNotNullOrWhitespace
 };
 
 let connectionSettingsValidations = {
-    name: v.utilities.isNotNullOrWhitespace,
+    name: v.validationUtilities.isNotNullOrWhitespace,
     connectionType: (value) => {
         return {
             result: isValidConnectionType(value),
             message: `Valid values are ${validConnectionTypes.join(',')}`
         };
     },
-    routingWeight: _.isFinite,
+    routingWeight: (value) => {
+        return {
+            result: _.isFinite(value),
+            message: 'Value must be a finite number'
+        };
+    },
     sharedKey: (value, parent) => {
         let result = {
             result: true
@@ -53,8 +59,7 @@ let connectionSettingsValidations = {
                 }
             } else {
                 result = {
-                    result: v.utilities.isNotNullOrWhitespace(value),
-                    message: 'sharedKey cannot be null, empty, or only whitespace'
+                    validations: v.validationUtilities.isNotNullOrWhitespace
                 };
             }
         }
@@ -219,7 +224,8 @@ function transform(settings) {
         }
     };
 
-    if (settings.connectionType === 'IPsec') {
+    switch (settings.connectionType) {
+    case 'IPsec': {
         result.properties.sharedKey = settings.sharedKey;
         result.properties.virtualNetworkGateway1 = {
             id: r.resourceId(settings.virtualNetworkGateway.subscriptionId, settings.virtualNetworkGateway.resourceGroupName,
@@ -229,7 +235,9 @@ function transform(settings) {
             id: r.resourceId(settings.localNetworkGateway.subscriptionId, settings.localNetworkGateway.resourceGroupName,
                 'Microsoft.Network/localNetworkGateways', settings.localNetworkGateway.name)
         };
-    } else if (settings.connectionType === 'Vnet2Vnet') {
+        break;
+    }
+    case 'Vnet2Vnet': {
         result.properties.sharedKey = settings.sharedKey;
         result.properties.virtualNetworkGateway1 = {
             id: r.resourceId(settings.virtualNetworkGateway1.subscriptionId, settings.virtualNetworkGateway1.resourceGroupName,
@@ -239,7 +247,9 @@ function transform(settings) {
             id: r.resourceId(settings.virtualNetworkGateway2.subscriptionId, settings.virtualNetworkGateway2.resourceGroupName,
                 'Microsoft.Network/virtualNetworkGateways', settings.virtualNetworkGateway2.name)
         };
-    } else if (settings.connectionType === 'ExpressRoute') {
+        break;
+    }
+    case 'ExpressRoute': {
         result.properties.virtualNetworkGateway1 = {
             id: r.resourceId(settings.virtualNetworkGateway.subscriptionId, settings.virtualNetworkGateway.resourceGroupName,
                 'Microsoft.Network/virtualNetworkGateways', settings.virtualNetworkGateway.name)
@@ -248,42 +258,34 @@ function transform(settings) {
             id: r.resourceId(settings.expressRouteCircuit.subscriptionId, settings.expressRouteCircuit.resourceGroupName,
                 'Microsoft.Network/expressRouteCircuits', settings.expressRouteCircuit.name)
         };
+        break;
+    }
     }
 
     return result;
 }
 
-function merge({settings}) {
-    return v.merge(settings, connectionSettingsDefaults);
-}
 
-function validate({settings}) {
-    return v.validate({
-        settings: settings,
-        validations: connectionSettingsValidations
+let merge = ({settings, buildingBlockSettings, defaultSettings = connectionSettingsDefaults}) => {
+    let merged = r.setupResources(settings, buildingBlockSettings, (parentKey) => {
+        return ((parentKey === null) ||
+               (v.utilities.isStringInArray(parentKey,
+               ['virtualNetworkGateway', 'localNetworkGateway', 'expressRouteCircuit', 'virtualNetworkGateway1', 'virtualNetworkGateway2'])));
     });
-}
+
+    return v.merge(merged, defaultSettings);
+};
 
 exports.transform = function ({ settings, buildingBlockSettings }) {
     if (_.isPlainObject(settings)) {
         settings = [settings];
     }
 
-    let results = _.transform(settings, (result, setting) => {
-        let merged = merge({settings: setting});
-        let errors = validate({settings: merged});
-        if (errors.length > 0) {
-            throw new Error(JSON.stringify(errors));
-        }
-
-        result.push(merged);
-    }, []);
-
     let buildingBlockErrors = v.validate({
         settings: buildingBlockSettings,
         validations: {
-            subscriptionId: v.utilities.isNotNullOrWhitespace,
-            resourceGroupName: v.utilities.isNotNullOrWhitespace,
+            subscriptionId: v.validationUtilities.isGuid,
+            resourceGroupName: v.validationUtilities.isNotNullOrWhitespace,
         }
     });
 
@@ -291,15 +293,35 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
         throw new Error(JSON.stringify(buildingBlockErrors));
     }
 
-    results = _.transform(results, (result, setting) => {
-        setting = r.setupResources(setting, buildingBlockSettings, (parentKey) => {
-            return ((parentKey === null) ||
-                (v.utilities.isStringInArray(parentKey,
-                ['virtualNetworkGateway', 'localNetworkGateway', 'expressRouteCircuit', 'virtualNetworkGateway1', 'virtualNetworkGateway2'])));
-        });
-        setting = transform(setting);
-        result.push(setting);
-    }, []);
+    let results = merge({
+        settings: settings,
+        buildingBlockSettings: buildingBlockSettings
+    });
 
-    return { settings: results };
+    let errors = v.validate({
+        settings: results,
+        validations: connectionSettingsValidations
+    });
+
+    if (errors.length > 0) {
+        throw new Error(JSON.stringify(errors));
+    }
+
+    results = _.transform(results, (result, setting) => {
+        if (setting.localNetworkGateway) {
+            let lng = localNetworkGateway.transform({
+                settings: setting.localNetworkGateway,
+                buildingBlockSettings: buildingBlockSettings
+            });
+            result.localNetworkGateways.push(lng.localNetworkGateways[0]);
+        }
+
+        setting = transform(setting);
+        result.connections.push(setting);
+    }, {
+        connections: [],
+        localNetworkGateways: []
+    });
+
+    return results;
 };

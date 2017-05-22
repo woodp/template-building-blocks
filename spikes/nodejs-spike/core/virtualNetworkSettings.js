@@ -1,6 +1,6 @@
 'use strict';
 
-let _ = require('../lodashMixins.js');
+let _ = require('lodash');
 let v = require('./validation.js');
 let r = require('./resources.js');
 let validationMessages = require('./validationMessages.js');
@@ -24,8 +24,8 @@ let virtualNetworkPeeringsSettingsDefaults = {
 };
 
 let virtualNetworkSettingsSubnetsValidations = {
-    name: v.utilities.isNotNullOrWhitespace,
-    addressPrefix: v.utilities.networking.isValidCidr
+    name: v.validationUtilities.isNotNullOrWhitespace,
+    addressPrefix: v.validationUtilities.isValidCidr
 };
 
 let virtualNetworkSettingsPeeringValidations = {
@@ -37,22 +37,21 @@ let virtualNetworkSettingsPeeringValidations = {
             };
         } else {
             return {
-                result: v.utilities.isNotNullOrWhitespace(value),
-                message: 'name must not be null or only whitespace'
+                validations: v.validationUtilities.isNotNullOrWhitespace
             };
         }
     },
     remoteVirtualNetwork: {
-        name: v.utilities.isNotNullOrWhitespace
+        name: v.validationUtilities.isNotNullOrWhitespace
     },
-    allowForwardedTraffic: _.isBoolean,
-    allowGatewayTransit: _.isBoolean,
-    useRemoteGateways: _.isBoolean
+    allowForwardedTraffic: v.validationUtilities.isBoolean,
+    allowGatewayTransit: v.validationUtilities.isBoolean,
+    useRemoteGateways: v.validationUtilities.isBoolean
 };
 
 let virtualNetworkSettingsValidations = {
-    name: v.utilities.isNotNullOrWhitespace,
-    addressPrefixes: v.utilities.networking.isValidCidr,
+    name: v.validationUtilities.isNotNullOrWhitespace,
+    addressPrefixes: v.validationUtilities.isValidCidr,
     subnets: virtualNetworkSettingsSubnetsValidations,
     dnsServers: (value) => {
         // An empty array is okay
@@ -67,7 +66,7 @@ let virtualNetworkSettingsValidations = {
             };
         } else if (value.length > 0) {
             result = {
-                validations: v.utilities.networking.isValidIpAddress
+                validations: v.validationUtilities.isValidIpAddress
             };
         }
 
@@ -148,30 +147,25 @@ let mergeCustomizer = function (objValue, srcValue, key) {
     }
 };
 
+let merge = ({settings, buildingBlockSettings, defaultSettings = virtualNetworkSettingsDefaults}) => {
+    let merged = r.setupResources(settings, buildingBlockSettings, (parentKey) => {
+        return ((parentKey === null) || (parentKey === 'remoteVirtualNetwork'));
+    });
+
+    merged = v.merge(merged, defaultSettings, mergeCustomizer);
+    return merged;
+};
+
 exports.transform = function ({ settings, buildingBlockSettings }) {
     if (_.isPlainObject(settings)) {
         settings = [settings];
     }
 
-    let results = _.transform(settings, (result, setting) => {
-        let merged = v.merge(setting, virtualNetworkSettingsDefaults, mergeCustomizer);
-        let errors = v.validate({
-            settings: merged,
-            validations: virtualNetworkSettingsValidations
-        });
-
-        if (errors.length > 0) {
-            throw new Error(JSON.stringify(errors));
-        }
-
-        result.push(merged);
-    }, []);
-
     let buildingBlockErrors = v.validate({
         settings: buildingBlockSettings,
         validations: {
-            subscriptionId: v.utilities.isNotNullOrWhitespace,
-            resourceGroupName: v.utilities.isNotNullOrWhitespace
+            subscriptionId: v.validationUtilities.isGuid,
+            resourceGroupName: v.validationUtilities.isNotNullOrWhitespace,
         }
     });
 
@@ -179,11 +173,21 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
         throw new Error(JSON.stringify(buildingBlockErrors));
     }
 
-    results = _.transform(results, (result, setting) => {
-        setting = r.setupResources(setting, buildingBlockSettings, (parentKey) => {
-            return ((parentKey === null) || (parentKey === 'remoteVirtualNetwork'));
-        });
+    let results = merge({
+        settings: settings,
+        buildingBlockSettings: buildingBlockSettings
+    });
 
+    let errors = v.validate({
+        settings: results,
+        validations: virtualNetworkSettingsValidations
+    });
+
+    if (errors.length > 0) {
+        throw new Error(JSON.stringify(errors));
+    }
+
+    results = _.transform(results, (result, setting) => {
         result.virtualNetworks.push(transform(setting));
         if ((setting.virtualNetworkPeerings) && (setting.virtualNetworkPeerings.length > 0)) {
             result.virtualNetworkPeerings = result.virtualNetworkPeerings.concat(_.transform(setting.virtualNetworkPeerings,
@@ -196,5 +200,5 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
         virtualNetworkPeerings: []
     });
 
-    return { settings: results };
+    return results;
 };

@@ -1,4 +1,7 @@
-let _ = require('../lodashMixins.js');
+'use strict';
+
+let _ = require('lodash');
+let v = require('./validation.js');
 
 function process(publicIPSettings) {
     let instance = {};
@@ -10,7 +13,7 @@ function process(publicIPSettings) {
             }
         };
 
-        if (!_.isNullOrWhitespace(publicIPSettings.domainNameLabel)) {
+        if (!v.utilities.isNullOrWhitespace(publicIPSettings.domainNameLabel)) {
             instance.properties.dnsSettings = {};
             instance.properties.dnsSettings.domainNameLabel = publicIPSettings.domainNameLabel;
         }

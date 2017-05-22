@@ -1,6 +1,6 @@
 'use strict';
 
-let _ = require('../lodashMixins.js');
+let _ = require('lodash');
 let validationMessages = require('./validationMessages.js');
 
 function merge(settings, defaultSettings, mergeCustomizer) {
@@ -15,6 +15,9 @@ function merge(settings, defaultSettings, mergeCustomizer) {
         }, []);
 
         return mergedSettings;
+    } else {
+        // We only support plain objects and arrays right now, so we should throw an exception.
+        throw new Error('Merge only supports plain objects and arrays');
     }
 }
 
@@ -78,7 +81,7 @@ function reduce({validations, value, parentKey, parentValue, accumulator}) {
         // Otherwise, just call the validation
         if (_.isArray(value)) {
             // Since we don't know if this is a function for the array as a whole, or the individual elements, we need to do a check here.
-            let result = validationWrapper(validations, value, parentValue);
+            let result = validations(value, parentValue);
             if ((_.isBoolean(result.result)) && (!result.result)) {
                 let {message} = result;
                 accumulator.push({
@@ -86,29 +89,7 @@ function reduce({validations, value, parentKey, parentValue, accumulator}) {
                     message: `Invalid value: ${toString(value)}.` + (message ? '  ' + message : '')
                 });
             } else {
-                // let localValidations = validations;
-                // if (result.validations) {
-                //     // We got back more validations to run.  Since we are in an array, we'll replace the one we have with this one.
-                //     // reduce({
-                //     //     validations: result.validations,
-                //     //     value: value,
-                //     //     parentKey: `${parentKey}`,
-                //     //     parentValue: parentValue,
-                //     //     accumulator: accumulator
-                //     // });
-                //     localValidations = result.validations;
-                // }
                 _.reduce(value, (accumulator, item, index) => {
-                    //let result = validationWrapper(localValidations, item, parentValue);
-                    // if (localValidations) {
-                    //     if (!_.isFunction(localValidations)) {
-                    //         localValidations = {
-                    //             validations: localValidations
-                    //         };
-                    //     }
-                    // }
-
-
                     // We got back more validations to run
                     reduce({
                         validations: result.validations,
@@ -118,47 +99,12 @@ function reduce({validations, value, parentKey, parentValue, accumulator}) {
                         accumulator: accumulator
                     });
 
-
-
-                    // let result = _.isFunction(localValidations) ? validationWrapper(localValidations, item, parentValue) : {
-                    //     validations: localValidations
-                    // };
-                    // // We can either get a boolean, an object with the error, or an array of objects with errors.
-                    // // We may be able to wrap this later, but let's brute force it for now
-                    // if ((_.isArray(result)) && (result.length > 0)) {
-                    //     // An array of already materialized errors, so just add them.
-                    //     _.forEach(result, (value) => {
-                    //         accumulator.push(value);
-                    //     });
-                    // //} else if (((_.isBoolean(result)) && (!result)) || ((_.isBoolean(result.result)) && (!result.result))) {
-                    // } else if ((_.isBoolean(result.result)) && (!result.result)) {
-                    //     let {message, name} = result;
-                    //     accumulator.push({
-                    //         name: name ? name : `${parentKey}[${index}]`,
-                    //         message: `Invalid value: ${toString(item)}.` + (message ? '  ' + message : '')
-                    //     });
-                    // } else if (result.validations) {
-                    //     // We got back more validations to run
-                    //     reduce({
-                    //         validations: result.validations,
-                    //         value: value,
-                    //         parentKey: `${parentKey}`,
-                    //         parentValue: parentValue,
-                    //         accumulator: accumulator
-                    //     });
-                    // }
-
-
-
-
-
-
                     return accumulator;
                 }, accumulator);
             }
         } else {
             // We're just a value
-            let result = validationWrapper(validations, value, parentValue);
+            let result = validations(value, parentValue);
             if ((_.isBoolean(result.result)) && (!result.result)) {
                 let {message} = result;
                 accumulator.push({
@@ -181,20 +127,6 @@ function reduce({validations, value, parentKey, parentValue, accumulator}) {
     return accumulator;
 }
 
-let validationWrapper = (validation, value, parent) => {
-
-    let r = validation(value, parent);
-    // We need to check the result and mutate accordingly.
-    // If the result is just a boolean, this was a true/false function, so we need to wrap the result in an object with a default message so we can destructure
-    // If the result is an object, this is likely a user-defined function so it could return custom messages.
-    if (_.isBoolean(r)) {
-        return { result: r };
-    } else {
-        // Hopefully it's the right shape!
-        return r;
-    }
-};
-
 let cidrRegex = /^(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(?:\/([0-9]|[1-2][0-9]|3[0-2]))$/;
 let ipAddressRegex = /^(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.)(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/;
 
@@ -203,7 +135,10 @@ let guidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-
 let utilities = {
     isGuid: (guid) => guidRegex.test(guid),
     isStringInArray: (value, array) => _.indexOf(array, value) > -1,
-    isNotNullOrWhitespace: (value) => !_.isNullOrWhitespace(value),
+    isNullOrWhitespace: (value) => {
+        value = _.toString(value);
+        return !value || !value.trim();
+    },
     isObjectForResourceId: (obj) => {
         // Omit the three fields we need.  If the length of the result is !== 0, this is likely a "full" object, so we can use the "full" validations
         let remainingKeys = _.keys(_.omit(obj, ['subscriptionId', 'resourceGroupName', 'name']));
@@ -244,6 +179,36 @@ let validationUtilities = {
         return {
             result: _.isBoolean(value),
             message: 'Value must be Boolean'
+        };
+    },
+    isGuid: (value) => {
+        return {
+            result: utilities.isGuid(value),
+            message: 'Value is not a valid GUID'
+        };
+    },
+    isValidIpAddress: (value) => {
+        return {
+            result: utilities.networking.isValidIpAddress(value),
+            message: 'Value is not a valid IP Address'
+        };
+    },
+    isValidCidr: (value) => {
+        return {
+            result: utilities.networking.isValidCidr(value),
+            message: 'Value is not a valid CIDR'
+        };
+    },
+    isValidPortRange: (value) => {
+        return {
+            result: utilities.networking.isValidPortRange(value),
+            message: 'Value must be a single integer, a range of integers between 1-65535 in the form low-high, or * for any port'
+        };
+    },
+    isNotNullOrWhitespace: (value) => {
+        return {
+            result: !utilities.isNullOrWhitespace(value),
+            message: 'Value cannot be undefined, null, empty, or only whitespace'
         };
     }
 };

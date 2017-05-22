@@ -1,6 +1,7 @@
+'use strict';
 
 var fs = require('fs');
-var _ = require('../lodashMixins.js');
+var _ = require('lodash');
 let v = require('./validation.js');
 let murmurHash = require('murmurhash-native').murmurHash64;
 
@@ -26,10 +27,10 @@ let storageValidations = {
         };
     },
     managed:  v.validationUtilities.isBoolean,
-    nameSuffix: v.utilities.isNotNullOrWhitespace,
+    nameSuffix: v.validationUtilities.isNotNullOrWhitespace,
     skuType: (value, parent) => {
         return {
-            result: (parent.managed) || v.utilities.isNotNullOrWhitespace(value),
+            result: (parent.managed) || !v.utilities.isNullOrWhitespace(value),
             message: 'Value cannot be null or empty string if managed is set to false'
         };
     },
@@ -56,7 +57,7 @@ let diagnosticValidations = {
     },
     skuType: (value) => {
         return {
-            result: (v.utilities.isNotNullOrWhitespace(value)) && !_.includes(_.toLower(value), 'premium'),
+            result: (!v.utilities.isNullOrWhitespace(value)) && !_.includes(_.toLower(value), 'premium'),
             message: 'Diagnostic storage cannot use premium storage.'
         };
     },
@@ -66,7 +67,7 @@ let diagnosticValidations = {
             message: 'Value must be greater than 0'
         };
     },
-    nameSuffix: v.utilities.isNotNullOrWhitespace,
+    nameSuffix: v.validationUtilities.isNotNullOrWhitespace,
     accounts: (value) => {
         return {
             result: _.isArray(value),

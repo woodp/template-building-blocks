@@ -1,7 +1,7 @@
 describe('availabilitySetSettings:', () => {
     let rewire = require('rewire');
     let availabilitySetSettings = rewire('../core/availabilitySetSettings.js');
-    let _ = require('../lodashMixins.js');
+    let _ = require('lodash');
 
     describe('merge:', () => {
 
@@ -105,13 +105,13 @@ describe('availabilitySetSettings:', () => {
             let validation = availabilitySetSettings.__get__('availabilitySetValidations').name;
             it('validate name canot be an empty string.', () => {
                 let result = validation('', testAvSetSettings);
-                expect(result).toEqual(false);
+                expect(result.result).toEqual(false);
 
                 result = validation('test', testAvSetSettings);
-                expect(result).toEqual(true);
+                expect(result.result).toEqual(true);
 
                 result = validation(null, testAvSetSettings);
-                expect(result).toEqual(false);
+                expect(result.result).toEqual(false);
             });
         });
     });

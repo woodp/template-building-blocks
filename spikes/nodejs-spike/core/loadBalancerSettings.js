@@ -1,4 +1,4 @@
-let _ = require('../lodashMixins.js');
+let _ = require('lodash');
 let v = require('./validation.js');
 var resources = require('./resources.js');
 var pipSettings = require('./pipSettings.js');
@@ -32,7 +32,7 @@ let isValidProbeProtocol = (probeProtocol) => {
 };
 
 let frontendIPConfigurationValidations = {
-    name: v.utilities.isNotNullOrWhitespace,
+    name: v.validationUtilities.isNotNullOrWhitespace,
     privateIPAddress: (value, parent) => {
         let result = {
             result: true
@@ -61,7 +61,7 @@ let frontendIPConfigurationValidations = {
 };
 
 let loadBalancingRuleValidations = {
-    name: v.utilities.isNotNullOrWhitespace,
+    name: v.validationUtilities.isNotNullOrWhitespace,
     protocol: (value) => {
         return {
             result: isValidProtocol(value),
@@ -109,7 +109,7 @@ let loadBalancingRuleValidations = {
 };
 
 let inboundNatRuleValidations = {
-    name: v.utilities.isNotNullOrWhitespace,
+    name: v.validationUtilities.isNotNullOrWhitespace,
     protocol: (value) => {
         return {
             result: isValidProtocol(value),
@@ -151,7 +151,7 @@ let inboundNatRuleValidations = {
 };
 
 let inboundNatPoolValidations = {
-    name: v.utilities.isNotNullOrWhitespace,
+    name: v.validationUtilities.isNotNullOrWhitespace,
     protocol: (value) => {
         return {
             result: isValidProtocol(value),
@@ -179,12 +179,12 @@ let inboundNatPoolValidations = {
 };
 
 let outboundNatRuleValidations = {
-    name: v.utilities.isNotNullOrWhitespace,
+    name: v.validationUtilities.isNotNullOrWhitespace,
     allocatedOutboundPorts: _.isFinite
 };
 
 let probeValidations = {
-    name: v.utilities.isNotNullOrWhitespace,
+    name: v.validationUtilities.isNotNullOrWhitespace,
     protocol: (value) => {
         return {
             result: isValidProbeProtocol(value),
@@ -252,7 +252,7 @@ let processProperties = {
                     properties: {
                         privateIPAllocationMethod: 'Dynamic',
                         publicIPAddress: {
-                            id: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/publicIPAddresses', `${config.name}-pip`),
+                            id: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/publicIPAddresses', `${config.name}-pip`)
                         }
                     }
                 });
@@ -306,10 +306,10 @@ let processProperties = {
                 ((nics[name]) || (nics[name] = [])).push({
                     id: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/loadBalancers/backendAddressPools', parent.name, pool.name)
                 });
-            })
+            });
         });
         accumulator.loadBalancers[0].properties['backendAddressPools'] = pools;
-        updateAccumulatorWithNicUpdates('backendPools', nics, accumulator)
+        updateAccumulatorWithNicUpdates('backendPools', nics, accumulator);
     },
     inboundNatRules: (value, key, parent, accumulator) => {
         let natRules = [];
@@ -326,7 +326,7 @@ let processProperties = {
                     }
                 };
                 if (rule.nics.names.length > 1) {
-                    natRule.name = `${rule.name}-${index}`
+                    natRule.name = `${rule.name}-${index}`;
                 }
                 if (rule.enableFloatingIP === true) {
                     natRule.properties.frontendPort = rule.frontendPort;
@@ -411,7 +411,7 @@ function updateNicReferencesInLoadBalancer(settings, accumulator) {
 
 function augmentResourceGroupAndSubscriptioInfo(param, buildingBlockSettings) {
     param = resources.setupResources(param, buildingBlockSettings, (parentKey) => {
-        return ((parentKey === null) || (parentKey === 'nics') || (parentKey === 'virtualNetwork'));
+        return ((parentKey === null) || (v.utilities.isStringInArray(parentKey, ['nics', 'virtualNetwork'])));
     });
 
     return param;

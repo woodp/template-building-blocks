@@ -405,21 +405,18 @@ describe('routeTableSettings', () => {
                 buildingBlockSettings: buildingBlockSettings
             });
 
-            expect(result.settings.length).toBe(1);
-            let settingsResult = result.settings[0];
+            expect(result.routeTables.length).toBe(1);
+            let settingsResult = result.routeTables[0];
             expect(settingsResult.hasOwnProperty('id')).toBe(true);
-            expect(settingsResult.hasOwnProperty('name')).toBe(true);
+            expect(settingsResult.name).toBe(settings.name);
             expect(settingsResult.hasOwnProperty('resourceGroupName')).toBe(true);
             expect(settingsResult.hasOwnProperty('subscriptionId')).toBe(true);
             
-            expect(settingsResult.hasOwnProperty('subnets')).toBe(true);
             expect(settingsResult.subnets.length).toBe(2);
             let subnetsResult = settingsResult.subnets;
             expect(subnetsResult[0].endsWith('my-virtual-network/subnets/biz')).toBe(true);
             expect(subnetsResult[1].endsWith('my-virtual-network/subnets/web')).toBe(true);
 
-            expect(settingsResult.hasOwnProperty('properties')).toBe(true);
-            expect(settingsResult.properties.hasOwnProperty('routes')).toBe(true);
             expect(settingsResult.properties.routes.length).toBe(2);
             let routesResult = settingsResult.properties.routes;
             expect(routesResult[0].name).toBe('route1');

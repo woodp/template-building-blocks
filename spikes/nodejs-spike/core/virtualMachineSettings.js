@@ -1,4 +1,6 @@
-var _ = require('../lodashMixins.js');
+'use strict';
+
+var _ = require('lodash');
 var fs = require('fs');
 var storageSettings = require('./storageSettings.js');
 var nicSettings = require('./networkInterfaceSettings.js');
@@ -78,19 +80,19 @@ function defaultsCustomizer(objValue, srcValue, key) {
 let encryptionSettingsValidations = {
     enabled: _.isBoolean,
     diskEncryptionKey: {
-        secretUrl: v.utilities.isNotNullOrWhitespace,
-        sourceVaultName: v.utilities.isNotNullOrWhitespace
+        secretUrl: v.validationUtilities.isNotNullOrWhitespace,
+        sourceVaultName: v.validationUtilities.isNotNullOrWhitespace
     },
     keyEncryptionKey: {
-        keyUrl: v.utilities.isNotNullOrWhitespace,
-        sourceVaultName: v.utilities.isNotNullOrWhitespace
+        keyUrl: v.validationUtilities.isNotNullOrWhitespace,
+        sourceVaultName: v.validationUtilities.isNotNullOrWhitespace
     }
 };
 
 let virtualMachineValidations = {
     virtualNetwork: () => {
         let virtualNetworkValidations = {
-            name: v.utilities.isNotNullOrWhitespace
+            name: v.validationUtilities.isNotNullOrWhitespace
         };
 
         return {
@@ -103,14 +105,14 @@ let virtualMachineValidations = {
             message: 'Value must be greater than 0'
         };
     },
-    namePrefix: v.utilities.isNotNullOrWhitespace,
+    namePrefix: v.validationUtilities.isNotNullOrWhitespace,
     computerNamePrefix: (value) => {
         return {
-            result: v.utilities.isNotNullOrWhitespace(value) && (value.length < 7),
+            result: (!v.utilities.isNullOrWhitespace(value)) && (value.length < 7),
             message: 'Value cannot be longer than 6 characters'
         };
     },
-    size: v.utilities.isNotNullOrWhitespace,
+    size: v.validationUtilities.isNotNullOrWhitespace,
     osDisk: (value, parent) => {
         // We will need this, so we'll capture here.
         let isManagedStorageAccounts = parent.storageAccounts.managed;
@@ -138,7 +140,7 @@ let virtualMachineValidations = {
                 return { result: true };
             },
             image: (value, parent) => {
-                if (parent.createOption === 'attach' && _.isNullOrWhitespace(value)) {
+                if (parent.createOption === 'attach' && v.utilities.isNullOrWhitespace(value)) {
                     return {
                         result: false,
                         message: 'Value of image cannot be null or empty, if value of .osDisk.createOption is attach'
@@ -202,7 +204,7 @@ let virtualMachineValidations = {
                     return { result: true };
                 },
                 image: (value, parent) => {
-                    if (parent.createOption === 'attach' && _.isNullOrWhitespace(value)) {
+                    if (parent.createOption === 'attach' && v.utilities.isNullOrWhitespace(value)) {
                         return {
                             result: false,
                             message: 'Value of image cannot be null or empty, if value of .dataDisks.createOption is attach'
@@ -249,7 +251,7 @@ let virtualMachineValidations = {
         }
         return { result: true };
     },
-    adminUsername: v.utilities.isNotNullOrWhitespace,
+    adminUsername: v.validationUtilities.isNotNullOrWhitespace,
     osAuthenticationType: (value, parent) => {
         let result = {
             result: true
@@ -273,7 +275,7 @@ let virtualMachineValidations = {
         let result = {
             result: true
         };
-        if ((parent.osAuthenticationType === 'password') && (_.isNullOrWhitespace(value))) {
+        if ((parent.osAuthenticationType === 'password') && (v.utilities.isNullOrWhitespace(value))) {
             result = {
                 result: false,
                 message: 'adminPassword cannot be null, empty, or only whitespace if osAuthenticationType is password'
@@ -286,7 +288,7 @@ let virtualMachineValidations = {
             result: true
         };
 
-        if (parent.osAuthenticationType === 'ssh' && (_.isNullOrWhitespace(value))) {
+        if (parent.osAuthenticationType === 'ssh' && (v.utilities.isNullOrWhitespace(value))) {
             result = {
                 result: false,
                 message: 'sshPublicKey cannot be null, empty, or only whitespace if osAuthenticationType is ssh'

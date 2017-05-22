@@ -1,6 +1,6 @@
 'use strict';
 
-let _ = require('../lodashMixins.js');
+let _ = require('lodash');
 let v = require('./validation.js');
 let r = require('./resources.js');
 
@@ -39,15 +39,15 @@ let isValidAccess = (access) => {
 };
 
 let networkSecurityGroupSettingsSecurityRulesValidations = {
-    name: v.utilities.isNotNullOrWhitespace,
+    name: v.validationUtilities.isNotNullOrWhitespace,
     protocol: (value) => {
         return {
             result: isValidProtocol(value),
             message: `Valid values are ${validProtocols.join(',')}`
         };
     },
-    sourcePortRange: v.utilities.networking.isValidPortRange,
-    destinationPortRange: v.utilities.networking.isValidPortRange,
+    sourcePortRange: v.validationUtilities.isValidPortRange,
+    destinationPortRange: v.validationUtilities.isValidPortRange,
     sourceAddressPrefix: (value) => {
         return {
             result: isValidAddressPrefix(value),
@@ -66,7 +66,12 @@ let networkSecurityGroupSettingsSecurityRulesValidations = {
             message: `Valid values are ${validDirections.join(',')}`
         };
     },
-    priority: isValidPriority,
+    priority: (value) => {
+        return {
+            result: isValidPriority(value),
+            message: 'Valid value is between 100 and 4096, inclusive'
+        };
+    },
     access: (value) => {
         return {
             result: isValidAccess(value),
@@ -76,7 +81,7 @@ let networkSecurityGroupSettingsSecurityRulesValidations = {
 };
 
 let virtualNetworkValidations = {
-    name: v.utilities.isNotNullOrWhitespace,
+    name: v.validationUtilities.isNotNullOrWhitespace,
     subnets: (value) => {
         if ((_.isNil(value)) || (value.length === 0)) {
             return {
@@ -85,18 +90,18 @@ let virtualNetworkValidations = {
             };
         } else {
             return {
-                validations: v.utilities.isNotNullOrWhitespace
+                validations: v.validationUtilities.isNotNullOrWhitespace
             };
         }
     }
 };
 
 let networkInterfaceValidations = {
-    name: v.utilities.isNotNullOrWhitespace
+    name: v.validationUtilities.isNotNullOrWhitespace
 };
 
 let networkSecurityGroupSettingsValidations = {
-    name: v.utilities.isNotNullOrWhitespace,
+    name: v.validationUtilities.isNotNullOrWhitespace,
     securityRules: (value) => {
         // We allow empty arrays
         let result = {
@@ -192,29 +197,25 @@ function transform(settings) {
     };
 }
 
+let merge = ({settings, buildingBlockSettings, defaultSettings = networkSecurityGroupSettingsDefaults}) => {
+    let merged = r.setupResources(settings, buildingBlockSettings, (parentKey) => {
+        return ((parentKey === null) || (v.utilities.isStringInArray(parentKey, ['virtualNetworks', 'networkInterfaces'])));
+    });
+
+    merged = v.merge(merged, defaultSettings, mergeCustomizer);
+    return merged;
+};
+
 exports.transform = function ({settings, buildingBlockSettings}) {
     if (_.isPlainObject(settings)) {
         settings = [settings];
     }
 
-    let results = _.transform(settings, (result, setting) => {
-        let merged = v.merge(setting, networkSecurityGroupSettingsDefaults, mergeCustomizer);
-        let errors = v.validate({
-            settings: merged,
-            validations: networkSecurityGroupSettingsValidations
-        });
-        if (errors.length > 0) {
-            throw new Error(JSON.stringify(errors));
-        }
-
-        result.push(merged);
-    }, []);
-
     let buildingBlockErrors = v.validate({
         settings: buildingBlockSettings,
         validations: {
-            subscriptionId: v.utilities.isNotNullOrWhitespace,
-            resourceGroupName: v.utilities.isNotNullOrWhitespace,
+            subscriptionId: v.validationUtilities.isGuid,
+            resourceGroupName: v.validationUtilities.isNotNullOrWhitespace,
         }
     });
 
@@ -222,13 +223,25 @@ exports.transform = function ({settings, buildingBlockSettings}) {
         throw new Error(JSON.stringify(buildingBlockErrors));
     }
 
-    results = _.transform(results, (result, setting) => {
-        setting = r.setupResources(setting, buildingBlockSettings, (parentKey) => {
-            return ((parentKey === null) || (parentKey === 'virtualNetworks') || (parentKey === 'networkInterfaces'));
-        });
-        setting = transform(setting);
-        result.push(setting);
-    }, []);
+    let results = merge({
+        settings: settings,
+        buildingBlockSettings: buildingBlockSettings
+    });
 
-    return { settings: results };
+    let errors = v.validate({
+        settings: results,
+        validations: networkSecurityGroupSettingsValidations
+    });
+
+    if (errors.length > 0) {
+        throw new Error(JSON.stringify(errors));
+    }
+
+    results = _.map(results, (setting) => {
+        return transform(setting);
+    });
+
+    return {
+        networkSecurityGroups: results
+    };
 };

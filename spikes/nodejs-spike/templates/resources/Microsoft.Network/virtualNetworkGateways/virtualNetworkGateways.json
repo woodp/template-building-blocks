@@ -10,14 +10,15 @@
   },
   "resources": [
     {
-      "type": "Microsoft.Network/virtualNetworks",
+      "type": "Microsoft.Network/virtualNetworkGateways",
       "apiVersion": "2016-06-01",
       "location": "[resourceGroup().location]",
-      "name": "[parameters('source')[copyIndex()].name]",
       "copy": {
-        "name": "iterator",
-        "count": "[length(parameters('source'))]"
+          "name": "iterator",
+          "mode": "Serial",
+          "count": "[length(parameters('source'))]"
       },
+      "name": "[parameters('source')[copyIndex()].name]",
       "properties": "[parameters('source')[copyIndex()].properties]"
     }
   ],

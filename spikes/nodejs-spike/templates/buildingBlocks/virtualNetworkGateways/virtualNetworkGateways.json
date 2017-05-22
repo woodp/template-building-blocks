@@ -24,10 +24,9 @@
   "variables": {
     "location": "[resourceGroup().location]",
     "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('virtualNetworkGateways')), string(parameters('publicIpAddresses'))))]",
-    "virtualNetworkGatewayTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/virtualNetworkGateways/virtualNetworkGateway.json')]",
+    "virtualNetworkGatewaysTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/virtualNetworkGateways/virtualNetworkGateways.json')]",
     "publicIpAddressTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/publicIPAddresses/publicIPAddress.json')]",
     "iteratorTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/common/resources.json')]",
-    "virtualNetworkGatewayDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployVng-', variables('templateUniqueString'))]",
     "publicIpAddressTemplateDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployPips-', variables('templateUniqueString'))]"
   },
   "resources": [
@@ -61,29 +60,22 @@
     {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2015-01-01",
-      "name": "[variables('virtualNetworkGatewayDeploymentName')]",
+      "name": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployVng', copyIndex(), '-', variables('templateUniqueString'))]",
       "dependsOn": [
           "[variables('publicIpAddressTemplateDeploymentName')]"
       ],
+      "copy": {
+        "name": "vngIterator",
+        "count": "[length(parameters('virtualNetworkGateways'))]"
+      },
       "properties": {
         "mode": "Incremental",
         "templateLink": {
-          "uri": "[variables('iteratorTemplate')]"
+          "uri": "[variables('virtualNetworkGatewaysTemplate')]"
         },
         "parameters": {
-          "deploymentContext": {
-            "value": {
-              "parentTemplateUniqueString": "[concat(variables('templateUniqueString'), '-deployVng')]"
-            }
-          },
           "source": {
-            "value": "[parameters('virtualNetworkGateways')]"
-          },
-          "name": {
-            "value": "vng"
-          },
-          "resourceTemplatePath": {
-            "value": "[variables('virtualNetworkGatewayTemplate')]"
+            "value": "[parameters('virtualNetworkGateways')[copyIndex()]]"
           }
         }
       }

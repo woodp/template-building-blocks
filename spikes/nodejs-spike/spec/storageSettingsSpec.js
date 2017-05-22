@@ -1,7 +1,7 @@
 describe('storageSettings:', () => {
     let rewire = require('rewire');
     let storageSettings = rewire('../core/storageSettings.js');
-    let _ = require('../lodashMixins.js');
+    let _ = require('lodash');
 
     describe('storage accounts merge:', () => {
 
@@ -111,13 +111,13 @@ describe('storageSettings:', () => {
             let validation = storageSettings.__get__('storageValidations').nameSuffix;
             it('validates nameSuffix canot be an empty string.', () => {
                 let result = validation('');
-                expect(result).toEqual(false);
+                expect(result.result).toEqual(false);
 
                 result = validation('test');
-                expect(result).toEqual(true);
+                expect(result.result).toEqual(true);
 
                 result = validation(null);
-                expect(result).toEqual(false);
+                expect(result.result).toEqual(false);
             });
         });
         describe('managed:', () => {
@@ -203,13 +203,13 @@ describe('storageSettings:', () => {
             let validation = storageSettings.__get__('diagnosticValidations').nameSuffix;
             it('validates nameSuffix canot be an empty string.', () => {
                 let result = validation('');
-                expect(result).toEqual(false);
+                expect(result.result).toEqual(false);
 
                 result = validation('test');
-                expect(result).toEqual(true);
+                expect(result.result).toEqual(true);
 
                 result = validation(null);
-                expect(result).toEqual(false);
+                expect(result.result).toEqual(false);
             });
         });
         describe('managed:', () => {
