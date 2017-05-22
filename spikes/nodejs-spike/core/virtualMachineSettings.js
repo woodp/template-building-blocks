@@ -646,10 +646,14 @@ function createTemplateParameters(resources) {
 }
 
 function getTemplateParameters(param, buildingBlockSettings) {
-    let processedParams = process(param, buildingBlockSettings);
+    let processedParams = mergeAndProcess(param, buildingBlockSettings);
     return createTemplateParameters(processedParams);
 }
 
-exports.processVirtualMachineSettings = getTemplateParameters;
-exports.mergeWithDefaults = merge;
+function mergeAndProcess(param, buildingBlockSettings) {
+    return process(merge(param), buildingBlockSettings);
+}
+
+exports.processVirtualMachineSettings = mergeAndProcess;
 exports.validations = validate;
+exports.getTemplateParameters = getTemplateParameters;

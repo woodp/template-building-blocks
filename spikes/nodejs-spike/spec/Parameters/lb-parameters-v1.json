@@ -65,21 +65,21 @@
                     {
                         "name": "lb-bep1",
                         "nics": {
-                            "vmIndex": [
-                                0,
-                                1
-                            ],
-                            "nicIndex": 0
+                            "names": [
+                                "A",
+                                "B",
+                                "Z"
+                            ]
                         }
                     },
                     {
                         "name": "lb-bep2",
                         "nics": {
-                            "vmIndex": [
-                                0,
-                                1
-                            ],
-                            "nicIndex": 1
+                            "names": [
+                                "B",
+                                "C",
+                                "Z"
+                            ]
                         }
                     }
                 ],
@@ -93,11 +93,11 @@
                         "protocol": "Tcp",
                         "idleTimeoutInMinutes": 4,
                         "nics": {
-                            "vmIndex": [
-                                0,
-                                1
-                            ],
-                            "nicIndex": 0
+                            "names": [
+                                "D",
+                                "E",
+                                "Z"
+                            ]
                         }
                     },
                     {
@@ -108,62 +108,14 @@
                         "protocol": "Tcp",
                         "idleTimeoutInMinutes": 4,
                         "nics": {
-                            "vmIndex": [
-                                1
-                            ],
-                            "nicIndex": 1
+                            "names": [
+                                "F"
+                            ]
                         }
                     }
                 ],
                 "virtualNetwork": {
                     "name": "test-vnet"
-                },
-                "backendVirtualMachinesSettings": {
-                    "vmCount": 2,
-                    "namePrefix": "test",
-                    "size": "Standard_DS2",
-                    "computerNamePrefix": "test",
-                    "adminUsername": "testadminuser",
-                    "adminPassword": "testPassw0rd111",
-                    "osAuthenticationType": "password",
-                    "storageAccounts": {
-                        "count": 1,
-                        "managed": false
-                    },
-                    "diagnosticStorageAccounts": {
-                        "count": 1
-                    },
-                    "nics": [
-                        {
-                            "isPublic": true,
-                            "subnetName": "web",
-                            "privateIPAllocationMethod": "Static",
-                            "startingIPAddress": "10.0.1.240",
-                            "isPrimary": true,
-                            "dnsServers": [
-                                "10.0.1.240",
-                                "10.0.1.242"
-                            ]
-                        },
-                        {
-                            "isPrimary": false,
-                            "subnetName": "biz",
-                            "privateIPAllocationMethod": "Dynamic"
-                        }
-                    ],
-                    "osDisk": {
-                        "osType": "linux"
-                    },
-                    "dataDisks": {
-                        "count": 1,
-                        "properties": {
-                            "diskSizeGB": 127
-                        }
-                    },
-                    "availabilitySet": {
-                        "useExistingAvailabilitySet": false,
-                        "name": "test-as"
-                    }
                 }
             }
         },
