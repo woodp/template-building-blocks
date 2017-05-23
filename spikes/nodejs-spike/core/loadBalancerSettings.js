@@ -9,12 +9,8 @@ const defaultsPath = './defaults/loadBalancerSettings.json';
 
 function merge(settings) {
     let defaults = JSON.parse(fs.readFileSync(defaultsPath, 'UTF-8'));
-
-    if (settings.backendVirtualMachinesSettings.nics.length >= 0) {
-        defaults.backendVirtualMachinesSettings.nics = [];
-    }
-    if (settings.probes.length === 0) {
-        defaults.probes = [];
+    if (!settings.backendVirtualMachinesSettings) {
+        delete (defaults.backendVirtualMachinesSettings);
     }
 
     let merged = v.merge(settings, defaults, defaultsCustomizer);
@@ -28,6 +24,11 @@ function merge(settings) {
 }
 
 function defaultsCustomizer(objValue, srcValue, key) {
+    if (objValue && key === 'backendVirtualMachinesSettings') {
+        if (srcValue.nics && _.isArray(srcValue.nics) && srcValue.nics.length >= 0) {
+            objValue.nics = [];
+        }
+    }
     if (objValue && key === 'frontendIPConfigurations') {
         if (srcValue && _.isArray(srcValue) && srcValue.length > 0) {
             objValue.splice(0, 1);
@@ -429,32 +430,44 @@ function updateNicReferencesInLoadBalancer(settings, accumulator) {
     let backendPools = param.backendPools;
     backendPools.forEach((pool, i) => {
         let backendPoolNics = [];
-        if (!pool.nics.hasOwnProperty('vmIndex') || pool.nics.vmIndex.length === 0) {
-            let count = accumulator.virtualMachines.length;
-            pool.nics.vmIndex = [];
-            for (let i = 0; i < count; i++) {
-                pool.nics.vmIndex.push(i);
+        if (pool.nics.hasOwnProperty('names')) {
+            pool.nics.names.forEach((name) => {
+                backendPoolNics.push(resources.resourceId(pool.nics.subscriptionId, pool.nics.resourceGroupName, 'Microsoft.Network/networkInterfaces', name));
+            });
+        } else {
+            if (!pool.nics.hasOwnProperty('vmIndex') || pool.nics.vmIndex.length === 0) {
+                let count = accumulator.virtualMachines.length;
+                pool.nics.vmIndex = [];
+                for (let i = 0; i < count; i++) {
+                    pool.nics.vmIndex.push(i);
+                }
             }
+            pool.nics.vmIndex.forEach((index) => {
+                backendPoolNics.push(accumulator.virtualMachines[index].properties.networkProfile.networkInterfaces[pool.nics.nicIndex].id);
+            });
         }
-        pool.nics.vmIndex.forEach((index) => {
-            backendPoolNics.push(accumulator.virtualMachines[index].properties.networkProfile.networkInterfaces[pool.nics.nicIndex].id);
-        });
         param.backendPools[i].nics.names = backendPoolNics;
     });
 
     let natRules = param.inboundNatRules;
     natRules.forEach((rule, i) => {
         let natRuleNics = [];
-        if (!rule.nics.hasOwnProperty('vmIndex') || rule.nics.vmIndex.length === 0) {
-            let count = accumulator.virtualMachines.length;
-            rule.nics.vmIndex = [];
-            for (let i = 0; i < count; i++) {
-                rule.nics.vmIndex.push(i);
+        if (rule.nics.hasOwnProperty('names')) {
+            rule.nics.names.forEach((name) => {
+                natRuleNics.push(resources.resourceId(rule.nics.subscriptionId, rule.nics.resourceGroupName, 'Microsoft.Network/networkInterfaces', name));
+            });
+        } else {
+            if (!rule.nics.hasOwnProperty('vmIndex') || rule.nics.vmIndex.length === 0) {
+                let count = accumulator.virtualMachines.length;
+                rule.nics.vmIndex = [];
+                for (let i = 0; i < count; i++) {
+                    rule.nics.vmIndex.push(i);
+                }
             }
+            rule.nics.vmIndex.forEach((index) => {
+                natRuleNics.push(accumulator.virtualMachines[index].properties.networkProfile.networkInterfaces[rule.nics.nicIndex].id);
+            });
         }
-        rule.nics.vmIndex.forEach((index) => {
-            natRuleNics.push(accumulator.virtualMachines[index].properties.networkProfile.networkInterfaces[rule.nics.nicIndex].id);
-        });
         param.inboundNatRules[i].nics.names = natRuleNics;
     });
 
@@ -471,7 +484,9 @@ function augmentResourceGroupAndSubscriptioInfo(param, buildingBlockSettings) {
 
 function process(param, buildingBlockSettings) {
     // process VM settings
-    param.backendVirtualMachinesSettings['virtualNetwork'] = param.virtualNetwork;
+    if (param.backendVirtualMachinesSettings) {
+        param.backendVirtualMachinesSettings['virtualNetwork'] = param.virtualNetwork;
+    }
     let updatedParams = augmentResourceGroupAndSubscriptioInfo(param, buildingBlockSettings);
 
     let accumulator = _.transform(updatedParams, (resources, value, key, obj) => {
@@ -481,10 +496,7 @@ function process(param, buildingBlockSettings) {
         return resources;
     }, {});
 
-    let updatedLoadBalancerSettings = param;
-    if (param.hasOwnProperty('backendVirtualMachinesSettings')) {
-        updatedLoadBalancerSettings = updateNicReferencesInLoadBalancer(updatedParams, accumulator);
-    }
+    let updatedLoadBalancerSettings = updateNicReferencesInLoadBalancer(updatedParams, accumulator);
     accumulator = _.merge(accumulator, { loadBalancers: [{ properties: {} }] });
     return _.transform(updatedLoadBalancerSettings, (accumulator, value, key, obj) => {
         if (typeof processProperties[key] === 'function') {
