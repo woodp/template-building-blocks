@@ -48,17 +48,13 @@
                         "name": "lbp1",
                         "port": 80,
                         "protocol": "Http",
-                        "requestPath": "/",
-                        "intervalInSeconds": 15,
-                        "numberOfProbes": 2
+                        "requestPath": "/"
                     },
                     {
                         "name": "lbp2",
                         "port": 50000,
                         "protocol": "TCP",
-                        "requestPath": "/",
-                        "intervalInSeconds": 15,
-                        "numberOfProbes": 2
+                        "requestPath": "/"
                     }
                 ],
                 "backendPools": [
@@ -104,7 +100,7 @@
                         "name": "nat2",
                         "frontendIPConfigurationName": "lbfe2",
                         "frontendPort": 25,
-                        "enableFloatingIP": "FloatingIp",
+                        "enableFloatingIP": true,
                         "protocol": "Tcp",
                         "idleTimeoutInMinutes": 4,
                         "nics": {

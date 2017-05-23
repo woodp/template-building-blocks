@@ -1,9 +1,47 @@
 let _ = require('lodash');
+var fs = require('fs');
 let v = require('./validation.js');
 var resources = require('./resources.js');
 var pipSettings = require('./pipSettings.js');
 let rewire = require('rewire');
-let virtualMachineSettings = rewire('../core/virtualMachineSettings.js');
+let virtualMachineSettings = require('./virtualMachineSettings.js');
+const defaultsPath = './defaults/loadBalancerSettings.json';
+
+function merge(settings) {
+    let defaults = JSON.parse(fs.readFileSync(defaultsPath, 'UTF-8'));
+
+    if (settings.backendVirtualMachinesSettings.nics.length >= 0) {
+        defaults.backendVirtualMachinesSettings.nics = [];
+    }
+    if (settings.probes.length === 0) {
+        defaults.probes = [];
+    }
+
+    let merged = v.merge(settings, defaults, defaultsCustomizer);
+    merged = v.merge(merged, {}, (objValue, srcValue, key) => {
+        if (key === 'backendVirtualMachinesSettings') {
+            return virtualMachineSettings.mergeWithDefaults(srcValue);
+        }
+    });
+
+    return merged;
+}
+
+function defaultsCustomizer(objValue, srcValue, key) {
+    if (objValue && key === 'frontendIPConfigurations') {
+        if (srcValue && _.isArray(srcValue) && srcValue.length > 0) {
+            objValue.splice(0, 1);
+        }
+    }
+    if (objValue && key === 'backendPools') {
+        if (srcValue && _.isArray(srcValue) && srcValue.length > 0) {
+            objValue.splice(0, 1);
+        }
+    }
+    if (objValue && key === 'probes') {
+        return v.merge(srcValue, objValue);
+    }
+}
 
 let validLoadBalancerTypes = ['Public', 'Internal'];
 let validProtocols = ['Tcp', 'Udp'];
@@ -353,7 +391,7 @@ let processChildResources = {
         accumulator.pips = pips;
     },
     backendVirtualMachinesSettings: (value, key, parent, accumulator) => {
-        _.mergeWith(accumulator, virtualMachineSettings.processVirtualMachineSettings(value, {resourceGroupName: parent.resourceGroupName, subscriptionId: parent.subscriptionId}), pipCustomizer);
+        _.mergeWith(accumulator, virtualMachineSettings.processVirtualMachineSettings(value, { resourceGroupName: parent.resourceGroupName, subscriptionId: parent.subscriptionId }), pipCustomizer);
     }
 };
 
@@ -391,6 +429,13 @@ function updateNicReferencesInLoadBalancer(settings, accumulator) {
     let backendPools = param.backendPools;
     backendPools.forEach((pool, i) => {
         let backendPoolNics = [];
+        if (!pool.nics.hasOwnProperty('vmIndex') || pool.nics.vmIndex.length === 0) {
+            let count = accumulator.virtualMachines.length;
+            pool.nics.vmIndex = [];
+            for (let i = 0; i < count; i++) {
+                pool.nics.vmIndex.push(i);
+            }
+        }
         pool.nics.vmIndex.forEach((index) => {
             backendPoolNics.push(accumulator.virtualMachines[index].properties.networkProfile.networkInterfaces[pool.nics.nicIndex].id);
         });
@@ -400,6 +445,13 @@ function updateNicReferencesInLoadBalancer(settings, accumulator) {
     let natRules = param.inboundNatRules;
     natRules.forEach((rule, i) => {
         let natRuleNics = [];
+        if (!rule.nics.hasOwnProperty('vmIndex') || rule.nics.vmIndex.length === 0) {
+            let count = accumulator.virtualMachines.length;
+            rule.nics.vmIndex = [];
+            for (let i = 0; i < count; i++) {
+                rule.nics.vmIndex.push(i);
+            }
+        }
         rule.nics.vmIndex.forEach((index) => {
             natRuleNics.push(accumulator.virtualMachines[index].properties.networkProfile.networkInterfaces[rule.nics.nicIndex].id);
         });
@@ -433,7 +485,7 @@ function process(param, buildingBlockSettings) {
     if (param.hasOwnProperty('backendVirtualMachinesSettings')) {
         updatedLoadBalancerSettings = updateNicReferencesInLoadBalancer(updatedParams, accumulator);
     }
-    accumulator = _.merge(accumulator, {loadBalancers: [{properties: {}}]});
+    accumulator = _.merge(accumulator, { loadBalancers: [{ properties: {} }] });
     return _.transform(updatedLoadBalancerSettings, (accumulator, value, key, obj) => {
         if (typeof processProperties[key] === 'function') {
             processProperties[key](value, key, obj, accumulator);
@@ -461,10 +513,15 @@ function createTemplateParameters(resources) {
 }
 
 function getTemplateParameters(param, buildingBlockSettings) {
-    let processedParams = process(param, buildingBlockSettings);
+    let processedParams = mergeAndProcess(param, buildingBlockSettings);
     return createTemplateParameters(processedParams);
 }
 
-exports.processLoadBalancerSettings = getTemplateParameters;
-//exports.mergeWithDefaults = merge;
+function mergeAndProcess(param, buildingBlockSettings) {
+    return process(merge(param), buildingBlockSettings);
+}
+
+exports.processLoadBalancerSettings = mergeAndProcess;
+exports.mergeWithDefaults = merge;
 //exports.validations = validate;
+exports.getTemplateParameters = getTemplateParameters;
