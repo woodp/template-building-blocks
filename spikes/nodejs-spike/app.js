@@ -1,6 +1,6 @@
 let fs = require('fs');
+let _ = require('lodash');
 let path = require('path');
-var _ = require('./lodashMixins.js');
 let virtualNetwork = require('./core/virtualNetworkSettings.js');
 let routeTables = require('./core/routeTableSettings.js');
 let availabilitySet = require('./core/availabilitySetSettings.js');
