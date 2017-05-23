@@ -63,7 +63,7 @@ exports.processParameters = processParameters;
 
 // ---------------------------------------------------------------------
 
-let parameterFile = path.join(__dirname, '.\\spec\\Parameters\\lb-parameters-v1.json');
+let parameterFile = path.join(__dirname, '.\\spec\\Parameters\\lb-parameters.json');
 //let result = processParameters("C:\\Projects\\GitHub\\template-building-blocks\\spikes\\nodejs-spike\\spec\\Parameters\\vm-parameters.json");
 let result = processParameters(parameterFile);
 fs.writeFileSync("C:\\temp\\parameters\\temp.parameter.json", JSON.stringify(result));

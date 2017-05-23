@@ -9,6 +9,9 @@ const defaultsPath = './defaults/loadBalancerSettings.json';
 
 function merge(settings) {
     let defaults = JSON.parse(fs.readFileSync(defaultsPath, 'UTF-8'));
+    if (!settings.backendVirtualMachinesSettings) {
+        delete (defaults.backendVirtualMachinesSettings);
+    }
 
     let merged = v.merge(settings, defaults, defaultsCustomizer);
     merged = v.merge(merged, {}, (objValue, srcValue, key) => {
@@ -22,8 +25,8 @@ function merge(settings) {
 
 function defaultsCustomizer(objValue, srcValue, key) {
     if (objValue && key === 'backendVirtualMachinesSettings') {
-        if (srcValue && _.isArray(srcValue) && srcValue.length >= 0) {
-            objValue.backendVirtualMachinesSettings.nics = [];
+        if (srcValue.nics && _.isArray(srcValue.nics) && srcValue.nics.length >= 0) {
+            objValue.nics = [];
         }
     }
     if (objValue && key === 'frontendIPConfigurations') {
@@ -481,7 +484,9 @@ function augmentResourceGroupAndSubscriptioInfo(param, buildingBlockSettings) {
 
 function process(param, buildingBlockSettings) {
     // process VM settings
-    param.backendVirtualMachinesSettings['virtualNetwork'] = param.virtualNetwork;
+    if (param.backendVirtualMachinesSettings) {
+        param.backendVirtualMachinesSettings['virtualNetwork'] = param.virtualNetwork;
+    }
     let updatedParams = augmentResourceGroupAndSubscriptioInfo(param, buildingBlockSettings);
 
     let accumulator = _.transform(updatedParams, (resources, value, key, obj) => {
@@ -491,10 +496,7 @@ function process(param, buildingBlockSettings) {
         return resources;
     }, {});
 
-    let updatedLoadBalancerSettings = param;
-    if (param.hasOwnProperty('backendVirtualMachinesSettings')) {
-        updatedLoadBalancerSettings = updateNicReferencesInLoadBalancer(updatedParams, accumulator);
-    }
+    let updatedLoadBalancerSettings = updateNicReferencesInLoadBalancer(updatedParams, accumulator);
     accumulator = _.merge(accumulator, { loadBalancers: [{ properties: {} }] });
     return _.transform(updatedLoadBalancerSettings, (accumulator, value, key, obj) => {
         if (typeof processProperties[key] === 'function') {
