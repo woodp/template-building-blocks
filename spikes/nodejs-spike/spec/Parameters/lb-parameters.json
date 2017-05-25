@@ -4,21 +4,11 @@
     "parameters": {
         "loadBalancerSettings": {
             "value": {
-                "name": "bb-dev-biz-lb",
+                "name": "test-lb",
                 "frontendIPConfigurations": [
                     {
-                        "name": "bb-dev-biz-lbfe1",
-                        "loadBalancerType": "public",
-                        "domainNameLabel": "rstest112211"
-                    },
-                    {
-                        "name": "bb-dev-biz-lbfe2",
-                        "loadBalancerType": "internal",
-                        "domainNameLabel": "tests",
-                        "internalLoadBalancerSettings": {
-                            "privateIPAddress": "10.0.2.100",
-                            "subnetName": "biz"
-                        }
+                        "name": "feConfig1",
+                        "loadBalancerType": "public"
                     }
                 ],
                 "loadBalancingRules": [
@@ -28,7 +18,7 @@
                         "backendPort": 80,
                         "protocol": "Tcp",
                         "backendPoolName": "lb-bep1",
-                        "frontendIPConfigurationName": "bb-dev-biz-lbfe1",
+                        "frontendIPConfigurationName": "feConfig1",
                         "enableFloatingIP": false,
                         "probeName": "lbp1"
                     },
@@ -38,7 +28,7 @@
                         "backendPort": 443,
                         "protocol": "Tcp",
                         "backendPoolName": "lb-bep2",
-                        "frontendIPConfigurationName": "bb-dev-biz-lbfe2",
+                        "frontendIPConfigurationName": "feConfig1",
                         "enableFloatingIP": false,
                         "probeName": "lbp2"
                     }
@@ -52,8 +42,8 @@
                     },
                     {
                         "name": "lbp2",
-                        "port": 50000,
-                        "protocol": "TCP",
+                        "port": 443,
+                        "protocol": "Http",
                         "requestPath": "/"
                     }
                 ],
@@ -62,8 +52,7 @@
                         "name": "lb-bep1",
                         "nics": {
                             "vmIndex": [
-                                0,
-                                1
+                                0
                             ],
                             "nicIndex": 0
                         }
@@ -72,7 +61,6 @@
                         "name": "lb-bep2",
                         "nics": {
                             "vmIndex": [
-                                0,
                                 1
                             ],
                             "nicIndex": 1
@@ -82,7 +70,7 @@
                 "inboundNatRules": [
                     {
                         "name": "nat1",
-                        "frontendIPConfigurationName": "lbfe1",
+                        "frontendIPConfigurationName": "feConfig1",
                         "startingFrontendPort": 50001,
                         "backendPort": 3389,
                         "enableFloatingIP": false,
@@ -98,7 +86,7 @@
                     },
                     {
                         "name": "nat2",
-                        "frontendIPConfigurationName": "lbfe2",
+                        "frontendIPConfigurationName": "feConfig1",
                         "frontendPort": 25,
                         "enableFloatingIP": true,
                         "protocol": "Tcp",
@@ -112,7 +100,7 @@
                     }
                 ],
                 "virtualNetwork": {
-                    "name": "test-vnet"
+                    "name": "ra-vnet"
                 },
                 "backendVirtualMachinesSettings": {
                     "vmCount": 2,
@@ -137,8 +125,6 @@
                             "startingIPAddress": "10.0.1.240",
                             "isPrimary": true,
                             "dnsServers": [
-                                "10.0.1.240",
-                                "10.0.1.242"
                             ]
                         },
                         {
@@ -147,7 +133,7 @@
                         }
                     ],
                     "osDisk": {
-                        "osType": "linux"
+                        "osType": "windows"
                     },
                     "dataDisks": {
                         "count": 1,
@@ -164,7 +150,7 @@
         },
         "buildingBlockSettings": {
             "value": {
-                "resourceGroupName": "rs-test1-rg",
+                "resourceGroupName": "rs-test7-rg",
                 "subscriptionId": "3b518fac-e5c8-4f59-8ed5-d70b626f8e10"
             }
         }
