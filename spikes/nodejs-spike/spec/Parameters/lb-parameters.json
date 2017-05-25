@@ -150,7 +150,7 @@
         },
         "buildingBlockSettings": {
             "value": {
-                "resourceGroupName": "rs-test5-rg",
+                "resourceGroupName": "rs-test7-rg",
                 "subscriptionId": "3b518fac-e5c8-4f59-8ed5-d70b626f8e10"
             }
         }

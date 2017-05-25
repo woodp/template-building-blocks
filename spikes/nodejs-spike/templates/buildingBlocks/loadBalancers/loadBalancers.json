@@ -125,7 +125,7 @@
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2017-05-10",
       "name": "[variables('lbDeploymentName')]",
-      "dependsOn": [
+       "dependsOn": [
         "[variables('vmDeploymentName')]"
       ],
       "properties": {
@@ -159,7 +159,7 @@
         },
         "parameters": {
           "nicReferenceId": {
-            "value": "[parameters('nicUpdates')[copyIndex()].name]"
+            "value": "[parameters('nicUpdates')[copyIndex()].id]"
           }
         }
       }
@@ -167,7 +167,7 @@
     {
       "type": "Microsoft.Network/networkInterfaces",
       "apiVersion": "2016-03-30",
-      "name": "[last(split(parameters('nicUpdates')[copyIndex()].name, '/'))]",
+      "name": "[last(split(parameters('nicUpdates')[copyIndex()].id, '/'))]",
       "location": "[resourceGroup().location]",
       "copy": {
         "name": "nicsIterator",
