@@ -1,0 +1,53 @@
+{
+    "$schema": "file:///Source/mspnp/template-building-blocks/spikes/nodejs-spike/swagger/settings.json#",
+    "parameters": {
+        "vmCount": 2,
+        "namePrefix": "test",
+        "size": "Standard_DS2",
+        "computerNamePrefix": "test",
+        "adminUsername": "testadminuser",
+        "adminPassword": "testPassw0rd111",
+        "osAuthenticationType": "password",
+        "virtualNetwork": {
+            "name": "ra-vnet"
+        },
+        "storageAccounts": {
+            "count": 1,
+            "managed": false
+        },
+        "diagnosticStorageAccounts": {
+            "count": 1
+        },
+        "nics": [
+            {
+                "isPublic": true,
+                "subnetName": "web",
+                "privateIPAllocationMethod": "Static",
+                "startingIPAddress": "10.0.1.240",
+                "isPrimary": true,
+                "dnsServers": [
+                    "10.0.1.240",
+                    "10.0.1.242"
+                ]
+            },
+            {
+                "isPrimary": false,
+                "subnetName": "biz",
+                "privateIPAllocationMethod": "Dynamic"
+            }
+        ],
+        "osDisk": {
+            "osType": "linux"
+        },
+        "dataDisks": {
+            "count": 1,
+            "properties": {
+                "diskSizeGB": 127
+            }
+        },
+        "availabilitySet": {
+            "useExistingAvailabilitySet": false,
+            "name": "test-as"
+        }
+    }
+}
