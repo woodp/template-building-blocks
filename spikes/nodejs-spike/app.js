@@ -48,7 +48,7 @@ function processParameters(parametersFilePath) {
         // if (errors.length > 0) {
         //   throw new Error(JSON.stringify(errors));
         // }  
-        result = lb.processLoadBalancerSettings(parameters[key], parameters["buildingBlockSettings"]);
+        result = lb.getTemplateParameters(parameters[key], parameters["buildingBlockSettings"]);
       case 'buildingBlockSettings':
         break;
       default:

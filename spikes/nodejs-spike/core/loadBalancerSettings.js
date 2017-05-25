@@ -305,13 +305,19 @@ let processProperties = {
             lbRules.push({
                 name: rule.name,
                 properties: {
-                    frontendIPConfiguration: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/loadBalancers/frontendIPConfigurations', parent.name, rule.frontendIPConfigurationName),
-                    backendAddressPool: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/loadBalancers/backendAddressPools', parent.name, rule.backendPoolName),
+                    frontendIPConfiguration: {
+                        id: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/loadBalancers/frontendIPConfigurations', parent.name, rule.frontendIPConfigurationName)
+                    },
+                    backendAddressPool: {
+                        id: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/loadBalancers/backendAddressPools', parent.name, rule.backendPoolName)
+                    },
                     frontendPort: rule.frontendPort,
                     backendPort: rule.backendPort,
                     protocol: rule.protocol,
                     enableFloatingIP: rule.enableFloatingIP,
-                    probe: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/loadBalancers/probes', parent.name, rule.probeName),
+                    probe: {
+                        id: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/loadBalancers/probes', parent.name, rule.probeName)
+                    },
                 }
             });
         });
@@ -358,7 +364,9 @@ let processProperties = {
                 let natRule = {
                     name: rule.name,
                     properties: {
-                        frontendIPConfiguration: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/loadBalancers/frontendIPConfigurations', parent.name, rule.frontendIPConfigurationName),
+                        frontendIPConfiguration: {
+                            id: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/loadBalancers/frontendIPConfigurations', parent.name, rule.frontendIPConfigurationName)
+                        },
                         protocol: rule.protocol,
                         enableFloatingIP: rule.enableFloatingIP,
                         idleTimeoutInMinutes: rule.idleTimeoutInMinutes
@@ -422,7 +430,6 @@ function updateAccumulatorWithNicUpdates(key, settings, accumulator) {
             accumulator.nicUpdates[nic][key] = accumulator.nicUpdates[nic][key].concat(settings[nic]);
         }
     }
-
 }
 
 function updateNicReferencesInLoadBalancer(settings, accumulator) {
@@ -483,10 +490,9 @@ function augmentResourceGroupAndSubscriptioInfo(param, buildingBlockSettings) {
 }
 
 function process(param, buildingBlockSettings) {
-    // process VM settings
-    if (param.backendVirtualMachinesSettings) {
-        param.backendVirtualMachinesSettings['virtualNetwork'] = param.virtualNetwork;
-    }
+    // add virtual network info from the load balancer settings to the VM property
+    param.backendVirtualMachinesSettings['virtualNetwork'] = param.virtualNetwork;
+
     let updatedParams = augmentResourceGroupAndSubscriptioInfo(param, buildingBlockSettings);
 
     let accumulator = _.transform(updatedParams, (resources, value, key, obj) => {
@@ -498,7 +504,7 @@ function process(param, buildingBlockSettings) {
 
     let updatedLoadBalancerSettings = updateNicReferencesInLoadBalancer(updatedParams, accumulator);
     accumulator = _.merge(accumulator, { loadBalancers: [{ properties: {} }] });
-    return _.transform(updatedLoadBalancerSettings, (accumulator, value, key, obj) => {
+    _.transform(updatedLoadBalancerSettings, (accumulator, value, key, obj) => {
         if (typeof processProperties[key] === 'function') {
             processProperties[key](value, key, obj, accumulator);
         } else if (key === 'name') {
@@ -506,6 +512,20 @@ function process(param, buildingBlockSettings) {
         }
         return accumulator;
     }, accumulator);
+
+
+    accumulator.nicUpdates = _.transform(_.cloneDeep(accumulator.nicUpdates), (result, value, key, obj) => {
+        result.push({
+            name: key,
+            properties: {
+                loadBalancerBackendAddressPools: value.backendPools,
+                loadBalancerInboundNatRules: value.inboundNatRules
+            }
+        });
+        return result;
+    }, []);
+
+    return accumulator;
 }
 
 function createTemplateParameters(resources) {
