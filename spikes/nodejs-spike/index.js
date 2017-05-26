@@ -18,19 +18,6 @@ let parseParameterFile = ({parameterFile}) => {
 
     try {
         return JSON.parse(content.replace(/^\uFEFF/, '')).parameters;
-        // let parameters = (JSON.parse(content.replace(/^\uFEFF/, ''))).parameters;
-
-        // if (!parameters.buildingBlockSettings.value) {
-        //     throw new Error('buildingBlockSettings not provided.');
-        // }
-
-        // if (Object.keys(parameters).length < 2) {
-        //     throw new Error('Parameters for the building blocks not provided');
-        // }
-
-        // return _.mapValues(parameters, (parameter) => {
-        //     return parameter.value
-        // });
     } catch (e) {
         throw new Error(`parameter file '${commander.parametersFile}' is not well-formed: ${e.message}`);
     }
@@ -43,61 +30,7 @@ let processParameters = ({buildingBlock, parameters, buildingBlockSettings}) => 
     }
 
     return processor.process(parameters, buildingBlockSettings);
-//         result = {
-//             name: key,
-//             value: process(parameters[key], parameters.buildingBlockSettings)
-//         };
 };
-
-// let processParameters = ({parameters, processors}) => {
-//     let result;
-
-//     // TODO - Normalize our interfaces, but for now, make it work.  We will loop, but we will only process the first parameter for now
-//     Object.keys(parameters).forEach((key) => {
-//         let process;
-//         switch (key) {
-//             case 'virtualMachinesSettings':
-//                 process = processors['virtualMachineSettings'].processVirtualMachineSettings;
-//                 break;
-//             case 'loadBalancerSettings':
-//                 process = processors[key].processLoadBalancerSettings;
-//                 break;
-//             case 'buildingBlockSettings':
-//                 return;
-//             default:
-//                 process = processors[key].transform;
-//                 break;
-//         }
-
-//         if (!process) {
-//             throw new Error(`Processor '${key}' not found.`);
-//         }
-
-//         result = {
-//             name: key,
-//             value: process(parameters[key], parameters.buildingBlockSettings)
-//         };
-//     });
-
-//     return result;
-// };
-
-// let loadModules = () => {
-//     let modules = {};
-//     let moduleFiles = fs.readdirSync('./core');
-//     for (let moduleFile of moduleFiles) {
-//         if (path.extname(moduleFile) === '.js') {
-//             let baseName = path.basename(moduleFile, '.js');
-//             if (baseName.endsWith('Settings')) {
-//                 let resolvedPath = path.resolve('./core', moduleFile);
-//                 modules[baseName] = require(resolvedPath);
-//                 //console.log(moduleFile);
-//             }
-//         }
-//     }
-
-//     return modules;
-// };
 
 let buildingBlocks = {
     vm: {
@@ -147,7 +80,7 @@ let validateSubscriptionId = (value) => {
 }
 
 let validateOutputModes
-let testCommandLine = ['dummy', 'dummy', '-b', 'vm', '-s', '3b518fac-e5c8-4f59-8ed5-d70b626f8e10', '-g', 'my-rg', '-p', 'spec/Parameters/vm-parameters-cmdline.json', '-o', 'output.json'];
+//let testCommandLine = ['dummy', 'dummy', '-b', 'vm', '-s', '3b518fac-e5c8-4f59-8ed5-d70b626f8e10', '-g', 'my-rg', '-p', 'spec/Parameters/vm-parameters-cmdline.json', '-o', 'output.json'];
 
 try {
     commander
@@ -161,6 +94,17 @@ try {
         .parse(process.argv);
         //.parse(testCommandLine);
 
+    if (_.isUndefined(commander.buildingBlock)) {
+        throw new Error('no building block specified');
+    }
+
+    if (_.isUndefined(commander.resourceGroup)) {
+        throw new Error('no resource group specified');
+    }
+
+    if (_.isUndefined(commander.subscriptionId)) {
+        throw new Error('no subscription id specified');
+    }
     if (((_.isUndefined(commander.outputFile)) && (_.isUndefined(commander.json))) ||
         ((!_.isUndefined(commander.outputFile)) && (!_.isUndefined(commander.json)))) {
         // Either both output types are not specified, or both of them were.  It's still invalid!
@@ -169,41 +113,40 @@ try {
         // File output was specified.  See if it needs the default file or if one was specified.
         commander.outputFile = path.resolve(commander.outputFile);
     }
+
+
+    let parameters = parseParameterFile({
+        parameterFile: commander.parametersFile
+    });
+
+    let result = processParameters({
+        buildingBlock: commander.buildingBlock,
+        parameters: parameters,
+        buildingBlockSettings: {
+            subscriptionId: commander.subscriptionId,
+            resourceGroupName: commander.resourceGroup
+        }
+    });
+
+    let templateParameters = createTemplateParameters({
+        parameters: result
+    });
+
+    // Prettify the json just in case we want to inspect the file.
+    let output = JSON.stringify(templateParameters, null, 2);
+    if (commander.json === true) {
+        console.log(output);
+    } else {
+        fs.writeFileSync(commander.outputFile, output);
+        console.log();
+        console.log(`  parameters written to ${commander.outputFile}`);
+        console.log();
+    }
 } catch (e) {
     console.error();
     console.error(`  error: ${e.message}`);
     console.error();
     process.exit(1);
-}
-
-let parameters = parseParameterFile({
-    parameterFile: commander.parametersFile
-});
-
-//let processors = loadModules();
-
-let result = processParameters({
-    buildingBlock: commander.buildingBlock,
-    parameters: parameters,
-    buildingBlockSettings: {
-        subscriptionId: commander.subscriptionId,
-        resourceGroupName: commander.resourceGroup
-    }
-});
-
-let templateParameters = createTemplateParameters({
-    parameters: result
-});
-
-// Prettify the json just in case we want to inspect the file.
-let output = JSON.stringify(templateParameters, null, 2);
-if (commander.json === true) {
-    console.log(output);
-} else {
-    fs.writeFileSync(commander.outputFile, output);
-    console.log();
-    console.log(`  parameters written to ${commander.outputFile}`);
-    console.log();
 }
 
 process.exit(0);
