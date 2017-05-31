@@ -7,7 +7,8 @@ let r = require('./resources.js');
 let networkSecurityGroupSettingsDefaults = {
     virtualNetworks: [],
     networkInterfaces: [],
-    securityRules: []
+    securityRules: [],
+    tags: {}
 };
 
 let validProtocols = ['TCP', 'UDP', '*'];
@@ -102,6 +103,7 @@ let networkInterfaceValidations = {
 
 let networkSecurityGroupSettingsValidations = {
     name: v.validationUtilities.isNotNullOrWhitespace,
+    tags: v.tagsValidations,
     securityRules: (value) => {
         // We allow empty arrays
         let result = {
@@ -160,7 +162,7 @@ let mergeCustomizer = function (objValue, srcValue, key) {
 };
 
 function transform(settings) {
-    return {
+    let result = {
         name: settings.name,
         id: r.resourceId(settings.subscriptionId, settings.resourceGroupName, 'Microsoft.Network/networkSecurityGroups', settings.name),
         resourceGroupName: settings.resourceGroupName,
@@ -195,6 +197,12 @@ function transform(settings) {
             })
         }
     };
+
+    if (settings.tags) {
+        result.tags = settings.tags;
+    }
+
+    return result;
 }
 
 let merge = ({settings, buildingBlockSettings, defaultSettings = networkSecurityGroupSettingsDefaults}) => {

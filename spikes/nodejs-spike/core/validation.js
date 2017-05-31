@@ -213,8 +213,63 @@ let validationUtilities = {
     }
 };
 
+let tagsValidations = (value) => {
+    let result = {
+        result: true
+    };
+
+    // Tags are optional
+    if (!_.isUndefined(value)) {
+        // If this is not an object, the value is invalid
+        if (!_.isPlainObject(value)) {
+            result = {
+                result: false,
+                message: 'tags must be a json object'
+            };
+        } else {
+            // If we have tags, we need to validate them
+            // 1.  We can only have 15 tags per resource
+            // 2.  Name is limited to 512 characters
+            // 3.  Value is limited to 256 characters
+            let keys = Object.keys(value);
+            if (keys.length > 15) {
+                result = {
+                    result: false,
+                    message: 'Only 15 tags are allowed'
+                };
+            } else {
+
+                let nameLengthViolated = _.some(value, (value, key) => {
+                    return !_.inRange(key.length, 1, 257);
+                });
+
+                let valueLengthViolated = _.some(value, (value) => {
+                    return (value.length > 256);
+                });
+
+                let message = '';
+                if (nameLengthViolated) {
+                    message = message.concat('Tag names must be between 1 and 512 characters in length.  ')
+                }
+
+                if (valueLengthViolated) {
+                    message = message.concat('Tag values cannot be greater than 256 characters in length.');
+                }
+
+                result = {
+                    result: (!nameLengthViolated && !valueLengthViolated),
+                    message: message.trim()
+                };
+            }
+        }
+    }
+    
+    return result;
+};
+
 exports.utilities = utilities;
 exports.validationUtilities = validationUtilities;
 exports.merge = merge;
 exports.validate = validate;
 exports.reduce = reduce;
+exports.tagsValidations = tagsValidations;

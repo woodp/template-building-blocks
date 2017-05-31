@@ -49,5 +49,6 @@
   },
   "availabilitySet": {
     "useExistingAvailabilitySet": false
-  }
+  },
+  "tags": {}
 }

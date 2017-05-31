@@ -6,7 +6,8 @@ let r = require('./resources.js');
 
 let routeTableSettingsDefaults = {
     virtualNetworks: [],
-    routes: []
+    routes: [],
+    tags: {}
 };
 
 let validNextHopTypes = ['VirtualNetworkGateway', 'VnetLocal', 'Internet', 'HyperNetGateway', 'None', 'VirtualAppliance'];
@@ -57,6 +58,7 @@ let virtualNetworkValidations = {
 
 let routeTableSettingsValidations = {
     name: v.validationUtilities.isNotNullOrWhitespace,
+    tags: v.tagsValidations,
     routes: (value) => {
         if ((_.isNil(value)) || (value.length === 0)) {
             return {
@@ -124,7 +126,7 @@ let mergeCustomizer = function (objValue, srcValue, key) {
 };
 
 function transform(settings) {
-    return {
+    let result = {
         name: settings.name,
         id: r.resourceId(settings.subscriptionId, settings.resourceGroupName, 'Microsoft.Network/routeTables', settings.name),
         resourceGroupName: settings.resourceGroupName,
@@ -153,6 +155,12 @@ function transform(settings) {
             })
         }
     };
+
+    if (settings.tags) {
+        result.tags = settings.tags;
+    }
+
+    return result;
 }
 
 let merge = ({settings, buildingBlockSettings, defaultSettings = routeTableSettingsDefaults}) => {

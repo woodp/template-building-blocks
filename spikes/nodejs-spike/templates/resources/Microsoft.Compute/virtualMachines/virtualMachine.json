@@ -18,9 +18,7 @@
             "apiVersion": "2016-04-30-preview",
             "name": "[variables('updatedSource').name]",
             "location": "[resourceGroup().location]",
-            "tags": {
-                "displayName": "VM"
-            },
+            "tags": "[variables('updatedSource').tags]",
             "properties": "[variables('updatedSource').properties]"
         }
     ]

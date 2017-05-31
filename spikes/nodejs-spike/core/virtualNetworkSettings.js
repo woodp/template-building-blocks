@@ -14,7 +14,8 @@ let virtualNetworkSettingsDefaults = {
         }
     ],
     dnsServers: [],
-    virtualNetworkPeerings: []
+    virtualNetworkPeerings: [],
+    tags: {}
 };
 
 let virtualNetworkPeeringsSettingsDefaults = {
@@ -72,6 +73,7 @@ let virtualNetworkSettingsValidations = {
 
         return result;
     },
+    tags: v.tagsValidations,
     virtualNetworkPeerings: (value) => {
         // An empty array is okay
         let result = {
@@ -94,7 +96,7 @@ let virtualNetworkSettingsValidations = {
 };
 
 function transform(settings) {
-    return {
+    let result = {
         name: settings.name,
         resourceGroupName: settings.resourceGroupName,
         subscriptionId: settings.subscriptionId,
@@ -115,6 +117,12 @@ function transform(settings) {
             }
         }
     };
+
+    if (settings.tags) {
+        result.tags = settings.tags;
+    }
+
+    return result;
 }
 
 function transformVirtualNetworkPeering({ settings, parentSettings }) {
