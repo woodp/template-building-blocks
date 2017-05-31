@@ -53,9 +53,11 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Launch Web API",
+            "name": "Launch Command Line",
             "program": "${workspaceRoot}/index.js",
-            "cwd": "${workspaceRoot}"
+            "cwd": "${workspaceRoot}",
+            "args": [
+            ]
         },
         {
             "type": "node",

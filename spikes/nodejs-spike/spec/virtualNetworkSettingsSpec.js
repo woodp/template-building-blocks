@@ -296,7 +296,12 @@ describe('virtualNetworkSettings', () => {
                         allowGatewayTransit: false,
                         useRemoteGateways: true
                     }
-                ]
+                ],
+                tags: {
+                    name1: 'value1',
+                    name2: 'value2',
+                    name3: 'value3'
+                }
             };
 
             it('name undefined', () => {
@@ -466,7 +471,110 @@ describe('virtualNetworkSettings', () => {
                 expect(errors.length).toEqual(0);
             });
 
-            
+            it('tags null', () => {
+                let settings = _.cloneDeep(virtualNetworkSettings);
+                delete settings.tags;
+                let errors = validation.validate({
+                    settings: settings,
+                    validations: virtualNetworkValidations
+                });
+
+                expect(errors.length).toEqual(0);
+            });
+
+            it('tags null', () => {
+                let settings = _.cloneDeep(virtualNetworkSettings);
+                settings.tags = null;
+                let errors = validation.validate({
+                    settings: settings,
+                    validations: virtualNetworkValidations
+                });
+
+                expect(errors.length).toEqual(1);
+            });
+
+            it('tags empty', () => {
+                let settings = _.cloneDeep(virtualNetworkSettings);
+                settings.tags = {};
+                let errors = validation.validate({
+                    settings: settings,
+                    validations: virtualNetworkValidations
+                });
+
+                expect(errors.length).toEqual(0);
+            });
+
+            it('tags length exceeded', () => {
+                let settings = _.cloneDeep(virtualNetworkSettings);
+                settings.tags = {};
+                for (let i = 0; i < 16; i++) {
+                    settings.tags[`name${i}`] = `value${i}`;
+                }
+
+                let errors = validation.validate({
+                    settings: settings,
+                    validations: virtualNetworkValidations
+                });
+
+                expect(errors.length).toEqual(1);
+            });
+
+            it('tags name length exceeded', () => {
+                let settings = _.cloneDeep(virtualNetworkSettings);
+                settings.tags = {};
+                let tagName = '';
+                for (let i = 0; i < 513; i++) {
+                    tagName = tagName.concat('a');
+                }
+
+                settings.tags[tagName] = 'value';
+                settings.tags[tagName + '1'] = 'value';
+
+                let errors = validation.validate({
+                    settings: settings,
+                    validations: virtualNetworkValidations
+                });
+
+                expect(errors.length).toEqual(1);
+            });
+
+            it('tags value length exceeded', () => {
+                let settings = _.cloneDeep(virtualNetworkSettings);
+                settings.tags = {};
+                let tagValue = '';
+                for (let i = 0; i < 257; i++) {
+                    tagValue = tagValue.concat('a');
+                }
+
+                settings.tags['name1'] = tagValue;
+                settings.tags['name2'] = tagValue;
+
+                let errors = validation.validate({
+                    settings: settings,
+                    validations: virtualNetworkValidations
+                });
+
+                expect(errors.length).toEqual(1);
+            });
+
+            it('tags name and value length exceeded', () => {
+                let settings = _.cloneDeep(virtualNetworkSettings);
+                settings.tags = {};
+                let tagName = '';
+                for (let i = 0; i < 513; i++) {
+                    tagName = tagName.concat('a');
+                }
+
+                settings.tags[tagName] = tagName;
+                settings.tags[tagName + '1'] = tagName;
+
+                let errors = validation.validate({
+                    settings: settings,
+                    validations: virtualNetworkValidations
+                });
+
+                expect(errors.length).toEqual(1);
+            });
 
             it('valid', () => {
                 let settings = _.cloneDeep(virtualNetworkSettings);
@@ -594,7 +702,12 @@ describe('virtualNetworkSettings', () => {
                         allowGatewayTransit: false,
                         useRemoteGateways: true
                     }
-                ]
+                ],
+                tags: {
+                    tag1: 'value1',
+                    tag2: 'value2',
+                    tag3: 'value3'
+                }
             },
             {
                 name: 'my-other-virtual-network',
@@ -673,6 +786,10 @@ describe('virtualNetworkSettings', () => {
 
             expect(result.virtualNetworks.length).toBe(1);
             expect(result.virtualNetworkPeerings.length).toBe(2);
+            expect(Object.keys(result.virtualNetworks[0].tags).length).toEqual(3);
+            expect(result.virtualNetworks[0].tags.tag1).toEqual('value1');
+            expect(result.virtualNetworks[0].tags.tag2).toEqual('value2');
+            expect(result.virtualNetworks[0].tags.tag3).toEqual('value3');
         });
 
         it('multiple virtual network with peers', () => {
@@ -685,6 +802,10 @@ describe('virtualNetworkSettings', () => {
 
             expect(result.virtualNetworks.length).toBe(3);
             expect(result.virtualNetworkPeerings.length).toBe(3);
+            expect(Object.keys(result.virtualNetworks[0].tags).length).toEqual(3);
+            expect(result.virtualNetworks[0].tags.tag1).toEqual('value1');
+            expect(result.virtualNetworks[0].tags.tag2).toEqual('value2');
+            expect(result.virtualNetworks[0].tags.tag3).toEqual('value3');
         });
 
         it('test settings validation errors', () => {

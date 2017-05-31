@@ -8,7 +8,7 @@
         "parentTemplateUniqueString": "bbVNet"
       }
     },
-    "virtualNetworkSettings": {
+    "virtualNetworks": {
       "type": "array"
     },
     "virtualNetworkPeerings": {
@@ -17,37 +17,31 @@
     }
   },
   "variables": {
-    "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('virtualNetworkSettings')), string(parameters('virtualNetworkPeerings'))))]",
+    "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('virtualNetworks')), string(parameters('virtualNetworkPeerings'))))]",
     "location": "[resourceGroup().location]",
-    "virtualNetworksTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/virtualNetworks/virtualNetworks.json')]",
     "iteratorTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/common/resources.json')]",
     "virtualNetworkPeeringTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/virtualNetworks/virtualNetworkPeering.json')]",
-    "virtualNetworksDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployVNet-', variables('templateUniqueString'))]",
     "virtualNetworkPeeringsDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployVNetPeering-', variables('templateUniqueString'))]"
   },
   "resources": [
     {
-      "type": "Microsoft.Resources/deployments",
-      "apiVersion": "2015-01-01",
-      "name": "[variables('virtualNetworksDeploymentName')]",
-      "properties": {
-        "mode": "Incremental",
-        "templateLink": {
-          "uri": "[variables('virtualNetworksTemplate')]"
-        },
-        "parameters": {
-          "source": {
-            "value": "[parameters('virtualNetworkSettings')]"
-          }
-        }
-      }
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2016-06-01",
+      "location": "[resourceGroup().location]",
+      "name": "[parameters('virtualNetworks')[copyIndex()].name]",
+      "copy": {
+        "name": "virtualNetworks",
+        "count": "[length(parameters('virtualNetworks'))]"
+      },
+      "properties": "[parameters('virtualNetworks')[copyIndex()].properties]",
+      "tags": "[parameters('virtualNetworks')[copyIndex()].tags]"
     },
     {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2015-01-01",
       "name": "[variables('virtualNetworkPeeringsDeploymentName')]",
       "dependsOn": [
-          "[variables('virtualNetworksDeploymentName')]"
+          "virtualNetworks"
       ],
       "properties": {
         "mode": "Incremental",

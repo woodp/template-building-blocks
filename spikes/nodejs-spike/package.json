@@ -4,6 +4,7 @@
   "description": "",
   "private": true,
   "dependencies": {
+    "commander": "^2.9.0",
     "lodash": "^4.17.4",
     "murmurhash-native": "^3.2.0"
   },

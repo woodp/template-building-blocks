@@ -8,12 +8,12 @@
         "parentTemplateUniqueString": "bbRouteTable"
       }
     },
-    "routeTableSettings": {
+    "routeTables": {
       "type": "array"
     }
   },
   "variables": {
-    "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('routeTableSettings'))))]",
+    "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('routeTables'))))]",
     "location": "[resourceGroup().location]",
     "routeTableTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/routeTables/routeTable.json')]",
     "routeTableDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployRt-', variables('templateUniqueString'))]"
@@ -23,12 +23,13 @@
       "type": "Microsoft.Network/routeTables",
       "apiVersion": "2016-06-01",
       "location": "[resourceGroup().location]",
-      "name": "[parameters('routeTableSettings')[copyIndex()].name]",
+      "name": "[parameters('routeTables')[copyIndex()].name]",
       "copy": {
         "name": "iterator",
-        "count": "[length(parameters('routeTableSettings'))]"
+        "count": "[length(parameters('routeTables'))]"
       },
-      "properties": "[parameters('routeTableSettings')[copyIndex()].properties]"
+      "properties": "[parameters('routeTables')[copyIndex()].properties]",
+      "tags": "[parameters('routeTables')[copyIndex()].tags]"
     },
     {
       "type": "Microsoft.Resources/deployments",
@@ -36,7 +37,7 @@
       "name": "[concat(variables('routeTableDeploymentName'), '-', copyIndex())]",
       "copy": {
           "name": "rt-iterator",
-          "count": "[length(parameters('routeTableSettings'))]"
+          "count": "[length(parameters('routeTables'))]"
       },
       "properties": {
         "mode": "Incremental",
@@ -50,7 +51,7 @@
                 }
             },
           "routeTableSetting": {
-            "value": "[parameters('routeTableSettings')[copyIndex()]]"
+            "value": "[parameters('routeTables')[copyIndex()]]"
           }
         }
       }

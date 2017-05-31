@@ -321,7 +321,8 @@ let virtualMachineValidations = {
             validations: nicSettings.validations
         };
     },
-    availabilitySet: avSetSettings.validations
+    availabilitySet: avSetSettings.validations,
+    tags: v.tagsValidations
 };
 
 let processorProperties = {
@@ -616,6 +617,8 @@ function process(param, buildingBlockSettings) {
             if (typeof processorProperties[key] === 'function') {
                 _.merge(inner.properties, processorProperties[key](value, key, index, obj, _.cloneDeep(result)));
             } else if (key === 'name') {
+                inner[key] = value;
+            } else if (key === 'tags') {
                 inner[key] = value;
             }
             //_.merge(inner, (typeof processorProperties[key] === 'function') ? processorProperties[key](value, key, index, obj, _.cloneDeep(result)) : `{${key}: ${value}}`);

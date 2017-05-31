@@ -8,12 +8,12 @@
         "parentTemplateUniqueString": "bbNetworkSecurityGroup"
       }
     },
-    "networkSecurityGroupSettings": {
+    "networkSecurityGroups": {
       "type": "array"
     }
   },
   "variables": {
-    "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('networkSecurityGroupSettings'))))]",
+    "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('networkSecurityGroups'))))]",
     "location": "[resourceGroup().location]",
 
     "subnetsTemplates": [
@@ -29,14 +29,15 @@
   "resources": [
     {
         "type": "Microsoft.Network/networkSecurityGroups",
-        "name": "[parameters('networkSecurityGroupSettings')[copyIndex()].name]",
+        "name": "[parameters('networkSecurityGroups')[copyIndex()].name]",
         "apiVersion": "2015-06-15",
         "location": "[variables('location')]",
         "copy": {
             "name": "iterator",
-            "count": "[length(parameters('networkSecurityGroupSettings'))]"
+            "count": "[length(parameters('networkSecurityGroups'))]"
         },
-        "properties": "[parameters('networkSecurityGroupSettings')[copyIndex()].properties]"
+        "properties": "[parameters('networkSecurityGroups')[copyIndex()].properties]",
+        "tags": "[parameters('networkSecurityGroups')[copyIndex()].tags]"
     },
     {
       "type": "Microsoft.Resources/deployments",
@@ -44,7 +45,7 @@
       "name": "[concat(variables('networkSecurityGroupDeploymentName'), '-sn-', copyIndex())]",
       "copy": {
           "name": "subnet-iterator",
-          "count": "[length(parameters('networkSecurityGroupSettings'))]"
+          "count": "[length(parameters('networkSecurityGroups'))]"
       },
       "dependsOn": [
           "iterator"
@@ -52,7 +53,7 @@
       "properties": {
         "mode": "Incremental",
         "templateLink": {
-          "uri": "[variables('subnetsTemplates')[mod(add(length(parameters('networkSecurityGroupSettings')[copyIndex()].subnets), 2), add(length(parameters('networkSecurityGroupSettings')[copyIndex()].subnets), 1))]]"
+          "uri": "[variables('subnetsTemplates')[mod(add(length(parameters('networkSecurityGroups')[copyIndex()].subnets), 2), add(length(parameters('networkSecurityGroups')[copyIndex()].subnets), 1))]]"
         },
         "parameters": {
           "deploymentContext": {
@@ -61,7 +62,7 @@
                 }
             },
           "networkSecurityGroupSetting": {
-            "value": "[parameters('networkSecurityGroupSettings')[copyIndex()]]"
+            "value": "[parameters('networkSecurityGroups')[copyIndex()]]"
           }
         }
       }
@@ -72,7 +73,7 @@
       "name": "[concat(variables('networkSecurityGroupDeploymentName'), '-nic-', copyIndex())]",
       "copy": {
           "name": "nic-iterator",
-          "count": "[length(parameters('networkSecurityGroupSettings'))]"
+          "count": "[length(parameters('networkSecurityGroups'))]"
       },
       "dependsOn": [
           "subnet-iterator"
@@ -80,7 +81,7 @@
       "properties": {
         "mode": "Incremental",
         "templateLink": {
-          "uri": "[variables('networkInterfacesTemplates')[mod(add(length(parameters('networkSecurityGroupSettings')[copyIndex()].networkInterfaces), 2), add(length(parameters('networkSecurityGroupSettings')[copyIndex()].networkInterfaces), 1))]]"
+          "uri": "[variables('networkInterfacesTemplates')[mod(add(length(parameters('networkSecurityGroups')[copyIndex()].networkInterfaces), 2), add(length(parameters('networkSecurityGroups')[copyIndex()].networkInterfaces), 1))]]"
         },
         "parameters": {
           "deploymentContext": {
@@ -89,7 +90,7 @@
                 }
             },
           "networkSecurityGroupSetting": {
-            "value": "[parameters('networkSecurityGroupSettings')[copyIndex()]]"
+            "value": "[parameters('networkSecurityGroups')[copyIndex()]]"
           }
         }
       }
