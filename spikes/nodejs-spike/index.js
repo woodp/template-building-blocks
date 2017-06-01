@@ -139,7 +139,8 @@ let deployTemplate = ({parameterFile, location, buildingBlockSettings, buildingB
 
     // Login first
     child = spawnSync('az', ['login'], {
-        stdio: 'inherit'
+        stdio: 'inherit',
+        shell: true
     });
     // if (child.status !== 0) {
     //     throw Error(`Error executing az login: ${child.stderr}`);
@@ -148,19 +149,22 @@ let deployTemplate = ({parameterFile, location, buildingBlockSettings, buildingB
     if (child.status === 0) {
         // Set the subscription
         child = spawnSync('az', ['account', 'set', '--subscription', buildingBlockSettings.subscriptionId], {
-            stdio: 'inherit'
+            stdio: 'inherit',
+            shell: true
         });
 
         if (child.status === 0) {
             // See if the resource group exists, and if not create it.
             child = spawnSync('az', ['group', 'exists', '--name', buildingBlockSettings.resourceGroupName], {
-                stdio: 'pipe'
+                stdio: 'pipe',
+                shell: true
             });
             if (child.status === 0) {
                 if (child.stdout.toString().trim() === 'false') {
                     // Create the resource group
                     child = spawnSync('az', ['group', 'create', '--location', location, '--name', buildingBlockSettings.resourceGroupName], {
-                        stdio: 'inherit'
+                        stdio: 'inherit',
+                        shell: true
                     });
 
                     if (child.status !== 0) {
@@ -172,7 +176,8 @@ let deployTemplate = ({parameterFile, location, buildingBlockSettings, buildingB
                     '--resource-group', buildingBlockSettings.resourceGroupName,
                     '--template-uri', buildingBlockMetadata.template,
                     '--parameters', `@${parameterFile}`], {
-                    stdio: 'inherit'
+                    stdio: 'inherit',
+                    shell: true
                 });
                 child.on('close', (code) => {
                     if (code !== 0) {
@@ -257,7 +262,8 @@ try {
         // If the deploy flag is specified, see if az is available on the path.  The only reliable way seems to be to try to run it, and
         // if the error code is not 0, az is not available.  Since we are just checking, we'll ignore the stdio and just check the status code.
         let child = childProcess.spawnSync('az', {
-            stdio: 'ignore'
+            stdio: 'ignore',
+            shell: true
         });
 
         if (child.status !== 0) {
