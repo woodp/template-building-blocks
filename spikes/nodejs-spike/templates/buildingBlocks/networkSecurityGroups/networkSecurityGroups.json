@@ -10,30 +10,42 @@
     },
     "networkSecurityGroups": {
       "type": "array"
+    },
+    "subnets": {
+      "type": "array",
+      "defaultValue": []
+    },
+    "networkInterfaces": {
+      "type": "array",
+      "defaultValue": []
     }
   },
   "variables": {
-    "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('networkSecurityGroups'))))]",
-    "location": "[resourceGroup().location]",
-
-    "subnetsTemplates": [
-      "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/networkSecurityGroups/networkSecurityGroup-nop.json')]",
-      "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/networkSecurityGroups/networkSecurityGroup-subnets.json')]"
-    ],
-    "networkInterfacesTemplates": [
-        "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/networkSecurityGroups/networkSecurityGroup-nop.json')]",
-        "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/networkSecurityGroups/networkSecurityGroup-networkInterfaces.json')]"
-    ],
-    "networkSecurityGroupDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployNsg-', variables('templateUniqueString'))]"
+    "sn-workaround": {
+       "true": "[parameters('subnets')]",
+       "false": [{
+           "name": "workaround",
+           "properties": {}
+       }]
+    },
+    "sn": "[variables('workaround')[string(greater(length(parameters('subnets')), 0))]]",
+    "nic-workaround": {
+       "true": "[parameters('networkInterfaces')]",
+       "false": [{
+           "name": "workaround",
+           "properties": {}
+       }]
+    },
+    "nics": "[variables('workaround')[string(greater(length(parameters('networkInterfaces')), 0))]]"
   },
   "resources": [
     {
         "type": "Microsoft.Network/networkSecurityGroups",
         "name": "[parameters('networkSecurityGroups')[copyIndex()].name]",
         "apiVersion": "2015-06-15",
-        "location": "[variables('location')]",
+        "location": "[resourceGroup().location]",
         "copy": {
-            "name": "iterator",
+            "name": "networkSecurityGroup",
             "count": "[length(parameters('networkSecurityGroups'))]"
         },
         "properties": "[parameters('networkSecurityGroups')[copyIndex()].properties]",
@@ -41,56 +53,72 @@
     },
     {
       "type": "Microsoft.Resources/deployments",
-      "apiVersion": "2015-01-01",
-      "name": "[concat(variables('networkSecurityGroupDeploymentName'), '-sn-', copyIndex())]",
-      "copy": {
-          "name": "subnet-iterator",
-          "count": "[length(parameters('networkSecurityGroups'))]"
-      },
+      "apiVersion": "2017-05-10",
+      "name": "[concat('nsg-sn-', copyIndex())]",
+      "condition": "[greater(length(parameters('subnets')), 0)]",
       "dependsOn": [
-          "iterator"
+        "networkSecurityGroup"
       ],
+      "copy": {
+         "name": "subnets",
+         "count": "[length(variables('sn'))]",
+         "mode": "Serial"
+      },
       "properties": {
         "mode": "Incremental",
-        "templateLink": {
-          "uri": "[variables('subnetsTemplates')[mod(add(length(parameters('networkSecurityGroups')[copyIndex()].subnets), 2), add(length(parameters('networkSecurityGroups')[copyIndex()].subnets), 1))]]"
-        },
-        "parameters": {
-          "deploymentContext": {
-                "value": {
-                    "parentTemplateUniqueString": "[variables('templateUniqueString')]"
-                }
-            },
-          "networkSecurityGroupSetting": {
-            "value": "[parameters('networkSecurityGroups')[copyIndex()]]"
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+          },
+          "variables": {
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Network/virtualNetworks/subnets",
+              "apiVersion": "2016-06-01",
+              "location": "[resourceGroup().location]",
+              "name": "[concat(split(variables('sn')[copyIndex()].id, '/')[8], '/', split(variables('sn')[copyIndex()].id, '/')[10])]",
+              "properties": "[union(reference(variables('sn')[copyIndex()].id, '2016-06-01'), variables('sn')[copyIndex()].properties)]"
+            }
+          ],
+          "outputs": {
           }
         }
       }
     },
     {
       "type": "Microsoft.Resources/deployments",
-      "apiVersion": "2015-01-01",
-      "name": "[concat(variables('networkSecurityGroupDeploymentName'), '-nic-', copyIndex())]",
-      "copy": {
-          "name": "nic-iterator",
-          "count": "[length(parameters('networkSecurityGroups'))]"
-      },
+      "apiVersion": "2017-05-10",
+      "name": "[concat('nsg-nics-', copyIndex())]",
+      "condition": "[greater(length(parameters('networkInterfaces')), 0)]",
       "dependsOn": [
-          "subnet-iterator"
+        "subnets"
       ],
+      "copy": {
+         "name": "networkInterfaces",
+         "count": "[length(variables('nics'))]",
+         "mode": "Serial"
+      },
       "properties": {
         "mode": "Incremental",
-        "templateLink": {
-          "uri": "[variables('networkInterfacesTemplates')[mod(add(length(parameters('networkSecurityGroups')[copyIndex()].networkInterfaces), 2), add(length(parameters('networkSecurityGroups')[copyIndex()].networkInterfaces), 1))]]"
-        },
-        "parameters": {
-          "deploymentContext": {
-                "value": {
-                    "parentTemplateUniqueString": "[variables('templateUniqueString')]"
-                }
-            },
-          "networkSecurityGroupSetting": {
-            "value": "[parameters('networkSecurityGroups')[copyIndex()]]"
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+          },
+          "variables": {
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Network/networkInterfaces",
+              "apiVersion": "2016-06-01",
+              "location": "[resourceGroup().location]",
+              "name": "[concat(split(variables('nics')[copyIndex()].id, '/')[8], '/', split(variables('nics')[copyIndex()].id, '/')[10])]",
+              "properties": "[union(reference(variables('nics')[copyIndex()].id, '2016-06-01'), variables('nics')[copyIndex()].properties)]"
+            }
+          ],
+          "outputs": {
           }
         }
       }
