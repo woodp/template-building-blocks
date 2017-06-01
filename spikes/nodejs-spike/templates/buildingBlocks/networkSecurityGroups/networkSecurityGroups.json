@@ -114,7 +114,7 @@
               "type": "Microsoft.Network/networkInterfaces",
               "apiVersion": "2016-06-01",
               "location": "[resourceGroup().location]",
-              "name": "[concat(split(variables('nics')[copyIndex()].id, '/')[8], '/', split(variables('nics')[copyIndex()].id, '/')[10])]",
+              "name": "[split(variables('nics')[copyIndex()].id, '/')[8]]",
               "properties": "[union(reference(variables('nics')[copyIndex()].id, '2016-06-01'), variables('nics')[copyIndex()].properties)]"
             }
           ],
