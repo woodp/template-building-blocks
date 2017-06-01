@@ -79,7 +79,8 @@ describe('virtualMachineSettings:', () => {
         adminPassword: 'testPassw0rd111',
         virtualNetwork: {
             name: 'test-vnet'
-        }
+        },
+        tags: {}
     };
     let buildingBlockSettings = {
         resourceGroupName: 'test-rg',

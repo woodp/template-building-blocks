@@ -216,7 +216,8 @@ describe('routeTableSettings', () => {
                         nextHopType: 'VirtualAppliance',
                         nextHopIpAddress: '192.168.1.1'
                     }
-                ]
+                ],
+                tags: {}
             };
 
             it('name undefined', () => {
@@ -388,7 +389,8 @@ describe('routeTableSettings', () => {
                         nextHopType: 'VirtualAppliance',
                         nextHopIpAddress: '192.168.1.1'
                     }
-                ]
+                ],
+                tags: {}
             }
         ];
 
@@ -425,6 +427,35 @@ describe('routeTableSettings', () => {
             expect(result.subnets.length).toEqual(2);
             expect(result.subnets[0].id.endsWith('my-virtual-network/subnets/biz')).toBe(true);
             expect(result.subnets[1].id.endsWith('my-virtual-network/subnets/web')).toBe(true);
+        });
+
+        it('single route table with no virtual networks', () => {
+            let settings = _.cloneDeep(routeTable);
+            settings = settings[0];
+            delete settings.virtualNetworks;
+            let result = routeTableSettings.transform({
+                settings: settings,
+                buildingBlockSettings: buildingBlockSettings
+            });
+
+            expect(result.routeTables.length).toBe(1);
+            let settingsResult = result.routeTables[0];
+            expect(settingsResult.hasOwnProperty('id')).toBe(true);
+            expect(settingsResult.name).toBe(settings.name);
+            expect(settingsResult.resourceGroupName).toEqual(buildingBlockSettings.resourceGroupName);
+            expect(settingsResult.subscriptionId).toEqual(buildingBlockSettings.subscriptionId);
+            
+            expect(settingsResult.properties.routes.length).toBe(2);
+            let routesResult = settingsResult.properties.routes;
+            expect(routesResult[0].name).toEqual(settings.routes[0].name);
+            expect(routesResult[0].properties.addressPrefix).toEqual(settings.routes[0].addressPrefix);
+            expect(routesResult[0].properties.nextHopType).toEqual(settings.routes[0].nextHopType);
+            expect(routesResult[1].name).toEqual(settings.routes[1].name);
+            expect(routesResult[1].properties.addressPrefix).toEqual(settings.routes[1].addressPrefix);
+            expect(routesResult[1].properties.nextHopType).toEqual(settings.routes[1].nextHopType);
+            expect(routesResult[1].properties.nextHopIpAddress).toEqual(settings.routes[1].nextHopIpAddress);
+
+            expect(result.subnets.length).toEqual(0);
         });
 
         it('test settings validation errors', () => {

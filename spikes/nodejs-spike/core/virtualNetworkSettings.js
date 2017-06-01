@@ -98,6 +98,7 @@ let virtualNetworkSettingsValidations = {
 function transform(settings) {
     let result = {
         name: settings.name,
+        tags: settings.tags,
         resourceGroupName: settings.resourceGroupName,
         subscriptionId: settings.subscriptionId,
         properties: {
@@ -117,10 +118,6 @@ function transform(settings) {
             }
         }
     };
-
-    if (settings.tags) {
-        result.tags = settings.tags;
-    }
 
     return result;
 }

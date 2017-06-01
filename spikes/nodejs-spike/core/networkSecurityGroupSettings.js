@@ -167,20 +167,11 @@ function transform(settings) {
         id: r.resourceId(settings.subscriptionId, settings.resourceGroupName, 'Microsoft.Network/networkSecurityGroups', settings.name),
         resourceGroupName: settings.resourceGroupName,
         subscriptionId: settings.subscriptionId,
-        // subnets: _.transform(settings.virtualNetworks, (result, virtualNetwork) => {
-        //     _.each(virtualNetwork.subnets, (subnet) => {
-        //         result.push(r.resourceId(virtualNetwork.subscriptionId, virtualNetwork.resourceGroupName, 'Microsoft.Network/virtualNetworks/subnets',
-        //             virtualNetwork.name, subnet));
-        //     });
-        // }, []),
-        // networkInterfaces: _.transform(settings.networkInterfaces, (result, networkInterface) => {
-        //     result.push(r.resourceId(networkInterface.subscriptionId, networkInterface.resourceGroupName, 'Microsoft.Network/networkInterfaces',
-        //             networkInterface.name));
-        // }, []),
         properties: {
             securityRules: _.map(settings.securityRules, (value) => {
                 let result = {
                     name: value.name,
+                    tags: settings.tags,
                     properties: {
                         direction: value.direction,
                         priority: value.priority,
@@ -197,10 +188,6 @@ function transform(settings) {
             })
         }
     };
-
-    if (settings.tags) {
-        result.tags = settings.tags;
-    }
 
     return result;
 }
@@ -247,7 +234,7 @@ exports.transform = function ({settings, buildingBlockSettings}) {
 
     results = _.transform(results, (result, setting) => {
         result.networkSecurityGroups.push(transform(setting));
-        if ((setting.virtualNetworks) && (setting.virtualNetworks.length > 0)) {
+        if (setting.virtualNetworks.length > 0) {
             result.subnets = result.subnets.concat(_.transform(setting.virtualNetworks, (result, virtualNetwork) =>
             {
                 _.each(virtualNetwork.subnets, (subnet) => {
@@ -264,7 +251,7 @@ exports.transform = function ({settings, buildingBlockSettings}) {
             }, []));
         }
 
-        if ((setting.networkInterfaces) && (setting.networkInterfaces.length > 0)) {
+        if (setting.networkInterfaces.length > 0) {
             result.networkInterfaces = result.networkInterfaces.concat(_.transform(setting.networkInterfaces, (result, networkInterface) =>
             {
                 result.push({

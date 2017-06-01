@@ -670,6 +670,40 @@ describe('networkSecurityGroupSettings', () => {
             expect(result.networkInterfaces[0].id.endsWith('networkInterfaces/my-nic1')).toBe(true);
         });
 
+        it('single network security group with no network interfaces or subnets', () => {
+            let settings = _.cloneDeep(networkSecurityGroup);
+            settings = settings[0];
+            delete settings.virtualNetworks;
+            delete settings.networkInterfaces;
+            let result = nsgSettings.transform({
+                settings: settings,
+                buildingBlockSettings: buildingBlockSettings
+            });
+
+            expect(result.networkSecurityGroups.length).toBe(1);
+            let settingsResult = result.networkSecurityGroups[0];
+            expect(settingsResult.hasOwnProperty('id')).toBe(true);
+            expect(settingsResult.name).toBe(settings.name);
+            expect(settingsResult.resourceGroupName).toEqual(buildingBlockSettings.resourceGroupName);
+            expect(settingsResult.subscriptionId).toEqual(buildingBlockSettings.subscriptionId);
+            
+            expect(settingsResult.properties.securityRules.length).toBe(1);
+            let securityRulesResult = settingsResult.properties.securityRules;
+            expect(securityRulesResult[0].name).toEqual(settings.securityRules[0].name);
+            expect(securityRulesResult[0].properties.direction).toEqual(settings.securityRules[0].direction);
+            expect(securityRulesResult[0].properties.priority).toEqual(settings.securityRules[0].priority);
+            expect(securityRulesResult[0].properties.sourceAddressPrefix).toEqual(settings.securityRules[0].sourceAddressPrefix);
+            expect(securityRulesResult[0].properties.destinationAddressPrefix).toEqual(settings.securityRules[0].destinationAddressPrefix);
+            expect(securityRulesResult[0].properties.sourcePortRange).toEqual(settings.securityRules[0].sourcePortRange);
+            expect(securityRulesResult[0].properties.destinationPortRange).toEqual(settings.securityRules[0].destinationPortRange);
+            expect(securityRulesResult[0].properties.access).toEqual(settings.securityRules[0].access);
+            expect(securityRulesResult[0].properties.protocol).toEqual(settings.securityRules[0].protocol);
+
+            expect(result.subnets.length).toBe(0);
+
+            expect(result.networkInterfaces.length).toBe(0);
+        });
+
         it('test settings validation errors', () => {
             let settings = _.cloneDeep(networkSecurityGroup);
             delete settings[0].name;
