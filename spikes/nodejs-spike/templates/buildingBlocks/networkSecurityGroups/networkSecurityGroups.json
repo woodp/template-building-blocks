@@ -28,7 +28,7 @@
            "properties": {}
        }]
     },
-    "sn": "[variables('workaround')[string(greater(length(parameters('subnets')), 0))]]",
+    "sn": "[variables('sn-workaround')[string(greater(length(parameters('subnets')), 0))]]",
     "nic-workaround": {
        "true": "[parameters('networkInterfaces')]",
        "false": [{
@@ -36,7 +36,7 @@
            "properties": {}
        }]
     },
-    "nics": "[variables('workaround')[string(greater(length(parameters('networkInterfaces')), 0))]]"
+    "nics": "[variables('nic-workaround')[string(greater(length(parameters('networkInterfaces')), 0))]]"
   },
   "resources": [
     {
