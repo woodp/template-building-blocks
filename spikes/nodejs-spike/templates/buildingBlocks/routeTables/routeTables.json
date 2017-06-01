@@ -10,13 +10,21 @@
     },
     "routeTables": {
       "type": "array"
+    },
+    "subnets": {
+      "type": "array",
+      "defaultValue": []
     }
   },
   "variables": {
-    "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('routeTables'))))]",
-    "location": "[resourceGroup().location]",
-    "routeTableTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/routeTables/routeTable.json')]",
-    "routeTableDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployRt-', variables('templateUniqueString'))]"
+    "workaround": {
+       "true": "[parameters('subnets')]",
+       "false": [{
+           "name": "workaround",
+           "properties": {}
+       }]
+     },
+     "sn": "[variables('workaround')[string(greater(length(parameters('subnets')), 0))]]"
   },
   "resources": [
     {
@@ -25,7 +33,7 @@
       "location": "[resourceGroup().location]",
       "name": "[parameters('routeTables')[copyIndex()].name]",
       "copy": {
-        "name": "iterator",
+        "name": "routeTables",
         "count": "[length(parameters('routeTables'))]"
       },
       "properties": "[parameters('routeTables')[copyIndex()].properties]",
@@ -33,25 +41,36 @@
     },
     {
       "type": "Microsoft.Resources/deployments",
-      "apiVersion": "2015-01-01",
-      "name": "[concat(variables('routeTableDeploymentName'), '-', copyIndex())]",
+      "apiVersion": "2017-05-10",
+      "name": "[concat('sn-', copyIndex())]",
+      "condition": "[greater(length(parameters('subnets')), 0)]",
+      "dependsOn": [
+        "routeTables"
+      ],
       "copy": {
-          "name": "rt-iterator",
-          "count": "[length(parameters('routeTables'))]"
+         "name": "subnets",
+         "count": "[length(variables('sn'))]",
+         "mode": "Serial"
       },
       "properties": {
         "mode": "Incremental",
-        "templateLink": {
-          "uri": "[variables('routeTableTemplate')]"
-        },
-        "parameters": {
-          "deploymentContext": {
-                "value": {
-                    "parentTemplateUniqueString": "[variables('templateUniqueString')]"
-                }
-            },
-          "routeTableSetting": {
-            "value": "[parameters('routeTables')[copyIndex()]]"
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+          },
+          "variables": {
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Network/virtualNetworks/subnets",
+              "apiVersion": "2016-06-01",
+              "location": "[resourceGroup().location]",
+              "name": "[concat(split(variables('sn')[copyIndex()].id, '/')[8], '/', split(variables('sn')[copyIndex()].id, '/')[10])]",
+              "properties": "[union(reference(variables('sn')[copyIndex()].id, '2016-06-01'), variables('sn')[copyIndex()].properties])"
+            }
+          ],
+          "outputs": {
           }
         }
       }
