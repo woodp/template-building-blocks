@@ -409,23 +409,22 @@ describe('routeTableSettings', () => {
             let settingsResult = result.routeTables[0];
             expect(settingsResult.hasOwnProperty('id')).toBe(true);
             expect(settingsResult.name).toBe(settings.name);
-            expect(settingsResult.hasOwnProperty('resourceGroupName')).toBe(true);
-            expect(settingsResult.hasOwnProperty('subscriptionId')).toBe(true);
+            expect(settingsResult.resourceGroupName).toEqual(buildingBlockSettings.resourceGroupName);
+            expect(settingsResult.subscriptionId).toEqual(buildingBlockSettings.subscriptionId);
             
-            expect(settingsResult.subnets.length).toBe(2);
-            let subnetsResult = settingsResult.subnets;
-            expect(subnetsResult[0].endsWith('my-virtual-network/subnets/biz')).toBe(true);
-            expect(subnetsResult[1].endsWith('my-virtual-network/subnets/web')).toBe(true);
-
             expect(settingsResult.properties.routes.length).toBe(2);
             let routesResult = settingsResult.properties.routes;
-            expect(routesResult[0].name).toBe('route1');
-            expect(routesResult[0].properties.addressPrefix).toBe('10.0.1.0/24');
-            expect(routesResult[0].properties.nextHopType).toBe('VnetLocal');
-            expect(routesResult[1].name).toBe('route2');
-            expect(routesResult[1].properties.addressPrefix).toBe('10.0.2.0/24');
-            expect(routesResult[1].properties.nextHopType).toBe('VirtualAppliance');
-            expect(routesResult[1].properties.nextHopIpAddress).toBe('192.168.1.1');
+            expect(routesResult[0].name).toEqual(settings.routes[0].name);
+            expect(routesResult[0].properties.addressPrefix).toEqual(settings.routes[0].addressPrefix);
+            expect(routesResult[0].properties.nextHopType).toEqual(settings.routes[0].nextHopType);
+            expect(routesResult[1].name).toEqual(settings.routes[1].name);
+            expect(routesResult[1].properties.addressPrefix).toEqual(settings.routes[1].addressPrefix);
+            expect(routesResult[1].properties.nextHopType).toEqual(settings.routes[1].nextHopType);
+            expect(routesResult[1].properties.nextHopIpAddress).toEqual(settings.routes[1].nextHopIpAddress);
+
+            expect(result.subnets.length).toEqual(2);
+            expect(result.subnets[0].id.endsWith('my-virtual-network/subnets/biz')).toBe(true);
+            expect(result.subnets[1].id.endsWith('my-virtual-network/subnets/web')).toBe(true);
         });
 
         it('test settings validation errors', () => {
