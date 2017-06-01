@@ -131,12 +131,12 @@ function transform(settings) {
         id: r.resourceId(settings.subscriptionId, settings.resourceGroupName, 'Microsoft.Network/routeTables', settings.name),
         resourceGroupName: settings.resourceGroupName,
         subscriptionId: settings.subscriptionId,
-        subnets: _.transform(settings.virtualNetworks, (result, virtualNetwork) => {
-            _.each(virtualNetwork.subnets, (subnet) => {
-                result.push(r.resourceId(virtualNetwork.subscriptionId, virtualNetwork.resourceGroupName, 'Microsoft.Network/virtualNetworks/subnets',
-                    virtualNetwork.name, subnet));
-            });
-        }, []),
+        // subnets: _.transform(settings.virtualNetworks, (result, virtualNetwork) => {
+        //     _.each(virtualNetwork.subnets, (subnet) => {
+        //         result.push(r.resourceId(virtualNetwork.subscriptionId, virtualNetwork.resourceGroupName, 'Microsoft.Network/virtualNetworks/subnets',
+        //             virtualNetwork.name, subnet));
+        //     });
+        // }, []),
         properties: {
             routes: _.map(settings.routes, (value) => {
                 let result = {
@@ -203,11 +203,28 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
         throw new Error(JSON.stringify(errors));
     }
 
-    results = _.map(results, (setting) => {
-        return transform(setting);
+    results = _.transform(results, (result, setting) => {
+        result.routeTables.push(transform(setting));
+        if ((setting.virtualNetworks) && (setting.virtualNetworks.length > 0)) {
+            result.subnets = result.subnets.concat(_.transform(setting.virtualNetworks, (result, virtualNetwork) =>
+            {
+                _.each(virtualNetwork.subnets, (subnet) => {
+                    result.push({
+                        id: r.resourceId(virtualNetwork.subscriptionId, virtualNetwork.resourceGroupName, 'Microsoft.Network/virtualNetworks/subnets',
+                            virtualNetwork.name, subnet),
+                        properties: {
+                            routeTable: {
+                                id: r.resourceId(setting.subscriptionId, setting.resourceGroupName, 'Microsoft.Network/routeTables', setting.name),
+                            }
+                        }
+                    });
+                });
+            }, []));
+        }
+    }, {
+        routeTables: [],
+        subnets: []
     });
 
-    return {
-        routeTables: results
-    };
+    return results;
 };
