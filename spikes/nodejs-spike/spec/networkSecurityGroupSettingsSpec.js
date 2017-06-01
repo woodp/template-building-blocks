@@ -647,29 +647,27 @@ describe('networkSecurityGroupSettings', () => {
             let settingsResult = result.networkSecurityGroups[0];
             expect(settingsResult.hasOwnProperty('id')).toBe(true);
             expect(settingsResult.name).toBe(settings.name);
-            expect(settingsResult.hasOwnProperty('resourceGroupName')).toBe(true);
-            expect(settingsResult.hasOwnProperty('subscriptionId')).toBe(true);
+            expect(settingsResult.resourceGroupName).toEqual(buildingBlockSettings.resourceGroupName);
+            expect(settingsResult.subscriptionId).toEqual(buildingBlockSettings.subscriptionId);
             
-            expect(settingsResult.subnets.length).toBe(2);
-            let subnetsResult = settingsResult.subnets;
-            expect(subnetsResult[0].endsWith('my-virtual-network/subnets/biz')).toBe(true);
-            expect(subnetsResult[1].endsWith('my-virtual-network/subnets/web')).toBe(true);
-
-            expect(settingsResult.networkInterfaces.length).toBe(1);
-            let nicsResult = settingsResult.networkInterfaces;
-            expect(nicsResult[0].endsWith('networkInterfaces/my-nic1')).toBe(true);
-
             expect(settingsResult.properties.securityRules.length).toBe(1);
             let securityRulesResult = settingsResult.properties.securityRules;
-            expect(securityRulesResult[0].name).toBe('rule1');
-            expect(securityRulesResult[0].properties.direction).toBe('Inbound');
-            expect(securityRulesResult[0].properties.priority).toBe(100);
-            expect(securityRulesResult[0].properties.sourceAddressPrefix).toBe('192.168.1.1');
-            expect(securityRulesResult[0].properties.destinationAddressPrefix).toBe('*');
-            expect(securityRulesResult[0].properties.sourcePortRange).toBe('*');
-            expect(securityRulesResult[0].properties.destinationPortRange).toBe('*');
-            expect(securityRulesResult[0].properties.access).toBe('Allow');
-            expect(securityRulesResult[0].properties.protocol).toBe('*');
+            expect(securityRulesResult[0].name).toEqual(settings.securityRules[0].name);
+            expect(securityRulesResult[0].properties.direction).toEqual(settings.securityRules[0].direction);
+            expect(securityRulesResult[0].properties.priority).toEqual(settings.securityRules[0].priority);
+            expect(securityRulesResult[0].properties.sourceAddressPrefix).toEqual(settings.securityRules[0].sourceAddressPrefix);
+            expect(securityRulesResult[0].properties.destinationAddressPrefix).toEqual(settings.securityRules[0].destinationAddressPrefix);
+            expect(securityRulesResult[0].properties.sourcePortRange).toEqual(settings.securityRules[0].sourcePortRange);
+            expect(securityRulesResult[0].properties.destinationPortRange).toEqual(settings.securityRules[0].destinationPortRange);
+            expect(securityRulesResult[0].properties.access).toEqual(settings.securityRules[0].access);
+            expect(securityRulesResult[0].properties.protocol).toEqual(settings.securityRules[0].protocol);
+
+            expect(result.subnets.length).toBe(2);
+            expect(result.subnets[0].id.endsWith('my-virtual-network/subnets/biz')).toBe(true);
+            expect(result.subnets[1].id.endsWith('my-virtual-network/subnets/web')).toBe(true);
+
+            expect(result.networkInterfaces.length).toBe(1);
+            expect(result.networkInterfaces[0].id.endsWith('networkInterfaces/my-nic1')).toBe(true);
         });
 
         it('test settings validation errors', () => {
