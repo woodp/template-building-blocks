@@ -31,13 +31,13 @@
       "type": "Microsoft.Network/localNetworkGateways",
       "apiVersion": "2016-06-01",
       "location": "[resourceGroup().location]",
-      "name": "[parameters('lgws')[copyIndex()].name]",
+      "name": "[variables('lgws')[copyIndex()].name]",
       "condition": "[greater(length(parameters('localNetworkGateways')), 0)]",
       "copy": {
         "name": "localNetworkGateways",
-        "count": "[length(parameters('lgws'))]"
+        "count": "[length(variables('lgws'))]"
       },
-      "properties": "[parameters('lgws')[copyIndex()].properties]"
+      "properties": "[variables('lgws')[copyIndex()].properties]"
     },
     {
       "type": "Microsoft.Network/connections",
