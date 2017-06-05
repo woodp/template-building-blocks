@@ -43,7 +43,6 @@ function defaultsCustomizer(objValue, srcValue, key) {
 
 let validLoadBalancerTypes = ['Public', 'Internal'];
 let validProtocols = ['Tcp', 'Udp'];
-let validLoadDistributions = ['Default', 'SourceIP', 'SourceIPProtocol'];
 let validIPAllocationMethods = ['Dynamic', 'Static'];
 let validProbeProtocols = ['Http', 'Tcp'];
 
@@ -53,10 +52,6 @@ let isValidLoadBalancerType = (loadBalancerType) => {
 
 let isValidProtocol = (protocol) => {
     return v.utilities.isStringInArray(protocol, validProtocols);
-};
-
-let isValidLoadDistribution = (loadDistribution) => {
-    return v.utilities.isStringInArray(loadDistribution, validLoadDistributions);
 };
 
 let isValidIPAllocationMethod = (ipAllocationMethod) => {
@@ -96,129 +91,6 @@ let frontendIPConfigurationValidations = {
     }
 };
 
-let loadBalancingRuleValidations = {
-    name: v.validationUtilities.isNotNullOrWhitespace,
-    protocol: (value) => {
-        return {
-            result: isValidProtocol(value),
-            message: `Valid values are ${validProtocols.join(',')}`
-        };
-    },
-    loadDistribution: (value) => {
-        return {
-            result: isValidLoadDistribution(value),
-            message: `Valid values are ${validLoadDistributions.join(',')}`
-        };
-    },
-    frontendPort: (value) => {
-        return {
-            result: _.inRange(_.toSafeInteger(value), 1, 65535),
-            message: 'Valid values are from 1 to 65534'
-        };
-    },
-    backendPort: (value) => {
-        return {
-            result: _.inRange(_.toSafeInteger(value), 1, 65536),
-            message: 'Valid values are from 1 to 65535'
-        };
-    },
-    idleTimeoutInMinutes: (value, parent) => {
-        let result = {
-            result: true
-        };
-
-        if ((parent.protocol === 'Tcp') && (!_.inRange(4, 31))) {
-            result = {
-                result: false,
-                message: 'Valid values are from 4 to 30'
-            };
-        } else if ((parent.protocol === 'Udp') && (!_.isNil(value))) {
-            result = {
-                result: false,
-                message: 'If protocol is Udp, idleTimeoutInMinutes cannot be specified'
-            };
-        }
-
-        return result;
-    },
-    enableFloatingIP: v.validationUtilities.isBoolean
-};
-
-let inboundNatRuleValidations = {
-    name: v.validationUtilities.isNotNullOrWhitespace,
-    protocol: (value) => {
-        return {
-            result: isValidProtocol(value),
-            message: `Valid values are ${validProtocols.join(',')}`
-        };
-    },
-    frontendPort: (value) => {
-        return {
-            result: _.inRange(_.toSafeInteger(value), 1, 65535),
-            message: 'Valid values are from 1 to 65534'
-        };
-    },
-    backendPort: (value) => {
-        return {
-            result: _.inRange(_.toSafeInteger(value), 1, 65536),
-            message: 'Valid values are from 1 to 65535'
-        };
-    },
-    idleTimeoutInMinutes: (value, parent) => {
-        let result = {
-            result: true
-        };
-
-        if ((parent.protocol === 'Tcp') && (!_.inRange(4, 31))) {
-            result = {
-                result: false,
-                message: 'Valid values are from 4 to 30'
-            };
-        } else if ((parent.protocol === 'Udp') && (!_.isNil(value))) {
-            result = {
-                result: false,
-                message: 'If protocol is Udp, idleTimeoutInMinutes cannot be specified'
-            };
-        }
-
-        return result;
-    },
-    enableFloatingIP: v.validationUtilities.isBoolean
-};
-
-let inboundNatPoolValidations = {
-    name: v.validationUtilities.isNotNullOrWhitespace,
-    protocol: (value) => {
-        return {
-            result: isValidProtocol(value),
-            message: `Valid values are ${validProtocols.join(',')}`
-        };
-    },
-    frontendPortRangeStart: (value) => {
-        return {
-            result: _.inRange(_.toSafeInteger(value), 1, 65535),
-            message: 'Valid values are from 1 to 65534'
-        };
-    },
-    frontendPortRangeEnd: (value) => {
-        return {
-            result: _.inRange(_.toSafeInteger(value), 1, 65536),
-            message: 'Valid values are from 1 to 65535'
-        };
-    },
-    backendPort: (value) => {
-        return {
-            result: _.inRange(_.toSafeInteger(value), 1, 65536),
-            message: 'Valid values are from 1 to 65535'
-        };
-    }
-};
-
-let outboundNatRuleValidations = {
-    name: v.validationUtilities.isNotNullOrWhitespace,
-    allocatedOutboundPorts: _.isFinite
-};
-
 let probeValidations = {
     name: v.validationUtilities.isNotNullOrWhitespace,
     protocol: (value) => {
@@ -240,12 +112,6 @@ let probeValidations = {
             message: 'Valid values are from 5 to 300'
         };
     },
-    numberOfProbes: (value) => {
-        return {
-            result: _.isFinite(value),
-            message: 'Valid value must be a finite number'
-        };
-    },
     requestPath: (value, parent) => {
         let result = {
             result: true
@@ -265,6 +131,224 @@ let probeValidations = {
 
         return result;
     }
+};
+
+function validate(settings) {
+    return v.validate({
+        settings: settings,
+        validations: loadBalancerValidations
+    });
+}
+
+let loadBalancerValidations = {
+    frontendIPConfigurations: () => {
+        return {
+            validations: frontendIPConfigurationValidations
+        };
+    },
+    loadBalancingRules: (value, parent) => {
+        let baseSettings = parent;
+        let loadBalancingRuleValidations = {
+            name: v.validationUtilities.isNotNullOrWhitespace,
+            protocol: (value) => {
+                return {
+                    result: isValidProtocol(value),
+                    message: `Valid values are ${validProtocols.join(',')}`
+                };
+            },
+            frontendPort: (value) => {
+                return {
+                    result: _.inRange(_.toSafeInteger(value), 1, 65535),
+                    message: 'Valid values are from 1 to 65534'
+                };
+            },
+            backendPort: (value) => {
+                return {
+                    result: _.inRange(_.toSafeInteger(value), 1, 65536),
+                    message: 'Valid values are from 1 to 65535'
+                };
+            },
+            idleTimeoutInMinutes: (value, parent) => {
+                let result = {
+                    result: true
+                };
+
+                if ((parent.protocol === 'Tcp') && (!_.inRange(4, 31))) {
+                    result = {
+                        result: false,
+                        message: 'Valid values are from 4 to 30'
+                    };
+                } else if ((parent.protocol === 'Udp') && (!_.isNil(value))) {
+                    result = {
+                        result: false,
+                        message: 'If protocol is Udp, idleTimeoutInMinutes cannot be specified'
+                    };
+                }
+
+                return result;
+            },
+            enableFloatingIP: v.validationUtilities.isBoolean,
+            frontendIPConfigurationName: (value, parent) => {
+                let result = {
+                    result: false,
+                    message: `Invalid frontendIPConfigurationName. loadBalancingRule: ${parent.name}, frontendIPConfigurationName: ${value}`
+                };
+                baseSettings.frontendIPConfigurations.forEach((config) => {
+                    if (config.name === value) {
+                        return { result: true };
+                    }
+                })
+                return result;
+            },
+            backendPoolName: (value, parent) => {
+                let result = {
+                    result: false,
+                    message: `Invalid backendPoolName. loadBalancingRule: ${parent.name}, backendPoolName: ${value}`
+                };
+                baseSettings.backendPools.forEach((config) => {
+                    if (config.name === value) {
+                        return { result: true };
+                    }
+                })
+                return result;
+            },
+            probeName: (value, parent) => {
+                let result = {
+                    result: false,
+                    message: `Invalid probeName. loadBalancingRule: ${parent.name}, probeName: ${value}`
+                };
+                baseSettings.probes.forEach((config) => {
+                    if (config.name === value) {
+                        return { result: true };
+                    }
+                })
+                return result;
+            }
+        };
+        return {
+            validations: loadBalancingRuleValidations
+        };
+    },
+    probes: () => {
+        return {
+            validations: probeValidations
+        };
+    },
+    backendPools: () => {
+        let baseSettings = parent;
+        let backendPoolsValidations = {
+            name: v.validationUtilities.isNotNullOrWhitespace,
+            nics: (value, parent) => {
+                let nicsValidations = {
+                    vmIndex: (value) => {
+                        return {
+                            result: !value <= (baseSettings.backendVirtualMachinesSettings.vmCount - 1),
+                            message: 'vmIndex cannot be greated than number of VMs'
+                        }
+                    },
+                    nicIndex: (value) => {
+                        return {
+                            result: !value <= (baseSettings.backendVirtualMachinesSettings.nics.length - 1),
+                            message: 'nicIndex cannot be greated than nics specified in backendVirtualMachinesSettings'
+                        }
+                    }
+                };
+                return {
+                    validations: nicsValidations
+                };
+            }
+        };
+        return {
+            validations: backendPoolsValidations
+        };
+    },
+    inboundNatRules: () => {
+        let baseSettings = parent;
+        let inboundNatRuleValidations = {
+            name: v.validationUtilities.isNotNullOrWhitespace,
+            protocol: (value) => {
+                return {
+                    result: isValidProtocol(value),
+                    message: `Valid values are ${validProtocols.join(',')}`
+                };
+            },
+            startingFrontendPort: (value) => {
+                return {
+                    result: _.inRange(_.toSafeInteger(value), 1, 65535),
+                    message: 'Valid values are from 1 to 65534'
+                };
+            },
+            backendPort: (value) => {
+                return {
+                    result: _.inRange(_.toSafeInteger(value), 1, 65536),
+                    message: 'Valid values are from 1 to 65535'
+                };
+            },
+            idleTimeoutInMinutes: (value, parent) => {
+                let result = {
+                    result: true
+                };
+
+                if ((parent.protocol === 'Tcp') && (!_.inRange(4, 31))) {
+                    result = {
+                        result: false,
+                        message: 'Valid values are from 4 to 30'
+                    };
+                } else if ((parent.protocol === 'Udp') && (!_.isNil(value))) {
+                    result = {
+                        result: false,
+                        message: 'If protocol is Udp, idleTimeoutInMinutes cannot be specified'
+                    };
+                }
+
+                return result;
+            },
+            enableFloatingIP: v.validationUtilities.isBoolean,
+            frontendIPConfigurationName: (value, parent) => {
+                let result = {
+                    result: false,
+                    message: `Invalid frontendIPConfigurationName. inboundNatRule: ${parent.name}, frontendIPConfigurationName: ${value}`
+                };
+                baseSettings.frontendIPConfigurations.forEach((config) => {
+                    if (config.name === value) {
+                        return { result: true };
+                    }
+                })
+                return result;
+            },
+            nics: (value, parent) => {
+                let nicsValidations = {
+                    vmIndex: (value) => {
+                        return {
+                            result: !value <= (baseSettings.backendVirtualMachinesSettings.vmCount - 1),
+                            message: 'vmIndex cannot be greated than number of VMs'
+                        }
+                    },
+                    nicIndex: (value) => {
+                        return {
+                            result: !value <= (baseSettings.backendVirtualMachinesSettings.nics.length - 1),
+                            message: 'nicIndex cannot be greated than nics specified in backendVirtualMachinesSettings'
+                        }
+                    }
+                };
+                return {
+                    validations: nicsValidations
+                };
+            }
+        };
+        return {
+            validations: inboundNatRuleValidations
+        };
+    },
+    virtualNetwork: () => {
+        name: v.validationUtilities.isNotNullOrWhitespace
+    },
+    backendVirtualMachinesSettings: () => {
+        return {
+            validations: virtualMachineSettings.validations
+        };
+    }
+
 };
 
 let processProperties = {
@@ -540,5 +624,5 @@ function mergeAndProcess(param, buildingBlockSettings) {
 
 exports.processLoadBalancerSettings = mergeAndProcess;
 exports.mergeWithDefaults = merge;
-//exports.validations = validate;
+exports.validations = validate;
 exports.getTemplateParameters = getTemplateParameters;
