@@ -16,6 +16,19 @@
         "parameters": {
             "type": "object",
             "properties": {
+                "connectionSettings": {
+                    "oneOf": [
+                        {
+                            "type": "array",
+                            "items": {
+                                "$ref": "file:///Source/mspnp/template-building-blocks/spikes/nodejs-spike/schemas/connectionSettings.json#"
+                            }
+                        },
+                        {
+                            "$ref": "file:///Source/mspnp/template-building-blocks/spikes/nodejs-spike/schemas/connectionSettings.json#"
+                        }
+                    ]
+                },
                 "networkSecurityGroupSettings": {
                     "oneOf": [
                         {
@@ -55,6 +68,19 @@
                         }
                     ]
                 },
+                "virtualNetworkGatewaySettings": {
+                    "oneOf": [
+                        {
+                            "type": "array",
+                            "items": {
+                                "$ref": "file:///Source/mspnp/template-building-blocks/spikes/nodejs-spike/schemas/virtualNetworkGatewaySettings.json#"
+                            }
+                        },
+                        {
+                            "$ref": "file:///Source/mspnp/template-building-blocks/spikes/nodejs-spike/schemas/virtualNetworkGatewaySettings.json#"
+                        }
+                    ]
+                },
                 "virtualNetworkSettings": {
                     "oneOf": [
                         {
@@ -72,8 +98,9 @@
             "description": "Collection of parameters to pass into a template",
             "additionalProperties": false,
             "oneOf": [
-                { "required": [ "networkSecurityGroupSettings" ]},
-                { "required": [ "routeTableSettings" ] }
+                { "required": [ "connectionSettings" ] },
+                { "required": [ "networkSecurityGroupSettings" ] },
+                { "required": [ "routeTableSettings" ] },
                 { "required": [ "virtualMachineSettings" ] },
                 { "required": [ "virtualNetworkSettings" ] }
             ]
