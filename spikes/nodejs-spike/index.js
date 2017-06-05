@@ -72,6 +72,16 @@ let buildingBlocks = {
         process: require(path.resolve('./core', 'virtualNetworkSettings.js')).transform,
         parameterName: 'virtualNetworkSettings',
         template: 'https://raw.githubusercontent.com/mspnp/template-building-blocks/andrew/spikes/spikes/nodejs-spike/templates/buildingBlocks/virtualNetworks/virtualNetworks.json'
+    },
+    'vnet-gateway': {
+        process: require(path.resolve('./core', 'virtualNetworkGatewaySettings.js')).transform,
+        parameterName: 'virtualNetworkGatewaySettings',
+        template: 'https://raw.githubusercontent.com/mspnp/template-building-blocks/andrew/spikes/spikes/nodejs-spike/templates/buildingBlocks/virtualNetworkGateways/virtualNetworkGateways.json'
+    },
+    'vpn-connection': {
+        process: require(path.resolve('./core', 'connectionSettings.js')).transform,
+        parameterName: 'connectionSettings',
+        template: 'https://raw.githubusercontent.com/mspnp/template-building-blocks/andrew/spikes/spikes/nodejs-spike/templates/buildingBlocks/connections/connections.json'
     }
 };
 
