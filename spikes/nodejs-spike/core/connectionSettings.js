@@ -14,12 +14,6 @@ let isValidConnectionType = (connectionType) => {
     return v.utilities.isStringInArray(connectionType, validConnectionTypes);
 };
 
-let localNetworkGatewayValidations = {
-    name: v.validationUtilities.isNotNullOrWhitespace,
-    ipAddress: v.validationUtilities.isValidIpAddress,
-    addressPrefixes: v.validationUtilities.isValidCidr
-};
-
 let expressRouteCircuitValidations = {
     name: v.validationUtilities.isNotNullOrWhitespace
 };
@@ -111,7 +105,7 @@ let connectionSettingsValidations = {
                     };
                 } else {
                     result = {
-                        validations: localNetworkGatewayValidations
+                        validations: localNetworkGateway.validations
                     };
                 }
             } else if (!_.isNil(value)) {
