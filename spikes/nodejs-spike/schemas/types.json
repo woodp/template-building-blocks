@@ -55,6 +55,21 @@
                 "Dynamic",
                 "Static"
             ]
+        },
+        "bgpSettings": {
+            "type": "object",
+            "properties": {
+                "asn": {
+                    "type": "integer"
+                },
+                "bgpPeeringAddress": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "peerWeight": {
+                    "type": "integer"
+                }
+            }
         }
     }
 }

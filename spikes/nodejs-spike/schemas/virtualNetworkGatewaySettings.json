@@ -36,6 +36,9 @@
                     ],
                     "default": "Standard"
                 },
+                "bgpSettings": {
+                    "$ref": "file:///Source/mspnp/template-building-blocks/spikes/nodejs-spike/schemas/types.json#/definitions/bgpSettings"
+                },
                 "virtualNetwork": {
                     "$ref": "file:///Source/mspnp/template-building-blocks/spikes/nodejs-spike/schemas/types.json#/definitions/resourceReference"
                 }

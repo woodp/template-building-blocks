@@ -43,8 +43,7 @@
                         "connectionType",
                         "expressRouteCircuit",
                         "virtualNetworkGateway"
-                    ],
-                    "additionalProperties": false
+                    ]
                 },
                 {
                     "allOf": [
@@ -101,8 +100,7 @@
                                         "connectionType",
                                         "localNetworkGateway",
                                         "virtualNetworkGateway"
-                                    ],
-                                    "additionalProperties": false
+                                    ]
                                 },
                                 {
                                     "properties": {
@@ -125,8 +123,7 @@
                                         "connectionType",
                                         "virtualNetworkGateway1",
                                         "virtualNetworkGateway2"
-                                    ],
-                                    "additionalProperties": false
+                                    ]
                                 }
                             ]
                         }
