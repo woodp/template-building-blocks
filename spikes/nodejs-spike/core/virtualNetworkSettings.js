@@ -6,13 +6,6 @@ let r = require('./resources.js');
 let validationMessages = require('./validationMessages.js');
 
 let virtualNetworkSettingsDefaults = {
-    addressPrefixes: ['10.0.0.0/16'],
-    subnets: [
-        {
-            name: 'default',
-            addressPrefix: '10.0.1.0/24'
-        }
-    ],
     dnsServers: [],
     virtualNetworkPeerings: [],
     tags: {}
@@ -53,7 +46,23 @@ let virtualNetworkSettingsPeeringValidations = {
 let virtualNetworkSettingsValidations = {
     name: v.validationUtilities.isNotNullOrWhitespace,
     addressPrefixes: v.validationUtilities.isValidCidr,
-    subnets: virtualNetworkSettingsSubnetsValidations,
+    subnets: (value) => {
+        if (_.isNil(value)) {
+            return {
+                result: false,
+                message: validationMessages.ValueCannotBeNull
+            };
+        } else if (value.length === 0) {
+            return {
+                result: false,
+                message: 'At least one subnet must be provided'
+            };
+        } else {
+            return {
+                validations: virtualNetworkSettingsSubnetsValidations
+            };
+        }
+    },
     dnsServers: (value) => {
         // An empty array is okay
         let result = {
@@ -161,7 +170,7 @@ let merge = ({settings, buildingBlockSettings, defaultSettings = virtualNetworkS
     return merged;
 };
 
-exports.transform = function ({ settings, buildingBlockSettings }) {
+exports.transform = function ({ settings, buildingBlockSettings, defaultSettings }) {
     if (_.isPlainObject(settings)) {
         settings = [settings];
     }
@@ -180,7 +189,8 @@ exports.transform = function ({ settings, buildingBlockSettings }) {
 
     let results = merge({
         settings: settings,
-        buildingBlockSettings: buildingBlockSettings
+        buildingBlockSettings: buildingBlockSettings,
+        defaultSettings: defaultSettings ? [virtualNetworkSettingsDefaults, defaultSettings] : virtualNetworkSettingsDefaults
     });
 
     let errors = v.validate({

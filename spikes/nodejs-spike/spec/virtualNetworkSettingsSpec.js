@@ -518,9 +518,7 @@ describe('virtualNetworkSettings', () => {
                 let settings = _.cloneDeep(virtualNetworkSettings);
                 delete settings.subnets;
                 let merged = validation.merge(settings, virtualNetworkSettingsDefaults, mergeCustomizer);
-                expect(merged.subnets.length).toEqual(1);
-                expect(merged.subnets[0].name).toEqual('default');
-                expect(merged.subnets[0].addressPrefix).toEqual('10.0.1.0/24');
+                expect(merged.subnets).toBeUndefined();
             });
 
             it('subnets null', () => {

@@ -4,7 +4,19 @@ let _ = require('lodash');
 let validationMessages = require('./validationMessages.js');
 
 function merge(settings, defaultSettings, mergeCustomizer) {
+    if (_.isPlainObject(defaultSettings)) {
+        defaultSettings = [defaultSettings];
+    }
 
+    // Since we have the ability to augment the default settings, we need to do a little work on the defaults that get passed in to
+    // maintain the backwards compatibility.  We may be able to remove this later.
+    let mergedDefaults = {};
+    for (const defaultSetting of defaultSettings) {
+        mergedDefaults = (mergeCustomizer ? _.mergeWith(mergedDefaults, defaultSetting, mergeCustomizer) : _.merge(mergedDefaults, defaultSetting));
+    }
+
+    defaultSettings = mergedDefaults;
+    
     if (_.isPlainObject(settings)) {
         let mergedSettings = (mergeCustomizer ? _.mergeWith({}, defaultSettings, settings, mergeCustomizer) : _.merge({}, defaultSettings, settings));
         return mergedSettings;
@@ -253,7 +265,7 @@ let tagsValidations = (value) => {
 
             let message = '';
             if (nameLengthViolated) {
-                message = message.concat('Tag names must be between 1 and 512 characters in length.  ')
+                message = message.concat('Tag names must be between 1 and 512 characters in length.  ');
             }
 
             if (valueLengthViolated) {
