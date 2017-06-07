@@ -24,7 +24,7 @@ let parseParameterFile = ({parameterFile}) => {
     }
 };
 
-let processParameters = ({buildingBlock, parameters, buildingBlockSettings}) => {
+let processParameters = ({buildingBlock, parameters, buildingBlockSettings, defaultsDirectory}) => {
     let processor = buildingBlocks[buildingBlock];
     if (!processor) {
         throw new Error(`building block '${buildingBlock}' not found.`);
@@ -35,9 +35,24 @@ let processParameters = ({buildingBlock, parameters, buildingBlockSettings}) => 
         throw new Error(`parameter '${processor.parameterName}' not found.`);
     }
 
+    let defaults;
+    if (defaultsDirectory) {
+        // Grab defaults, if they exist
+        let defaultsFile = path.join(defaultsDirectory, `${processor.parameterName}.json`);
+        if (fs.existsSync(defaultsFile)) {
+            try {
+                let content = fs.readFileSync(defaultsFile, 'UTF-8');
+                defaults = JSON.parse(content.replace(/^\uFEFF/, ''));
+            } catch (e) {
+                throw new Error(`error parsing '${defaultsFile}': ${e.message}`);
+            }
+        }
+    }
+
     return processor.process({
         settings: parameter,
-        buildingBlockSettings: buildingBlockSettings
+        buildingBlockSettings: buildingBlockSettings,
+        defaultSettings: defaults
     });
 };
 
@@ -52,11 +67,11 @@ let buildingBlocks = {
     },
     lb: {
         process: ({settings, buildingBlockSettings}) => {
-            require(path.resolve('./core', 'loadBalancerSettings.js')).processLoadBalancerSettings;
+            let process = require(path.resolve('./core', 'loadBalancerSettings.js')).processLoadBalancerSettings;
             return process(settings, buildingBlockSettings);
         },
         parameterName: 'loadBalancerSettings',
-        template: ''
+        template: 'https://raw.githubusercontent.com/mspnp/template-building-blocks/andrew/spikes/spikes/nodejs-spike/templates/buildingBlocks/loadBalancers/loadBalancers.json'
     },
     nsg: {
         process: require(path.resolve('./core', 'networkSecurityGroupSettings.js')).transform,
@@ -117,6 +132,18 @@ let validateSubscriptionId = (value) => {
     return value;
 }
 
+let getRegisteredClouds = () => {
+    let child = childProcess.spawnSync('az', ['cloud', 'list'], {
+        stdio: 'pipe',
+        shell: true
+    });
+
+    if (child.status === 0) {
+        return JSON.parse(child.stdout.toString());
+    } else {
+        throw new Error('error getting registered clouds');
+    }
+};
 //let validateOutputModes
 //let testCommandLine = ['dummy', 'dummy', '-b', 'vm', '-s', '3b518fac-e5c8-4f59-8ed5-d70b626f8e10', '-g', 'my-rg', '-p', 'spec/Parameters/vm-parameters-cmdline.json', '-o', 'output.json'];
 
@@ -147,16 +174,16 @@ let deployTemplate = ({parameterFile, location, buildingBlockSettings, buildingB
     //     currentSubscriptionId = JSON.parse(child.stdout.toString()).id;
     // }
 
-    // Login first
-    child = spawnSync('az', ['login'], {
-        stdio: 'inherit',
-        shell: true
-    });
+    // // Login first
+    // child = spawnSync('az', ['login'], {
+    //     stdio: 'inherit',
+    //     shell: true
+    // });
     // if (child.status !== 0) {
     //     throw Error(`Error executing az login: ${child.stderr}`);
     // }
 
-    if (child.status === 0) {
+    //if (child.status === 0) {
         // Set the subscription
         child = spawnSync('az', ['account', 'set', '--subscription', buildingBlockSettings.subscriptionId], {
             stdio: 'inherit',
@@ -199,33 +226,14 @@ let deployTemplate = ({parameterFile, location, buildingBlockSettings, buildingB
             }
             
         } else {
-            throw new Error(`error executing az account set: ${child.stderr.toString()}`);
+            throw new Error(`error executing az account set${(child.stderr) ? ': ' + child.stderr.toString() : ''}`);
         }
-    } else {
-        throw new Error(`error executing az login`);
-    }
-
-
-    // if (child.status !== 0) {
-    //     throw Error(`Error setting current subscription: ${child.stderr}`);
+    // } else {
+    //     throw new Error(`error executing az login`);
     // }
-
-    // child = spawn('az', []);
-
-    // child.stdout.on('data', (data) => {
-    //     console.log(data.toString());
-    // });
-
-    // child.stderr.on('data', (data) => {
-    //     console.error(data.toString());
-    // });
-
-    // child.on('close', (code) => {
-    //     console.log(`az exited with code: ${code}`);
-    // });
-    
-    //child.unref();
 };
+
+let registeredClouds = getRegisteredClouds();
 
 try {
     commander
@@ -236,6 +244,7 @@ try {
         .option('-o, --output-file <output-file>', 'the output file name')
         .option('-s, --subscription-id <subscription-id>', 'the subscription identifier', validateSubscriptionId)
         .option('-l, --location <location>', 'location in which to create the resource group, if it does not exist')
+        .option('-d, --defaults-directory <defaults-directory>', 'directory containing customized building block default values')
         .option('--json', 'output JSON to console')
         .option('--deploy', 'deploy building block using az')
         .parse(process.argv);
@@ -259,6 +268,13 @@ try {
     } else if (!_.isUndefined(commander.outputFile)) {
         // File output was specified.  See if it needs the default file or if one was specified.
         commander.outputFile = path.resolve(commander.outputFile);
+    }
+
+    if (!_.isUndefined(commander.defaultsDirectory)) {
+        commander.defaultsDirectory = path.resolve(commander.defaultsDirectory);
+        if (!fs.existsSync(commander.defaultsDirectory)) {
+            throw new Error(`defaults path '${commander.defaultsDirectory}' was not found`);
+        }
     }
 
     if (commander.deploy === true) {
@@ -293,7 +309,8 @@ try {
     let result = processParameters({
         buildingBlock: commander.buildingBlock,
         parameters: parameters,
-        buildingBlockSettings: buildingBlockSettings
+        buildingBlockSettings: buildingBlockSettings,
+        defaultsDirectory: commander.defaultsDirectory
     });
 
     let templateParameters = createTemplateParameters({
