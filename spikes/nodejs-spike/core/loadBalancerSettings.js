@@ -271,7 +271,7 @@ let processProperties = {
     frontendIPConfigurations: (value, key, parent, accumulator) => {
         let feIpConfigs = [];
         value.forEach((config, index) => {
-            if (config.loadBalancerType === 'internal') {
+            if (config.loadBalancerType === 'Internal') {
                 feIpConfigs.push({
                     name: config.name,
                     properties: {
@@ -282,7 +282,7 @@ let processProperties = {
                         }
                     }
                 });
-            } else if (config.loadBalancerType === 'public') {
+            } else if (config.loadBalancerType === 'Public') {
                 feIpConfigs.push({
                     name: config.name,
                     properties: {

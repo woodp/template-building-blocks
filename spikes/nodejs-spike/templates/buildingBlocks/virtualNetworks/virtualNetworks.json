@@ -17,11 +17,14 @@
     }
   },
   "variables": {
-    "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('virtualNetworks')), string(parameters('virtualNetworkPeerings'))))]",
-    "location": "[resourceGroup().location]",
-    "iteratorTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/common/resources.json')]",
-    "virtualNetworkPeeringTemplate": "[uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/virtualNetworks/virtualNetworkPeering.json')]",
-    "virtualNetworkPeeringsDeploymentName": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployVNetPeering-', variables('templateUniqueString'))]"
+    "workaround": {
+       "true": "[parameters('virtualNetworkPeerings')]",
+       "false": [{
+           "name": "workaround",
+           "properties": {}
+       }]
+     },
+     "peerings": "[variables('workaround')[string(greater(length(parameters('virtualNetworkPeerings')), 0))]]"
   },
   "resources": [
     {
@@ -38,30 +41,36 @@
     },
     {
       "type": "Microsoft.Resources/deployments",
-      "apiVersion": "2015-01-01",
-      "name": "[variables('virtualNetworkPeeringsDeploymentName')]",
+      "apiVersion": "2017-05-10",
+      "name": "[concat('vnp-', copyIndex())]",
+      "condition": "[greater(length(parameters('virtualNetworkPeerings')), 0)]",
       "dependsOn": [
-          "virtualNetworks"
+        "virtualNetworks"
       ],
+      "copy": {
+         "name": "vnpIterator",
+         "count": "[length(variables('peerings'))]",
+         "mode": "Serial"
+      },
       "properties": {
         "mode": "Incremental",
-        "templateLink": {
-          "uri": "[variables('iteratorTemplate')]"
-        },
-        "parameters": {
-          "deploymentContext": {
-            "value": {
-              "parentTemplateUniqueString": "[concat(variables('templateUniqueString'), '-deployVNetPeering')]"
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+          },
+          "variables": {
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+              "apiVersion": "2016-06-01",
+              "location": "[resourceGroup().location]",
+              "name": "[variables('peerings')[copyIndex()].name]",
+              "properties": "[variables('peerings')[copyIndex()].properties]"
             }
-          },
-          "source": {
-            "value": "[parameters('virtualNetworkPeerings')]"
-          },
-          "name": {
-            "value": "vnp"
-          },
-          "resourceTemplatePath": {
-            "value": "[variables('virtualNetworkPeeringTemplate')]"
+          ],
+          "outputs": {
           }
         }
       }

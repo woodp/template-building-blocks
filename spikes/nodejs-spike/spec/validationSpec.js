@@ -481,6 +481,139 @@ describe('validation', () => {
         });
     });
 
+    describe('tags validations', () => {
+        let tagsValidations = {
+            tags: validation.tagsValidations
+        };
+
+        let tagsSettings = {
+            tags: {}
+        };
+
+        it('tags undefined', () => {
+            let settings = _.cloneDeep(tagsSettings);
+            delete settings.tags;
+            let errors = validation.validate({
+                settings: settings,
+                validations: tagsValidations
+            });
+
+            expect(errors.length).toEqual(1);
+            expect(errors[0].name).toEqual('.tags');
+        });
+
+        it('tags null', () => {
+            let settings = _.cloneDeep(tagsSettings);
+            settings.tags = null;
+            let errors = validation.validate({
+                settings: settings,
+                validations: tagsValidations
+            });
+
+            expect(errors.length).toEqual(1);
+            expect(errors[0].name).toEqual('.tags');
+        });
+
+        it('tags empty', () => {
+            let settings = _.cloneDeep(tagsSettings);
+            settings.tags = {};
+            let errors = validation.validate({
+                settings: settings,
+                validations: tagsValidations
+            });
+
+            expect(errors.length).toEqual(0);
+        });
+
+        it('tags not a plain object', () => {
+            let settings = _.cloneDeep(tagsSettings);
+            settings.tags = [];
+            let errors = validation.validate({
+                settings: settings,
+                validations: tagsValidations
+            });
+
+            expect(errors.length).toEqual(1);
+            expect(errors[0].name).toEqual('.tags');
+        });
+
+        it('tags length exceeded', () => {
+            let settings = _.cloneDeep(tagsSettings);
+            settings.tags = {};
+            for (let i = 0; i < 16; i++) {
+                settings.tags[`name${i}`] = `value${i}`;
+            }
+
+            let errors = validation.validate({
+                settings: settings,
+                validations: tagsValidations
+            });
+
+            expect(errors.length).toEqual(1);
+            expect(errors[0].name).toEqual('.tags');
+        });
+
+        it('tags name length exceeded', () => {
+            let settings = _.cloneDeep(tagsSettings);
+            settings.tags = {};
+            let tagName = '';
+            for (let i = 0; i < 513; i++) {
+                tagName = tagName.concat('a');
+            }
+
+            settings.tags[tagName] = 'value';
+            settings.tags[tagName + '1'] = 'value';
+
+            let errors = validation.validate({
+                settings: settings,
+                validations: tagsValidations
+            });
+
+            expect(errors.length).toEqual(1);
+            expect(errors[0].name).toEqual('.tags');
+        });
+
+        it('tags value length exceeded', () => {
+            let settings = _.cloneDeep(tagsSettings);
+            settings.tags = {};
+            let tagValue = '';
+            for (let i = 0; i < 257; i++) {
+                tagValue = tagValue.concat('a');
+            }
+
+            settings.tags['name1'] = tagValue;
+            settings.tags['name2'] = tagValue;
+
+            let errors = validation.validate({
+                settings: settings,
+                validations: tagsValidations
+            });
+
+            expect(errors.length).toEqual(1);
+            expect(errors[0].name).toEqual('.tags');
+        });
+
+        it('tags name and value length exceeded', () => {
+            let settings = _.cloneDeep(tagsSettings);
+            settings.tags = {};
+            let tagName = '';
+            for (let i = 0; i < 513; i++) {
+                tagName = tagName.concat('a');
+            }
+
+            settings.tags[tagName] = tagName;
+            settings.tags[tagName + '1'] = tagName;
+
+            let errors = validation.validate({
+                settings: settings,
+                validations: tagsValidations
+            });
+
+            expect(errors.length).toEqual(1);
+            expect(errors[0].name).toEqual('.tags');
+        });
+    });
+
     describe('merge', () => {
         it('invalid settings type', () => {
             expect(() => {

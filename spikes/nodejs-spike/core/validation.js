@@ -4,7 +4,19 @@ let _ = require('lodash');
 let validationMessages = require('./validationMessages.js');
 
 function merge(settings, defaultSettings, mergeCustomizer) {
+    if (_.isPlainObject(defaultSettings)) {
+        defaultSettings = [defaultSettings];
+    }
 
+    // Since we have the ability to augment the default settings, we need to do a little work on the defaults that get passed in to
+    // maintain the backwards compatibility.  We may be able to remove this later.
+    let mergedDefaults = {};
+    for (const defaultSetting of defaultSettings) {
+        mergedDefaults = (mergeCustomizer ? _.mergeWith(mergedDefaults, defaultSetting, mergeCustomizer) : _.merge(mergedDefaults, defaultSetting));
+    }
+
+    defaultSettings = mergedDefaults;
+    
     if (_.isPlainObject(settings)) {
         let mergedSettings = (mergeCustomizer ? _.mergeWith({}, defaultSettings, settings, mergeCustomizer) : _.merge({}, defaultSettings, settings));
         return mergedSettings;
@@ -218,49 +230,52 @@ let tagsValidations = (value) => {
         result: true
     };
 
-    // Tags are optional
-    if (!_.isUndefined(value)) {
+    // Tags are optional, but all defaults should have an empty object set
+    if (_.isNil(value)) {
+        result = {
+            result: false,
+            message: 'Value cannot be undefined or null'
+        };
+    } else if (!_.isPlainObject(value)) {
         // If this is not an object, the value is invalid
-        if (!_.isPlainObject(value)) {
+        result = {
+            result: false,
+            message: 'tags must be a json object'
+        };
+    } else {
+        // If we have tags, we need to validate them
+        // 1.  We can only have 15 tags per resource
+        // 2.  Name is limited to 512 characters
+        // 3.  Value is limited to 256 characters
+        let keys = Object.keys(value);
+        if (keys.length > 15) {
             result = {
                 result: false,
-                message: 'tags must be a json object'
+                message: 'Only 15 tags are allowed'
             };
         } else {
-            // If we have tags, we need to validate them
-            // 1.  We can only have 15 tags per resource
-            // 2.  Name is limited to 512 characters
-            // 3.  Value is limited to 256 characters
-            let keys = Object.keys(value);
-            if (keys.length > 15) {
-                result = {
-                    result: false,
-                    message: 'Only 15 tags are allowed'
-                };
-            } else {
 
-                let nameLengthViolated = _.some(value, (value, key) => {
-                    return !_.inRange(key.length, 1, 257);
-                });
+            let nameLengthViolated = _.some(value, (value, key) => {
+                return !_.inRange(key.length, 1, 257);
+            });
 
-                let valueLengthViolated = _.some(value, (value) => {
-                    return (value.length > 256);
-                });
+            let valueLengthViolated = _.some(value, (value) => {
+                return (value.length > 256);
+            });
 
-                let message = '';
-                if (nameLengthViolated) {
-                    message = message.concat('Tag names must be between 1 and 512 characters in length.  ')
-                }
-
-                if (valueLengthViolated) {
-                    message = message.concat('Tag values cannot be greater than 256 characters in length.');
-                }
-
-                result = {
-                    result: (!nameLengthViolated && !valueLengthViolated),
-                    message: message.trim()
-                };
+            let message = '';
+            if (nameLengthViolated) {
+                message = message.concat('Tag names must be between 1 and 512 characters in length.  ');
             }
+
+            if (valueLengthViolated) {
+                message = message.concat('Tag values cannot be greater than 256 characters in length.');
+            }
+
+            result = {
+                result: (!nameLengthViolated && !valueLengthViolated),
+                message: message.trim()
+            };
         }
     }
     

@@ -76,6 +76,7 @@ let merge = ({settings, buildingBlockSettings, defaultSettings = localNetworkGat
     return merged;
 };
 
+exports.validations = localNetworkGatewayValidations;
 exports.merge = merge;
 exports.transform = function ({ settings, buildingBlockSettings }) {
     if (_.isPlainObject(settings)) {
