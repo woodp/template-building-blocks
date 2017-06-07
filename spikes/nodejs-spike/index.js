@@ -84,6 +84,14 @@ let buildingBlocks = {
         parameterName: 'routeTableSettings',
         template: 'https://raw.githubusercontent.com/mspnp/template-building-blocks/andrew/spikes/spikes/nodejs-spike/templates/buildingBlocks/routeTables/routeTables.json'
     },
+    'vm-extension': {
+        process: ({settings, buildingBlockSettings}) => {
+            let process = require(path.resolve('./core', 'virtualMachineExtensionsSettings.js')).processvirtualMachineExtensionsSettings;
+            return process(settings, buildingBlockSettings);
+        },
+        parameterName: 'virtualMachinesExtensionSettings',
+        template: 'https://raw.githubusercontent.com/mspnp/template-building-blocks/andrew/spikes/spikes/nodejs-spike/templates/buildingBlocks/virtualMachineExtensions/virtualMachineExtensions.json'
+    },
     vnet: {
         process: require(path.resolve('./core', 'virtualNetworkSettings.js')).transform,
         parameterName: 'virtualNetworkSettings',
