@@ -14,37 +14,6 @@ function validate(settings) {
     };
 }
 
-let processProperties = {
-    frontendIPConfigurations: (value, key, parent, accumulator) => {
-        let feIpConfigs = [];
-        value.forEach((config, index) => {
-            if (config.loadBalancerType === 'internal') {
-                feIpConfigs.push({
-                    name: config.name,
-                    properties: {
-                        privateIPAllocationMethod: 'Static',
-                        privateIPAddress: config.internalLoadBalancerSettings.privateIPAddress,
-                        subnet: {
-                            id: resources.resourceId(parent.virtualNetwork.subscriptionId, parent.virtualNetwork.resourceGroupName, 'Microsoft.Network/virtualNetworks/subnets', parent.virtualNetwork.name, config.internalLoadBalancerSettings.subnetName),
-                        }
-                    }
-                });
-            } else if (config.loadBalancerType === 'public') {
-                feIpConfigs.push({
-                    name: config.name,
-                    properties: {
-                        privateIPAllocationMethod: 'Dynamic',
-                        publicIPAddress: {
-                            id: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/publicIPAddresses', `${config.name}-pip`)
-                        }
-                    }
-                });
-            }
-        });
-        accumulator.loadBalancers[0].properties['frontendIPConfigurations'] = feIpConfigs;
-    }
-};
-
 function process(param, buildingBlockSettings) {
     let accumulator = {extensions: []};
     param.forEach((value) => {
