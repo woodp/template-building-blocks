@@ -8,8 +8,12 @@ let validation = require('./core/validation.js');
 let virtualNetwork = require('./core/virtualNetworkSettings.js');
 let routeTables = require('./core/routeTableSettings.js');
 let networkSecurityGroups = require('./core/networkSecurityGroupSettings.js');
-let r = require('./core/resources.js');
+let virtualNetworkGateways = require('./core/virtualNetworkGatewaySettings.js');
+let connection = require('./core/connectionSettings.js');
+let expressRouteCircuit = require('./core/expressRouteCircuitSettings.js');
 
+let r = require('./core/resources.js');
+let _ = require('lodash');
 
 let virtualNetworkSettingsWithPeering = [
   {
@@ -41,7 +45,7 @@ let virtualNetworkSettingsWithPeering = [
         remoteVirtualNetwork: {
           name: "my-other-virtual-network"
         },
-        allowForwardedTraffic: true,
+        //allowForwardedTraffic: true,
         allowGatewayTransit: true,
         useRemoteGateways: false
       },
@@ -333,13 +337,167 @@ function nsgTests(req, res, next) {
   next();
 }
 
+let vpnGatewaySettings = {
+  name: 'bb-hybrid-vpn-vgw',
+  //gatewayType: 'Vpn',
+  //vpnType: 'RouteBased',
+  //sku: 'Standard',
+  isPublic: true,
+  virtualNetwork: {
+    name: 'my-virtual-network'
+  },
+  bgpSettings: {
+  }
+};
+
+let connectionSettings = {
+  name: 'my-connection',
+  connectionType: 'IPsec',
+  //connectionType: 'ExpressRoute',
+  //connectionType: 'Vnet2Vnet',
+  routingWeight: 10,
+  sharedKey: 'mysecret',
+  virtualNetworkGateway: {
+    name: 'vgw'
+  },
+  // virtualNetworkGateway1: {
+  //   name: 'vgw1'
+  // },
+  // virtualNetworkGateway2: {
+  //   name: 'vgw2'
+  // }
+  // expressRouteCircuit: {
+  //   name: 'my-er-circuit'
+  // },
+  localNetworkGateway: {
+    name: 'my-lgw',
+    ipAddress: '40.50.60.70',
+    addressPrefixes: ['10.0.1.0/24']
+  }
+};
+
+let expressRouteCircuitSettings = {
+    name: 'ra-hybrid-er-erc',
+    skuTier: 'Premium',
+    skuFamily: 'UnlimitedData',
+    serviceProviderName: 'Equinix',
+    peeringLocation: 'Silicon Valley',
+    bandwidthInMbps: 50,
+    allowClassicOperations: false
+};
+
+function vpnGatewayTests(req, res, next) {
+  let multipleGateways = [
+    {
+      name: 'my-vpn-gw',
+      gatewayType: 'Vpn',
+      vpnType: 'RouteBased',
+      sku: 'Standard',
+      isPublic: true,
+      virtualNetwork: {
+        name: 'my-virtual-network'
+      }
+    },
+    {
+      name: 'my-er-gw',
+      gatewayType: 'ExpressRoute',
+      vpnType: 'RouteBased',
+      sku: 'Standard',
+      isPublic: true,
+      virtualNetwork: {
+        name: 'my-virtual-network'
+      }
+    },
+    {
+      name: 'my-vpn-gw2',
+      gatewayType: 'Vpn',
+      vpnType: 'RouteBased',
+      sku: 'Standard',
+      isPublic: true,
+      virtualNetwork: {
+        name: 'my-other-virtual-network'
+      },
+      bgpSettings: {
+      }
+    }
+  ];
+
+  try {
+    let settings = virtualNetworkGateways.transform({
+      //settings: vpnGatewaySettings,
+      settings: multipleGateways,
+      buildingBlockSettings: {
+        subscriptionId: "3b518fac-e5c8-4f59-8ed5-d70b626f8e10",
+        resourceGroupName: "test-vnet-rg"
+      }
+    });
+
+    let templateParameters = {
+      $schema: 'http://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#',
+      contentVersion: '1.0.0.0',
+      parameters: {
+      }
+    };
+
+    templateParameters.parameters = _.transform(settings, (result, value, key) => {
+      result[key] = {
+        value: value
+      };
+    }, {});
+
+    res.send(templateParameters);
+  } catch (e) {
+    res.send(400, e);
+  }
+
+  next();
+};
+
+function connectionTests(req, res, next) {
+  let { settings, validationErrors } = connection.transform({
+    settings: connectionSettings,
+    buildingBlockSettings: {
+      subscriptionId: "3b518fac-e5c8-4f59-8ed5-d70b626f8e10",
+      resourceGroupName: "test-vnet-rg"
+    }
+  });
+
+  if (validationErrors) {
+    res.send(400, validationErrors);
+  } else {
+    res.send(settings);
+  }
+
+  next();
+};
+
+function expressRouteCircuitTests(req, res, next) {
+  let { settings, validationErrors } = expressRouteCircuit.transform({
+    settings: expressRouteCircuitSettings,
+    buildingBlockSettings: {
+      subscriptionId: "3b518fac-e5c8-4f59-8ed5-d70b626f8e10",
+      resourceGroupName: "test-vnet-rg"
+    }
+  });
+
+  if (validationErrors) {
+    res.send(400, validationErrors);
+  } else {
+    res.send(settings);
+  }
+
+  next();
+};
+
 exports.createRestServer = () => {
   var server = restify.createServer();
   server.get('/virtualNetwork', vnetTests);
   server.get('/routeTable', routeTableTests);
   server.get('/networkSecurityGroup', nsgTests);
-
-  server.listen(8080, function() {
+  server.get('/virtualNetworkGateway', vpnGatewayTests);
+  server.get('/connection', connectionTests);
+  server.get('expressRouteCircuit', expressRouteCircuitTests);
+  server.listen(8080, function () {
     console.log('%s listening at %s', server.name, server.url);
   });
 };
