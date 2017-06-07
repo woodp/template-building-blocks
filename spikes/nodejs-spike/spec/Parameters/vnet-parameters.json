@@ -16,6 +16,10 @@
                     {
                         "name": "biz",
                         "addressPrefix": "10.0.2.0/24"
+                    },
+                    {
+                        "name": "GatewaySubnet",
+                        "addressPrefix": "10.0.0.0/27"
                     }
                 ],
                 "dnsServers": [],
@@ -23,6 +27,14 @@
                     {
                         "remoteVirtualNetwork": {
                         "name": "my-other-virtual-network"
+                        },
+                        "allowForwardedTraffic": true,
+                        "allowGatewayTransit": true,
+                        "useRemoteGateways": false
+                    },
+                    {
+                        "remoteVirtualNetwork": {
+                            "name": "my-third-virtual-network"
                         },
                         "allowForwardedTraffic": true,
                         "allowGatewayTransit": true,
@@ -48,6 +60,10 @@
                     {
                         "name": "biz",
                         "addressPrefix": "10.1.2.0/24"
+                    },
+                    {
+                        "name": "GatewaySubnet",
+                        "addressPrefix": "10.1.0.0/27"
                     }
                 ]
             },
@@ -64,6 +80,10 @@
                     {
                         "name": "biz",
                         "addressPrefix": "10.2.2.0/24"
+                    },
+                    {
+                        "name": "GatewaySubnet",
+                        "addressPrefix": "10.2.0.0/27"
                     }
                 ]
             }
