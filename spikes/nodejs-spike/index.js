@@ -106,9 +106,20 @@ let createTemplateParameters = ({parameters}) => {
         $schema: 'http://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#',
         contentVersion: '1.0.0.0',
         parameters: _.transform(parameters, (result, value, key) => {
-            result[key] = {
-                value: value
-            };
+            // All KeyVault parameters are named secret.  We need to see if it's a value, or if it is a KeyVault reference.
+            if (key === 'secret') {
+                if (_.isUndefined(value.reference)) {
+                    result[key] = {
+                        value: value
+                    };
+                } else {
+                    result[key] = value;
+                }
+            } else {
+                result[key] = {
+                    value: value
+                };
+            }
 
             return result;
         }, {})
