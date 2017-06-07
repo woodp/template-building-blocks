@@ -3,6 +3,22 @@
     "description": "Settings for the virtual machine building block",
     "id": "file:///Source/mspnp/template-building-blocks/spikes/nodejs-spike/schemas/virtualMachineSettings.json#",
     "type": "object",
+    "definitions": {
+        "osAuthenticationType": {
+            "type": "string",
+            "enum": [
+                "password",
+                "ssh"
+            ]
+        },
+        "osType": {
+            "type": "string",
+            "enum": [
+                "linux",
+                "windows"
+            ]
+        }
+    },
     "properties": {
         "adminPassword": {
             "type": "string"
@@ -70,7 +86,7 @@
                         "type": "boolean"
                     },
                     "privateIPAllocationMethod": {
-                        "$ref": "file:///Source/mspnp/template-building-blocks/spikes/nodejs-spike/schemas/types.json#/definitions/privateIPAllocationMethod"
+                        "$ref": "file:///Source/mspnp/template-building-blocks/spikes/nodejs-spike/schemas/types.json#/definitions/ipAllocationMethod"
                     },
                     "startingIPAddress": {
                         "$ref": "file:///Source/mspnp/template-building-blocks/spikes/nodejs-spike/schemas/types.json#/definitions/ipAddress"
@@ -82,21 +98,13 @@
             }
         },
         "osAuthenticationType": {
-            "type": "string",
-            "enum": [
-                "password",
-                "ssh"
-            ]
+            "$ref": "#/definitions/osAuthenticationType"
         },
         "osDisk": {
             "type": "object",
             "properties": {
                 "osType": {
-                    "type": "string",
-                    "enum": [
-                        "linux",
-                        "windows"
-                    ]
+                    "$ref": "#/definitions/osType"
                 }
             }
         },

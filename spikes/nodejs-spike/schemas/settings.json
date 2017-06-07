@@ -29,6 +29,19 @@
                         }
                     ]
                 },
+                "loadBalancerSettings": {
+                    "oneOf": [
+                        {
+                            "type": "array",
+                            "items": {
+                                "$ref": "file:///Source/mspnp/template-building-blocks/spikes/nodejs-spike/schemas/loadBalancerSettings.json#"
+                            }
+                        },
+                        {
+                            "$ref": "file:///Source/mspnp/template-building-blocks/spikes/nodejs-spike/schemas/loadBalancerSettings.json#"
+                        }
+                    ]
+                },
                 "networkSecurityGroupSettings": {
                     "oneOf": [
                         {
@@ -99,6 +112,7 @@
             "additionalProperties": false,
             "oneOf": [
                 { "required": [ "connectionSettings" ] },
+                { "required": [ "loadBalancerSettings" ] },
                 { "required": [ "networkSecurityGroupSettings" ] },
                 { "required": [ "routeTableSettings" ] },
                 { "required": [ "virtualMachineSettings" ] },
