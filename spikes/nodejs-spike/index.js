@@ -6,6 +6,7 @@ let path = require('path');
 let _ = require('lodash');
 let v = require('./core/validation.js');
 let childProcess = require('child_process');
+const os = require('os');
 
 let parseParameterFile = ({parameterFile}) => {
     // Resolve the path to be cross-platform safe
@@ -133,19 +134,28 @@ let validateSubscriptionId = (value) => {
 }
 
 let getRegisteredClouds = () => {
-    let child = childProcess.spawnSync('az', ['cloud', 'list'], {
-        stdio: 'pipe',
-        shell: true
+    let child = spawnAz({
+        args: ['cloud', 'list']
     });
 
-    if (child.status === 0) {
-        return JSON.parse(child.stdout.toString());
-    } else {
-        throw new Error('error getting registered clouds');
-    }
+    return JSON.parse(child.stdout.toString());
 };
-//let validateOutputModes
-//let testCommandLine = ['dummy', 'dummy', '-b', 'vm', '-s', '3b518fac-e5c8-4f59-8ed5-d70b626f8e10', '-g', 'my-rg', '-p', 'spec/Parameters/vm-parameters-cmdline.json', '-o', 'output.json'];
+
+let spawnAz = ({args, options}) => {
+    if (_.isNil(options)) {
+        // Assign default options so nothing unexpected happens
+        options = {
+            stdio: 'pipe',
+            shell: true
+        };
+    }
+    let child = childProcess.spawnSync('az', args, options);
+    if (child.status !== 0) {
+        throw new Error(`error executing az${os.EOL}  status: ${child.status}${os.EOL}  arguments: ${args.join(' ')}`);
+    }
+
+    return child;
+};
 
 let deployTemplate = ({parameterFile, location, buildingBlockSettings, buildingBlock}) => {
     let buildingBlockMetadata = buildingBlocks[buildingBlock];
@@ -154,86 +164,47 @@ let deployTemplate = ({parameterFile, location, buildingBlockSettings, buildingB
     }
     // Get the current date in UTC and remove the separators.  We can use this as our deployment name.
     let deploymentName = `${buildingBlock}-${new Date().toISOString().replace(/[T\:\.\Z-]/g, '')}`;
-    // let spawn = require('child_process').spawnSync;
-    // let azOutput = spawn('az');
-    // if (azOutput.status === 0) {
-    //     console.log(azOutput.stdout);
-    // } else {
-    //     console.log(azOutput.stderr);
-    // }
-    let spawn = childProcess.spawn;
-    let spawnSync = childProcess.spawnSync;
-    let child;
-    // let currentSubscriptionId;
-    // // Since we will be setting the subscription, we should save the current one and reset it at the end
-    // child = spawnSync('az', ['account', 'show', '--output', 'json'], {
-    //     stdio: 'pipe'
-    // });
 
-    // if (child.status === 0) {
-    //     currentSubscriptionId = JSON.parse(child.stdout.toString()).id;
-    // }
-
-    // // Login first
-    // child = spawnSync('az', ['login'], {
-    //     stdio: 'inherit',
-    //     shell: true
-    // });
-    // if (child.status !== 0) {
-    //     throw Error(`Error executing az login: ${child.stderr}`);
-    // }
-
-    //if (child.status === 0) {
-        // Set the subscription
-        child = spawnSync('az', ['account', 'set', '--subscription', buildingBlockSettings.subscriptionId], {
+    let child = spawnAz({
+        args: ['account', 'set', '--subscription', buildingBlockSettings.subscriptionId],
+        options: {
             stdio: 'inherit',
             shell: true
-        });
-
-        if (child.status === 0) {
-            // See if the resource group exists, and if not create it.
-            child = spawnSync('az', ['group', 'exists', '--name', buildingBlockSettings.resourceGroupName], {
-                stdio: 'pipe',
-                shell: true
-            });
-            if (child.status === 0) {
-                if (child.stdout.toString().trim() === 'false') {
-                    // Create the resource group
-                    child = spawnSync('az', ['group', 'create', '--location', location, '--name', buildingBlockSettings.resourceGroupName], {
-                        stdio: 'inherit',
-                        shell: true
-                    });
-
-                    if (child.status !== 0) {
-                        throw new Error(`error creating resource group '${buildingBlockSettings.resourceGroupName}' in location '${location}'`);
-                    }
-                }
-
-                child = spawn('az', ['group', 'deployment', 'create', '--name', deploymentName,
-                    '--resource-group', buildingBlockSettings.resourceGroupName,
-                    '--template-uri', buildingBlockMetadata.template,
-                    '--parameters', `@${parameterFile}`], {
-                    stdio: 'inherit',
-                    shell: true
-                });
-                child.on('close', (code) => {
-                    if (code !== 0) {
-                        console.error(`error executing az group deploy create: ${code}`);
-                    }
-                });
-            } else {
-                throw new Error(`error checking resource group existence: ${child.stderr.toString()}`);
-            }
-            
-        } else {
-            throw new Error(`error executing az account set${(child.stderr) ? ': ' + child.stderr.toString() : ''}`);
         }
-    // } else {
-    //     throw new Error(`error executing az login`);
-    // }
-};
+    });
 
-let registeredClouds = getRegisteredClouds();
+    // See if the resource group exists, and if not create it.
+    child = spawnAz({
+        args: ['group', 'exists', '--name', buildingBlockSettings.resourceGroupName],
+        options: {
+            stdio: 'pipe',
+            shell: true
+        }
+    });
+
+    // The result has to be trimmed because it has a newline at the end
+    if (child.stdout.toString().trim() === 'false') {
+        // Create the resource group
+        child = spawnAz({
+            args: ['group', 'create', '--location', location, '--name', buildingBlockSettings.resourceGroupName],
+            options: {
+                stdio: 'inherit',
+                shell: true
+            }
+        });
+    }
+
+    child = spawnAz({
+        args: ['group', 'deployment', 'create', '--name', deploymentName,
+        '--resource-group', buildingBlockSettings.resourceGroupName,
+        '--template-uri', buildingBlockMetadata.template,
+        '--parameters', `@${parameterFile}`],
+        options: {
+            stdio: 'inherit',
+            shell: true
+        }
+    });
+};
 
 try {
     commander
@@ -248,7 +219,6 @@ try {
         .option('--json', 'output JSON to console')
         .option('--deploy', 'deploy building block using az')
         .parse(process.argv);
-        //.parse(testCommandLine);
 
     if (_.isUndefined(commander.buildingBlock)) {
         throw new Error('no building block specified');
@@ -266,7 +236,7 @@ try {
         // Either both output types are not specified, or both of them were.  It's still invalid!
         throw new Error('either --output-file or --json must be specified, but not both');
     } else if (!_.isUndefined(commander.outputFile)) {
-        // File output was specified.  See if it needs the default file or if one was specified.
+        // File output was specified.
         commander.outputFile = path.resolve(commander.outputFile);
     }
 
@@ -277,6 +247,8 @@ try {
         }
     }
 
+    let registeredClouds = getRegisteredClouds();
+
     if (commander.deploy === true) {
         if (_.isUndefined(commander.location)) {
             throw new Error('--deploy was specified, but no location was specified');
@@ -284,16 +256,6 @@ try {
 
         if (commander.json === true) {
             throw new Error('--deploy cannot be specified with --json');
-        }
-        // If the deploy flag is specified, see if az is available on the path.  The only reliable way seems to be to try to run it, and
-        // if the error code is not 0, az is not available.  Since we are just checking, we'll ignore the stdio and just check the status code.
-        let child = childProcess.spawnSync('az', {
-            stdio: 'ignore',
-            shell: true
-        });
-
-        if (child.status !== 0) {
-            throw new Error('--deploy was specified but there was an error executing az');
         }
     }
 
@@ -342,5 +304,3 @@ try {
     console.error();
     process.exit(1);
 }
-
-//process.exit(0);
