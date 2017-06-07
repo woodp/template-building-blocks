@@ -6,6 +6,7 @@ let routeTables = require('./core/routeTableSettings.js');
 let availabilitySet = require('./core/availabilitySetSettings.js');
 let vm = require('./core/virtualMachineSettings.js');
 let lb = require('./core/loadBalancerSettings.js');
+let ext = require('./core/virtualMachineExtensionsSettings.js');
 
 function processParameters(parametersFilePath) {
   if (!path.isAbsolute(parametersFilePath)) throw new Error("ERROR: Absolute path required.");
@@ -34,23 +35,37 @@ function processParameters(parametersFilePath) {
   let result;
   Object.keys(parameters).forEach((key) => {
     switch (key) {
-      case 'virtualMachinesSettings':
-        let mergedSettings = vm.mergeWithDefaults(parameters[key]);
-        let errors = vm.validations(mergedSettings);
-        if (errors.length > 0) {
-          throw new Error(JSON.stringify(errors));
-        }
-        result = vm.processVirtualMachineSettings(mergedSettings, parameters["buildingBlockSettings"]);
-        break;
+      // case 'virtualMachinesSettings':
+      //   let mergedSettings = vm.mergeWithDefaults(parameters[key]);
+      //   let errors = vm.validations(mergedSettings);
+      //   if (errors.length > 0) {
+      //     throw new Error(JSON.stringify(errors));
+      //   }
+      //   result = vm.processVirtualMachineSettings(mergedSettings, parameters["buildingBlockSettings"]);
+      //   break;
       case 'loadBalancerSettings':
         //let mergedSettings = vm.mergeWithDefaults(parameters[key]);
         // let errors = vm.validations(mergedSettings);
         // if (errors.length > 0) {
         //   throw new Error(JSON.stringify(errors));
         // }  
+        let mergedSettings1 = lb.mergeWithDefaults(parameters[key]);
+        let errors1 = lb.validations(mergedSettings1);
+        if (errors1.length > 0) {
+          throw new Error(JSON.stringify(errors1));
+        }
         result = lb.getTemplateParameters(parameters[key], parameters["buildingBlockSettings"]);
+      case 'virtualMachinesExtensionSettings':
+        let mergedSettings = ext.mergeWithDefaults(parameters[key]);
+        let errors = ext.validations(mergedSettings);
+        if (errors.length > 0) {
+          throw new Error(JSON.stringify(errors));
+        }
+        result = ext.getTemplateParameters(mergedSettings, parameters["buildingBlockSettings"]);
+        break;
       case 'buildingBlockSettings':
         break;
+
       default:
         throw new Error("Not Implemented");
     }
@@ -63,7 +78,8 @@ exports.processParameters = processParameters;
 
 // ---------------------------------------------------------------------
 
-let parameterFile = path.join(__dirname, '.\\spec\\Parameters\\lb-parameters.json');
+let parameterFile = path.join(__dirname, '.\\spec\\Parameters\\vmExtensions.json');
 //let result = processParameters("C:\\Projects\\GitHub\\template-building-blocks\\spikes\\nodejs-spike\\spec\\Parameters\\vm-parameters.json");
+
 let result = processParameters(parameterFile);
 fs.writeFileSync("C:\\temp\\parameters\\temp.parameter.json", JSON.stringify(result));
