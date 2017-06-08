@@ -152,7 +152,7 @@ let utilities = {
         return !value || !value.trim();
     },
     isJsonObject: (value) => {
-        return (typeof value === 'object');
+        return (!_.isNil(value) && typeof value === 'object');
     },
     isObjectForResourceId: (obj) => {
         // Omit the three fields we need.  If the length of the result is !== 0, this is likely a "full" object, so we can use the "full" validations
