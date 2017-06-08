@@ -151,9 +151,6 @@ let utilities = {
         value = _.toString(value);
         return !value || !value.trim();
     },
-    isJsonObject: (value) => {
-        return (!_.isNil(value) && typeof value === 'object');
-    },
     isObjectForResourceId: (obj) => {
         // Omit the three fields we need.  If the length of the result is !== 0, this is likely a "full" object, so we can use the "full" validations
         let remainingKeys = _.keys(_.omit(obj, ['subscriptionId', 'resourceGroupName', 'name']));
@@ -228,7 +225,7 @@ let validationUtilities = {
     },
     isValidJsonObject: (value) => {
         return {
-            result: utilities.isJsonObject(value),
+            result: _.isPlainObject(value),
             message: 'Value must be Json object'
         };
     }

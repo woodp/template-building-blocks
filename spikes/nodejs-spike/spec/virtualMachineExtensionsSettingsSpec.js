@@ -171,6 +171,14 @@ describe('extensionSettings:', () => {
                 expect(errors.length).toEqual(1);
                 expect(errors[0].name).toEqual('[0].settings');
 
+                updatedSettings[0].settings = [];
+                errors = v.validate({
+                    settings: updatedSettings,
+                    validations: validation
+                });
+                expect(errors.length).toEqual(1);
+                expect(errors[0].name).toEqual('[0].settings');
+
                 updatedSettings[0].settings = {};
                 errors = v.validate({
                     settings: updatedSettings,
@@ -189,6 +197,14 @@ describe('extensionSettings:', () => {
                 expect(errors[0].name).toEqual('[0].protectedSettings');
 
                 updatedSettings[0].protectedSettings = "test";
+                errors = v.validate({
+                    settings: updatedSettings,
+                    validations: validation
+                });
+                expect(errors.length).toEqual(1);
+                expect(errors[0].name).toEqual('[0].protectedSettings');
+
+                updatedSettings[0].protectedSettings = [];
                 errors = v.validate({
                     settings: updatedSettings,
                     validations: validation
