@@ -28,6 +28,7 @@
                                 "secretName": "ext111"
                             }
                         }
+<<<<<<< HEAD
                     }
                 ]
             },
@@ -51,6 +52,48 @@
                         "protectedSettings": {
                             "storageAccountName": "scriptsa222",
                             "storageAccountKey": "6+T/CvPOwNOpfUEoBv/FfdtUX9OjpsMGcS/Pa0a1Narm1L0l7B/xg4VJU3Q48lDDWJW1OiDGL09Nf18+CLMM3A=="
+=======
+                    ]
+                },
+                {
+                    "vms": [
+                        "test-vm2"
+                    ],
+                    "extensions": [
+                        {
+                            "name": "testCustomExtension",
+                            "publisher": "Microsoft.Compute",
+                            "type": "CustomScriptExtension",
+                            "typeHandlerVersion": "1.8",
+                            "autoUpgradeMinorVersion": true,
+                            "settings": {
+                                "fileUris": [
+                                    "https://scriptsa222.blob.core.windows.net/extensions/test.ps1"
+                                ],
+                                "commandToExecute": "powershell -ExecutionPolicy Unrestricted -File ./test.ps1 PrivateSettingsRef:user PrivateSettingsRef:password"
+                            },
+                            "protectedSettings": {
+                                "storageAccountName": "scriptsa222",
+                                "storageAccountKey": "6+T/CvPOwNOpfUEoBv/FfdtUX9OjpsMGcS/Pa0a1Narm1L0l7B/xg4VJU3Q48lDDWJW1OiDGL09Nf18+CLMM3A=="
+                            }
+                        },
+                        {
+                            "name": "testCustomExtension",
+                            "publisher": "Microsoft.Compute",
+                            "type": "CustomScriptExtension",
+                            "typeHandlerVersion": "1.8",
+                            "autoUpgradeMinorVersion": true,
+                            "settings": {
+                                "fileUris": [
+                                    "https://scriptsa222.blob.core.windows.net/extensions/test.ps1"
+                                ],
+                                "commandToExecute": "powershell -ExecutionPolicy Unrestricted -File ./test.ps1 PrivateSettingsRef:user PrivateSettingsRef:password"
+                            },
+                            "protectedSettings": {
+                                "storageAccountName": "scriptsa222",
+                                "storageAccountKey": "6+T/CvPOwNOpfUEoBv/FfdtUX9OjpsMGcS/Pa0a1Narm1L0l7B/xg4VJU3Q48lDDWJW1OiDGL09Nf18+CLMM3A=="
+                            }
+>>>>>>> added validations for extensions building block
                         }
                     }
                 ]
