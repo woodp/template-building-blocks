@@ -222,6 +222,12 @@ let validationUtilities = {
             result: !utilities.isNullOrWhitespace(value),
             message: 'Value cannot be undefined, null, empty, or only whitespace'
         };
+    },
+    isValidJsonObject: (value) => {
+        return {
+            result: _.isPlainObject(value),
+            message: 'Value must be Json object'
+        };
     }
 };
 
