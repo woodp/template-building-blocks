@@ -258,9 +258,9 @@ describe('extensionSettings:', () => {
                         protectedSettings: {
                             reference: {
                                 keyVault: {
-                                    id: "/subscriptions/SUB-ID/resourceGroups/KEYVAULT-RG/providers/Microsoft.KeyVault/vaults/VAULT-NAME"
+                                    id: '/subscriptions/SUB-ID/resourceGroups/KEYVAULT-RG/providers/Microsoft.KeyVault/vaults/VAULT-NAME'
                                 },
-                                secretName: "TEST-SECRET"
+                                secretName: 'TEST-SECRET'
                             }
                         }
                     }
@@ -290,7 +290,7 @@ describe('extensionSettings:', () => {
                     }
                 ]
             }
-        ]
+        ];
 
         it('validates that output contains 3 extensions', () => {
             let result = extensionSettings.processvirtualMachineExtensionsSettings(settings);
@@ -302,16 +302,16 @@ describe('extensionSettings:', () => {
 
             _.forEach(result.extensions, (ext) => {
                 switch (ext.name) {
-                    case 'testCustomExtension1':
-                    case 'testCustomExtension2':
-                        expect(ext.vms.length).toEqual(2);
-                        expect(_.includes(ext.vms, 'test-vm1')).toEqual(true);
-                        expect(_.includes(ext.vms, 'test-vm2')).toEqual(true);
-                        break;
-                    case 'testCustomExtension3':
-                        expect(ext.vms.length).toEqual(1);
-                        expect(_.includes(ext.vms, 'test-vm3')).toEqual(true);
-                        break;
+                case 'testCustomExtension1':
+                case 'testCustomExtension2':
+                    expect(ext.vms.length).toEqual(2);
+                    expect(_.includes(ext.vms, 'test-vm1')).toEqual(true);
+                    expect(_.includes(ext.vms, 'test-vm2')).toEqual(true);
+                    break;
+                case 'testCustomExtension3':
+                    expect(ext.vms.length).toEqual(1);
+                    expect(_.includes(ext.vms, 'test-vm3')).toEqual(true);
+                    break;
                 }
             });
         });
@@ -320,33 +320,33 @@ describe('extensionSettings:', () => {
 
             _.forEach(result.extensions, (ext) => {
                 switch (ext.name) {
-                    case 'testCustomExtension1':
-                        expect(ext.extensionSettings.publisher).toEqual('Microsoft.Compute');
-                        expect(ext.extensionSettings.type).toEqual('CustomScriptExtension');
-                        expect(ext.extensionSettings.typeHandlerVersion).toEqual('1.8');
-                        expect(ext.extensionSettings.autoUpgradeMinorVersion).toEqual(true);
-                        expect(ext.extensionSettings.settings.fileUris[0]).toEqual('https://[TEST-SA].blob.core.windows.net/extensions/test.ps1');
-                        expect(ext.extensionSettings.settings.commandToExecute).toEqual('powershell -ExecutionPolicy Unrestricted -File ./test.ps1');
-                        expect(ext.extensionSettings.hasOwnProperty('protectedSettings')).toEqual(false);
-                        break;
-                    case 'testCustomExtension2':
-                        expect(ext.extensionSettings.publisher).toEqual('Microsoft.Compute');
-                        expect(ext.extensionSettings.type).toEqual('CustomScriptExtension');
-                        expect(ext.extensionSettings.typeHandlerVersion).toEqual('1.7');
-                        expect(ext.extensionSettings.autoUpgradeMinorVersion).toEqual(false);
-                        expect(ext.extensionSettings.settings.fileUris[0]).toEqual('https://[TEST-SA].blob.core.windows.net/extensions/test.ps1');
-                        expect(ext.extensionSettings.settings.commandToExecute).toEqual('powershell -ExecutionPolicy Unrestricted -File ./test.ps1');
-                        expect(ext.extensionSettings.hasOwnProperty('protectedSettings')).toEqual(false);
-                        break;
-                    case 'testCustomExtension3':
-                        expect(ext.extensionSettings.publisher).toEqual('Test.Publisher');
-                        expect(ext.extensionSettings.type).toEqual('CustomScriptExtension');
-                        expect(ext.extensionSettings.typeHandlerVersion).toEqual('1.4');
-                        expect(ext.extensionSettings.autoUpgradeMinorVersion).toEqual(false);
-                        expect(ext.extensionSettings.settings.fileUris[0]).toEqual('https://[STORAGE-ACCOUNT].blob.core.windows.net/extensions/test.ps1');
-                        expect(ext.extensionSettings.settings.commandToExecute).toEqual('powershell -ExecutionPolicy Unrestricted -File ./test.ps1');
-                        expect(ext.extensionSettings.hasOwnProperty('protectedSettings')).toEqual(false);
-                        break;
+                case 'testCustomExtension1':
+                    expect(ext.extensionSettings.publisher).toEqual('Microsoft.Compute');
+                    expect(ext.extensionSettings.type).toEqual('CustomScriptExtension');
+                    expect(ext.extensionSettings.typeHandlerVersion).toEqual('1.8');
+                    expect(ext.extensionSettings.autoUpgradeMinorVersion).toEqual(true);
+                    expect(ext.extensionSettings.settings.fileUris[0]).toEqual('https://[TEST-SA].blob.core.windows.net/extensions/test.ps1');
+                    expect(ext.extensionSettings.settings.commandToExecute).toEqual('powershell -ExecutionPolicy Unrestricted -File ./test.ps1');
+                    expect(ext.extensionSettings.hasOwnProperty('protectedSettings')).toEqual(false);
+                    break;
+                case 'testCustomExtension2':
+                    expect(ext.extensionSettings.publisher).toEqual('Microsoft.Compute');
+                    expect(ext.extensionSettings.type).toEqual('CustomScriptExtension');
+                    expect(ext.extensionSettings.typeHandlerVersion).toEqual('1.7');
+                    expect(ext.extensionSettings.autoUpgradeMinorVersion).toEqual(false);
+                    expect(ext.extensionSettings.settings.fileUris[0]).toEqual('https://[TEST-SA].blob.core.windows.net/extensions/test.ps1');
+                    expect(ext.extensionSettings.settings.commandToExecute).toEqual('powershell -ExecutionPolicy Unrestricted -File ./test.ps1');
+                    expect(ext.extensionSettings.hasOwnProperty('protectedSettings')).toEqual(false);
+                    break;
+                case 'testCustomExtension3':
+                    expect(ext.extensionSettings.publisher).toEqual('Test.Publisher');
+                    expect(ext.extensionSettings.type).toEqual('CustomScriptExtension');
+                    expect(ext.extensionSettings.typeHandlerVersion).toEqual('1.4');
+                    expect(ext.extensionSettings.autoUpgradeMinorVersion).toEqual(false);
+                    expect(ext.extensionSettings.settings.fileUris[0]).toEqual('https://[STORAGE-ACCOUNT].blob.core.windows.net/extensions/test.ps1');
+                    expect(ext.extensionSettings.settings.commandToExecute).toEqual('powershell -ExecutionPolicy Unrestricted -File ./test.ps1');
+                    expect(ext.extensionSettings.hasOwnProperty('protectedSettings')).toEqual(false);
+                    break;
                 }
             });
         });
@@ -367,7 +367,7 @@ describe('extensionSettings:', () => {
             _.forEach(result.extensions, (ext) => {
                 if (ext.name === 'testCustomExtension3') {
                     expect(ext.extensionProtectedSettings).toEqual({
-                        value: "{\"storageAccountName\":\"STORAGE-ACCOUNT\",\"storageAccountKey\":\"STORAGE-ACCOUNT-KEY\"}"
+                        value: '{\"storageAccountName\":\"STORAGE-ACCOUNT\",\"storageAccountKey\":\"STORAGE-ACCOUNT-KEY\"}'
                     });
                 }
             });
@@ -378,11 +378,11 @@ describe('extensionSettings:', () => {
             _.forEach(result.extensions, (ext) => {
                 if (ext.name === 'testCustomExtension2') {
                     expect(ext.extensionProtectedSettings).toEqual({
-                        "reference": {
-                            "keyVault": {
-                                "id": "/subscriptions/SUB-ID/resourceGroups/KEYVAULT-RG/providers/Microsoft.KeyVault/vaults/VAULT-NAME"
+                        reference: {
+                            keyVault: {
+                                id: '/subscriptions/SUB-ID/resourceGroups/KEYVAULT-RG/providers/Microsoft.KeyVault/vaults/VAULT-NAME'
                             },
-                            "secretName": "TEST-SECRET"
+                            secretName: 'TEST-SECRET'
                         }
                     });
                 }
