@@ -81,6 +81,12 @@
                         }
                     ]
                 },
+                "virtualMachinesExtensionSettings": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "file:///Source/mspnp/template-building-blocks/spikes/nodejs-spike/schemas/virtualMachineExtensionsSettings.json#"
+                    }
+                },
                 "virtualNetworkGatewaySettings": {
                     "oneOf": [
                         {
@@ -115,6 +121,7 @@
                 { "required": [ "loadBalancerSettings" ] },
                 { "required": [ "networkSecurityGroupSettings" ] },
                 { "required": [ "routeTableSettings" ] },
+                { "required": [ "virtualMachinesExtensionSettings" ] },
                 { "required": [ "virtualMachineSettings" ] },
                 { "required": [ "virtualNetworkSettings" ] }
             ]
