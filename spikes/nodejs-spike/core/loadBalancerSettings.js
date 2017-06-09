@@ -68,6 +68,12 @@ let isValidLoadDistribution = (loadDistribution) => {
 
 let frontendIPConfigurationValidations = {
     name: v.validationUtilities.isNotNullOrWhitespace,
+    loadBalancerType: (value) => {
+        return {
+            result: isValidLoadBalancerType(value),
+            message: `Valid values are ${validLoadBalancerTypes.join(',')}`
+        };
+    },
     privateIPAddress: (value, parent) => {
         let result = {
             result: true
@@ -226,6 +232,21 @@ let loadBalancerValidations = {
                         return { result: true };
                     }
                 });
+                return result;
+            },
+            loadDistribution: (value) => {
+                let result = {
+                    result: true
+                };
+
+                // loadDistribution is not required.
+                if (!_.isUndefined(value)) {
+                    result = {
+                        result: isValidLoadDistribution(value),
+                        message: `Valid values are ${validLoadDistributions.join(',')}`
+                    };
+                }
+
                 return result;
             }
         };
