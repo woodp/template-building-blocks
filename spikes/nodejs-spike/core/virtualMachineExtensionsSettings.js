@@ -47,7 +47,7 @@ function validate(settings) {
     });
 }
 
-function process(param, buildingBlockSettings) {
+function process(param) {
     let accumulator = { extensions: [] };
     param.forEach((value) => {
         value.extensions.forEach((ext) => {

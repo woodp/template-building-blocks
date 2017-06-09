@@ -127,7 +127,7 @@ let probeValidations = {
             result: true
         };
 
-        if ((parent.protocol === 'Http') && (_.isNullOrWhitespace(value))) {
+        if ((parent.protocol === 'Http') && (v.utilities.isNullOrWhitespace(value))) {
             result = {
                 result: false,
                 message: 'If protocol is Http, requestPath cannot be null, undefined, or only whitespace'
@@ -263,7 +263,7 @@ let loadBalancerValidations = {
         let baseSettings = parent;
         let backendPoolsValidations = {
             name: v.validationUtilities.isNotNullOrWhitespace,
-            nics: (value) => {
+            nics: () => {
                 let nicsValidations = {
                     vmIndex: (value) => {
                         return {
@@ -341,7 +341,7 @@ let loadBalancerValidations = {
                 });
                 return result;
             },
-            nics: (value) => {
+            nics: () => {
                 let nicsValidations = {
                     vmIndex: (value) => {
                         return {
