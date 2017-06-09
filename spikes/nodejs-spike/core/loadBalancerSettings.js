@@ -3,7 +3,6 @@ var fs = require('fs');
 let v = require('./validation.js');
 var resources = require('./resources.js');
 var pipSettings = require('./pipSettings.js');
-let rewire = require('rewire');
 let virtualMachineSettings = require('./virtualMachineSettings.js');
 const defaultsPath = './defaults/loadBalancerSettings.json';
 
@@ -45,6 +44,7 @@ let validLoadBalancerTypes = ['Public', 'Internal'];
 let validProtocols = ['Tcp', 'Udp'];
 let validIPAllocationMethods = ['Dynamic', 'Static'];
 let validProbeProtocols = ['Http', 'Tcp'];
+let validLoadDistributions = [ 'Default', 'SourceIP', 'SourceIPProtocol' ];
 
 let isValidLoadBalancerType = (loadBalancerType) => {
     return v.utilities.isStringInArray(loadBalancerType, validLoadBalancerTypes);
@@ -60,6 +60,10 @@ let isValidIPAllocationMethod = (ipAllocationMethod) => {
 
 let isValidProbeProtocol = (probeProtocol) => {
     return v.utilities.isStringInArray(probeProtocol, validProbeProtocols);
+};
+
+let isValidLoadDistribution = (loadDistribution) => {
+    return v.utilities.isStringInArray(loadDistribution, validLoadDistributions);
 };
 
 let frontendIPConfigurationValidations = {
@@ -197,7 +201,7 @@ let loadBalancerValidations = {
                     if (config.name === value) {
                         return { result: true };
                     }
-                })
+                });
                 return result;
             },
             backendPoolName: (value, parent) => {
@@ -209,7 +213,7 @@ let loadBalancerValidations = {
                     if (config.name === value) {
                         return { result: true };
                     }
-                })
+                });
                 return result;
             },
             probeName: (value, parent) => {
@@ -221,7 +225,7 @@ let loadBalancerValidations = {
                     if (config.name === value) {
                         return { result: true };
                     }
-                })
+                });
                 return result;
             }
         };
@@ -234,23 +238,23 @@ let loadBalancerValidations = {
             validations: probeValidations
         };
     },
-    backendPools: () => {
+    backendPools: (value, parent) => {
         let baseSettings = parent;
         let backendPoolsValidations = {
             name: v.validationUtilities.isNotNullOrWhitespace,
-            nics: (value, parent) => {
+            nics: (value) => {
                 let nicsValidations = {
                     vmIndex: (value) => {
                         return {
                             result: !value <= (baseSettings.backendVirtualMachinesSettings.vmCount - 1),
                             message: 'vmIndex cannot be greated than number of VMs'
-                        }
+                        };
                     },
                     nicIndex: (value) => {
                         return {
                             result: !value <= (baseSettings.backendVirtualMachinesSettings.nics.length - 1),
                             message: 'nicIndex cannot be greated than nics specified in backendVirtualMachinesSettings'
-                        }
+                        };
                     }
                 };
                 return {
@@ -262,7 +266,7 @@ let loadBalancerValidations = {
             validations: backendPoolsValidations
         };
     },
-    inboundNatRules: () => {
+    inboundNatRules: (value, parent) => {
         let baseSettings = parent;
         let inboundNatRuleValidations = {
             name: v.validationUtilities.isNotNullOrWhitespace,
@@ -313,22 +317,22 @@ let loadBalancerValidations = {
                     if (config.name === value) {
                         return { result: true };
                     }
-                })
+                });
                 return result;
             },
-            nics: (value, parent) => {
+            nics: (value) => {
                 let nicsValidations = {
                     vmIndex: (value) => {
                         return {
                             result: !value <= (baseSettings.backendVirtualMachinesSettings.vmCount - 1),
                             message: 'vmIndex cannot be greated than number of VMs'
-                        }
+                        };
                     },
                     nicIndex: (value) => {
                         return {
                             result: !value <= (baseSettings.backendVirtualMachinesSettings.nics.length - 1),
                             message: 'nicIndex cannot be greated than nics specified in backendVirtualMachinesSettings'
-                        }
+                        };
                     }
                 };
                 return {
@@ -341,7 +345,11 @@ let loadBalancerValidations = {
         };
     },
     virtualNetwork: () => {
-        name: v.validationUtilities.isNotNullOrWhitespace
+        return {
+            validations: {
+                name: v.validationUtilities.isNotNullOrWhitespace
+            }
+        };
     },
     backendVirtualMachinesSettings: () => {
         return {
@@ -354,7 +362,7 @@ let loadBalancerValidations = {
 let processProperties = {
     frontendIPConfigurations: (value, key, parent, accumulator) => {
         let feIpConfigs = [];
-        value.forEach((config, index) => {
+        value.forEach((config) => {
             if (config.loadBalancerType === 'Internal') {
                 feIpConfigs.push({
                     name: config.name,
@@ -428,7 +436,7 @@ let processProperties = {
                 name: pool.name,
             });
 
-            pool.nics.ids.forEach((i, index) => {
+            pool.nics.ids.forEach((i) => {
                 ((nics[i]) || (nics[i] = [])).push({
                     id: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/loadBalancers/backendAddressPools', parent.name, pool.name)
                 });
@@ -494,7 +502,7 @@ function pipCustomizer(objValue, srcValue, key) {
 function processPipsForFrontendIPConfigurations(feIpconfig) {
     let pips = [];
     feIpconfig.forEach((config) => {
-        if (config.loadBalancerType === 'public') {
+        if (config.loadBalancerType === 'Public') {
             let settings = { namePrefix: config.name, publicIPAllocationMethod: 'Static', domainNameLabel: config.domainNameLabel };
             pips = pips.concat(pipSettings.processPipSettings(settings));
         }
@@ -583,7 +591,7 @@ function process(param, buildingBlockSettings) {
     }, accumulator);
 
 
-    accumulator.nicUpdates = _.transform(_.cloneDeep(accumulator.nicUpdates), (result, value, key, obj) => {
+    accumulator.nicUpdates = _.transform(_.cloneDeep(accumulator.nicUpdates), (result, value, key) => {
         result.push({
             id: key,
             properties: {

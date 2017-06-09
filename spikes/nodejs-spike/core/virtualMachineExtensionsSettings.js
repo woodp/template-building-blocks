@@ -1,15 +1,12 @@
 let _ = require('lodash');
-var fs = require('fs');
 let v = require('./validation.js');
-var resources = require('./resources.js');
-let rewire = require('rewire');
 
 function merge(settings) {
     return settings;
 }
 
 let vmExtensionValidations = {
-    vms: (value, parent) => {
+    vms: (value) => {
         if (_.isNil(value) || !_.isArray(value) || value.length === 0) {
             return {
                 result: false,
@@ -18,10 +15,10 @@ let vmExtensionValidations = {
         } else {
             return {
                 result: true
-            }
+            };
         }
     },
-    extensions: (value, parent) => {
+    extensions: (value) => {
         if (_.isNil(value) || !_.isArray(value) || value.length === 0) {
             return {
                 result: false,
@@ -36,8 +33,8 @@ let vmExtensionValidations = {
             autoUpgradeMinorVersion: v.validationUtilities.isBoolean,
             settings: v.validationUtilities.isValidJsonObject,
             protectedSettings: v.validationUtilities.isValidJsonObject
-        }
-         return {
+        };
+        return {
             validations: extensionValidations
         };
     },
