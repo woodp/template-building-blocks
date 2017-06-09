@@ -105,11 +105,11 @@ describe('loadBalancerSettings', () => {
         });
 
         it('invalid spacing', () => {
-            expect(isValidLoadDistribution(' Public ')).toEqual(false);
+            expect(isValidLoadDistribution(' Default ')).toEqual(false);
         });
 
         it('invalid casing', () => {
-            expect(isValidLoadDistribution('public')).toEqual(false);
+            expect(isValidLoadDistribution('default')).toEqual(false);
         });
 
         it('invalid value', () => {

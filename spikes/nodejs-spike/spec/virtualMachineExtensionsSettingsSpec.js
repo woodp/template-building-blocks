@@ -9,19 +9,19 @@ describe('extensionSettings:', () => {
             let settings = [
                 {
                     vms: [
-                        "test-vm1"
+                        'test-vm1'
                     ],
                     extensions: [
                         {
-                            publisher: "Microsoft.Compute",
-                            type: "CustomScriptExtension",
-                            typeHandlerVersion: "1.8",
+                            publisher: 'Microsoft.Compute',
+                            type: 'CustomScriptExtension',
+                            typeHandlerVersion: '1.8',
                             autoUpgradeMinorVersion: true,
                             settings: {
                                 fileUris: [
-                                    "https://[TEST-SA].blob.core.windows.net/extensions/test.ps1"
+                                    'https://[TEST-SA].blob.core.windows.net/extensions/test.ps1'
                                 ],
-                                commandToExecute: "powershell -ExecutionPolicy Unrestricted -File ./test.ps1"
+                                commandToExecute: 'powershell -ExecutionPolicy Unrestricted -File ./test.ps1'
                             },
                             protectedSettings: {}
                         }
@@ -39,20 +39,20 @@ describe('extensionSettings:', () => {
         let settings = [
             {
                 vms: [
-                    "test-vm1"
+                    'test-vm1'
                 ],
                 extensions: [
                     {
-                        name: "testextension",
-                        publisher: "Microsoft.Compute",
-                        type: "CustomScriptExtension",
-                        typeHandlerVersion: "1.8",
+                        name: 'testextension',
+                        publisher: 'Microsoft.Compute',
+                        type: 'CustomScriptExtension',
+                        typeHandlerVersion: '1.8',
                         autoUpgradeMinorVersion: true,
                         settings: {
                             fileUris: [
-                                "https://[TEST-SA].blob.core.windows.net/extensions/test.ps1"
+                                'https://[TEST-SA].blob.core.windows.net/extensions/test.ps1'
                             ],
-                            commandToExecute: "powershell -ExecutionPolicy Unrestricted -File ./test.ps1"
+                            commandToExecute: 'powershell -ExecutionPolicy Unrestricted -File ./test.ps1'
                         },
                         protectedSettings: {}
                     }
@@ -105,7 +105,7 @@ describe('extensionSettings:', () => {
             });
             it('validates extension.name cannot be null or empty.', () => {
                 let updatedSettings = _.cloneDeep(settings[0].extensions);
-                updatedSettings[0].name = "";
+                updatedSettings[0].name = '';
                 let errors = v.validate({
                     settings: updatedSettings,
                     validations: validation
@@ -125,7 +125,7 @@ describe('extensionSettings:', () => {
             });
             it('validates extension.type cannot be null or empty.', () => {
                 let updatedSettings = _.cloneDeep(settings[0].extensions);
-                updatedSettings[0].type = "";
+                updatedSettings[0].type = '';
                 let errors = v.validate({
                     settings: updatedSettings,
                     validations: validation
@@ -135,7 +135,7 @@ describe('extensionSettings:', () => {
             });
             it('validates extension.typeHandlerVersion cannot be null or empty.', () => {
                 let updatedSettings = _.cloneDeep(settings[0].extensions);
-                updatedSettings[0].typeHandlerVersion = "";
+                updatedSettings[0].typeHandlerVersion = '';
                 let errors = v.validate({
                     settings: updatedSettings,
                     validations: validation
@@ -163,7 +163,7 @@ describe('extensionSettings:', () => {
                 expect(errors.length).toEqual(1);
                 expect(errors[0].name).toEqual('[0].settings');
 
-                updatedSettings[0].settings = "test";
+                updatedSettings[0].settings = 'test';
                 errors = v.validate({
                     settings: updatedSettings,
                     validations: validation
@@ -196,7 +196,7 @@ describe('extensionSettings:', () => {
                 expect(errors.length).toEqual(1);
                 expect(errors[0].name).toEqual('[0].protectedSettings');
 
-                updatedSettings[0].protectedSettings = "test";
+                updatedSettings[0].protectedSettings = 'test';
                 errors = v.validate({
                     settings: updatedSettings,
                     validations: validation

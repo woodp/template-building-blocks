@@ -35,6 +35,26 @@
             },
             "required": [ "name" ]
         },
+        "keyVaultReference": {
+            "type": "object",
+            "properties": {
+                "reference": {
+                    "properties": {
+                        "keyVault": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "secretName": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "tags": {
             "type": "object",
             "minProperties": 0,

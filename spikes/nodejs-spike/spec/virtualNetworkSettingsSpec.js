@@ -668,6 +668,34 @@ describe('virtualNetworkSettings', () => {
             expect(result.virtualNetworks.length).toBe(1);
         });
 
+        it('single virtual network with defaults', () => {
+            let settings = _.cloneDeep(virtualNetworkSettingsWithPeering);
+            settings = settings[0];
+            delete settings.addressPrefixes;
+            delete settings.subnets;
+            delete settings.virtualNetworkPeerings;
+            let defaults = {
+                addressPrefixes: [ '10.0.0.0/16' ],
+                subnets: [
+                    {
+                        name: 'default',
+                        addressPrefix: '10.0.1.0/24'
+                    }
+                ]
+            };
+
+            let result = virtualNetworkSettings.transform({
+                settings: settings,
+                buildingBlockSettings: buildingBlockSettings,
+                defaultSettings: defaults
+            });
+
+            expect(result.virtualNetworks.length).toBe(1);
+            expect(result.virtualNetworks[0].properties.addressSpace.addressPrefixes[0]).toEqual(defaults.addressPrefixes[0]);
+            expect(result.virtualNetworks[0].properties.subnets[0].name).toEqual(defaults.subnets[0].name);
+            expect(result.virtualNetworks[0].properties.subnets[0].properties.addressPrefix).toEqual(defaults.subnets[0].addressPrefix);
+        });
+
         it('single virtual network with peers', () => {
             let settings = _.cloneDeep(virtualNetworkSettingsWithPeering);
             settings = settings[0];
