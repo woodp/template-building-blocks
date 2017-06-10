@@ -71,27 +71,6 @@ function process(param) {
     return accumulator;
 }
 
-function createTemplateParameters(resources) {
-    let templateParameters = {
-        $schema: 'http://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#',
-        contentVersion: '1.0.0.0',
-        parameters: {
-
-        }
-    };
-    templateParameters.parameters = _.transform(resources, (result, value, key) => {
-        result[key] = {};
-        result[key].value = value;
-        return result;
-    }, {});
-    return templateParameters;
-}
-
-function getTemplateParameters(param, buildingBlockSettings) {
-    let processedParams = mergeAndProcess(param, buildingBlockSettings);
-    return createTemplateParameters(processedParams);
-}
-
 function mergeAndProcess(param, buildingBlockSettings) {
     return process(merge(param), buildingBlockSettings);
 }
@@ -99,4 +78,3 @@ function mergeAndProcess(param, buildingBlockSettings) {
 exports.processvirtualMachineExtensionsSettings = mergeAndProcess;
 exports.mergeWithDefaults = merge;
 exports.validations = validate;
-exports.getTemplateParameters = getTemplateParameters;
