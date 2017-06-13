@@ -4,9 +4,9 @@
     "id": "file:///Source/mspnp/template-building-blocks/spikes/nodejs-spike/schema/routeTableSettings.json#",
     "type": "object",
     "definitions": {
-        "nextHopTypes": {
+        "nextHop": {
             "type": "string",
-            "enum": [ "Internet", "None", "VirtualAppliance", "VirtualNetworkGateway", "VnetLocal" ]
+            "enum": [ "Internet", "None", "VirtualNetworkGateway", "VnetLocal" ]
          }
     },
     "properties": {
@@ -29,40 +29,22 @@
                             "name": {
                                 "type": "string"
                             },
-                            "nextHopType": {
+                            "nextHop": {
                                 "type": "string",
-                                "enum": [ "Internet", "None", "VirtualNetworkGateway", "VnetLocal" ]
+                                "oneOf":[
+                                    {
+                                        "$ref": "#/definitions/nextHop"
+                                    },
+                                    {
+                                        "$ref": "file:///Source/mspnp/template-building-blocks/spikes/nodejs-spike/schemas/types.json#/definitions/ipAddress"
+                                    }
+                                ]
                             }
                         },
                         "required": [
                             "addressPrefix",
                             "name",
-                            "nextHopType"
-                        ],
-                        "additionalProperties": false
-                    },
-                    {
-                        "type": "object",
-                        "properties": {
-                            "addressPrefix": {
-                                "$ref": "file:///Source/mspnp/template-building-blocks/spikes/nodejs-spike/schemas/types.json#/definitions/cidr"
-                            },
-                            "name": {
-                                "type": "string"
-                            },
-                            "nextHopType": {
-                                "type": "string",
-                                "enum": [ "VirtualAppliance" ]
-                            },
-                            "nextHopIpAddress": {
-                                "$ref": "file:///Source/mspnp/template-building-blocks/spikes/nodejs-spike/schemas/types.json#/definitions/ipAddress"
-                            }
-                        },
-                        "required": [
-                            "addressPrefix",
-                            "name",
-                            "nextHopType",
-                            "nextHopIpAddress"
+                            "nextHop"
                         ],
                         "additionalProperties": false
                     }

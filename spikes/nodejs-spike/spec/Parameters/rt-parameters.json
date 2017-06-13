@@ -17,18 +17,17 @@
                     {
                         "name": "route1",
                         "addressPrefix": "10.0.1.0/24",
-                        "nextHopType": "VnetLocal"
+                        "nextHop": "VnetLocal"
                     },
                     {
                         "name": "route2",
                         "addressPrefix": "10.0.2.0/24",
-                        "nextHopType": "VirtualNetworkGateway"
+                        "nextHop": "VirtualNetworkGateway"
                     },
                     {
                         "name": "route3",
                         "addressPrefix": "10.0.3.0/24",
-                        "nextHopType": "VirtualAppliance",
-                        "nextHopIpAddress": "192.168.1.1"
+                        "nextHop": "192.168.1.1"
                     }
                 ],
                 "tags": {
@@ -56,18 +55,17 @@
                     {
                         "name": "route1",
                         "addressPrefix": "10.0.1.0/24",
-                        "nextHopType": "VnetLocal"
+                        "nextHop": "VnetLocal"
                     },
                     {
                         "name": "route2",
                         "addressPrefix": "10.0.2.0/24",
-                        "nextHopType": "VirtualNetworkGateway"
+                        "nextHop": "VirtualNetworkGateway"
                     },
                     {
                         "name": "route3",
                         "addressPrefix": "10.0.3.0/24",
-                        "nextHopType": "VirtualAppliance",
-                        "nextHopIpAddress": "192.168.1.1"
+                        "nextHop": "192.168.1.1"
                     }
                 ],
                 "tags": {

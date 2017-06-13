@@ -4,59 +4,59 @@ describe('routeTableSettings', () => {
     let _ = require('lodash');
     let validation = require('../core/validation.js');
 
-    describe('isValidNextHopType', () => {
-        let isValidNextHopType = routeTableSettings.__get__('isValidNextHopType');
+    describe('isValidNextHop', () => {
+        let isValidNextHop = routeTableSettings.__get__('isValidNextHop');
         
         it('undefined', () => {
-            expect(isValidNextHopType()).toEqual(false);
+            expect(isValidNextHop()).toEqual(false);
         });
 
         it('null', () => {
-            expect(isValidNextHopType(null)).toEqual(false);
+            expect(isValidNextHop(null)).toEqual(false);
         });
 
         it('empty', () => {
-            expect(isValidNextHopType('')).toEqual(false);
+            expect(isValidNextHop('')).toEqual(false);
         });
 
         it('whitespace', () => {
-            expect(isValidNextHopType(' ')).toEqual(false);
+            expect(isValidNextHop(' ')).toEqual(false);
         });
 
         it('invalid spacing', () => {
-            expect(isValidNextHopType(' VirtualNetworkGateway ')).toEqual(false);
+            expect(isValidNextHop(' VirtualNetworkGateway ')).toEqual(false);
         });
 
         it('invalid casing', () => {
-            expect(isValidNextHopType('virtualnetworkgateway')).toEqual(false);
+            expect(isValidNextHop('virtualnetworkgateway')).toEqual(false);
         });
 
         it('invalid value', () => {
-            expect(isValidNextHopType('NOT_A_VALID_NEXT_HOP_TYPE')).toEqual(false);
+            expect(isValidNextHop('NOT_VALID')).toEqual(false);
         });
 
         it('VirtualNetworkGateway', () => {
-            expect(isValidNextHopType('VirtualNetworkGateway')).toEqual(true);
+            expect(isValidNextHop('VirtualNetworkGateway')).toEqual(true);
         });
 
         it('VnetLocal', () => {
-            expect(isValidNextHopType('VnetLocal')).toEqual(true);
+            expect(isValidNextHop('VnetLocal')).toEqual(true);
         });
 
         it('Internet', () => {
-            expect(isValidNextHopType('Internet')).toEqual(true);
+            expect(isValidNextHop('Internet')).toEqual(true);
         });
 
         it('HyperNetGateway', () => {
-            expect(isValidNextHopType('HyperNetGateway')).toEqual(true);
+            expect(isValidNextHop('HyperNetGateway')).toEqual(true);
         });
 
         it('None', () => {
-            expect(isValidNextHopType('None')).toEqual(true);
+            expect(isValidNextHop('None')).toEqual(true);
         });
 
-        it('VirtualAppliance', () => {
-            expect(isValidNextHopType('VirtualAppliance')).toEqual(true);
+        it('IPAddress', () => {
+            expect(isValidNextHop('127.0.0.1')).toEqual(true);
         });
     });
 
@@ -140,7 +140,7 @@ describe('routeTableSettings', () => {
             let valid = {
                 name: 'name',
                 addressPrefix: '10.0.0.1/24',
-                nextHopType: 'VirtualNetworkGateway'
+                nextHop: 'VirtualNetworkGateway'
             };
 
             it('name undefined', () => {
@@ -167,28 +167,16 @@ describe('routeTableSettings', () => {
                 expect(errors[0].name).toEqual('[0].addressPrefix');
             });
 
-            it('nextHopType undefined', () => {
+            it('nextHop undefined', () => {
                 let invalid = _.cloneDeep(valid);
-                delete invalid.nextHopType;
+                delete invalid.nextHop;
                 let errors = validation.validate({
                     settings: [invalid],
                     validations: routeValidations
                 });
 
                 expect(errors.length).toEqual(1);
-                expect(errors[0].name).toEqual('[0].nextHopType');
-            });
-
-            it('nextHopIpAddress undefined', () => {
-                let invalid = _.cloneDeep(valid);
-                invalid.nextHopType = 'VirtualAppliance';
-                let errors = validation.validate({
-                    settings: [invalid],
-                    validations: routeValidations
-                });
-
-                expect(errors.length).toEqual(1);
-                expect(errors[0].name).toEqual('[0].nextHopIpAddress');
+                expect(errors[0].name).toEqual('[0].nextHop');
             });
         });
 
@@ -208,13 +196,12 @@ describe('routeTableSettings', () => {
                     {
                         name: 'route1',
                         addressPrefix: '10.0.1.0/24',
-                        nextHopType: 'VnetLocal'
+                        nextHop: 'VnetLocal'
                     },
                     {
                         name: 'route2',
                         addressPrefix: '10.0.2.0/24',
-                        nextHopType: 'VirtualAppliance',
-                        nextHopIpAddress: '192.168.1.1'
+                        nextHop: '192.168.1.1'
                     }
                 ],
                 tags: {}
@@ -381,13 +368,12 @@ describe('routeTableSettings', () => {
                     {
                         name: 'route1',
                         addressPrefix: '10.0.1.0/24',
-                        nextHopType: 'VnetLocal'
+                        nextHop: 'VnetLocal'
                     },
                     {
                         name: 'route2',
                         addressPrefix: '10.0.2.0/24',
-                        nextHopType: 'VirtualAppliance',
-                        nextHopIpAddress: '192.168.1.1'
+                        nextHop: '192.168.1.1'
                     }
                 ],
                 tags: {}
@@ -418,11 +404,11 @@ describe('routeTableSettings', () => {
             let routesResult = settingsResult.properties.routes;
             expect(routesResult[0].name).toEqual(settings.routes[0].name);
             expect(routesResult[0].properties.addressPrefix).toEqual(settings.routes[0].addressPrefix);
-            expect(routesResult[0].properties.nextHopType).toEqual(settings.routes[0].nextHopType);
+            expect(routesResult[0].properties.nextHopType).toEqual(settings.routes[0].nextHop);
             expect(routesResult[1].name).toEqual(settings.routes[1].name);
             expect(routesResult[1].properties.addressPrefix).toEqual(settings.routes[1].addressPrefix);
-            expect(routesResult[1].properties.nextHopType).toEqual(settings.routes[1].nextHopType);
-            expect(routesResult[1].properties.nextHopIpAddress).toEqual(settings.routes[1].nextHopIpAddress);
+            expect(routesResult[1].properties.nextHopType).toEqual('VirtualAppliance');
+            expect(routesResult[1].properties.nextHopIpAddress).toEqual(settings.routes[1].nextHop);
 
             expect(result.subnets.length).toEqual(2);
             expect(result.subnets[0].id.endsWith('my-virtual-network/subnets/biz')).toBe(true);
@@ -449,11 +435,11 @@ describe('routeTableSettings', () => {
             let routesResult = settingsResult.properties.routes;
             expect(routesResult[0].name).toEqual(settings.routes[0].name);
             expect(routesResult[0].properties.addressPrefix).toEqual(settings.routes[0].addressPrefix);
-            expect(routesResult[0].properties.nextHopType).toEqual(settings.routes[0].nextHopType);
+            expect(routesResult[0].properties.nextHopType).toEqual(settings.routes[0].nextHop);
             expect(routesResult[1].name).toEqual(settings.routes[1].name);
             expect(routesResult[1].properties.addressPrefix).toEqual(settings.routes[1].addressPrefix);
-            expect(routesResult[1].properties.nextHopType).toEqual(settings.routes[1].nextHopType);
-            expect(routesResult[1].properties.nextHopIpAddress).toEqual(settings.routes[1].nextHopIpAddress);
+            expect(routesResult[1].properties.nextHopType).toEqual('VirtualAppliance');
+            expect(routesResult[1].properties.nextHopIpAddress).toEqual(settings.routes[1].nextHop);
 
             expect(result.subnets.length).toEqual(0);
         });

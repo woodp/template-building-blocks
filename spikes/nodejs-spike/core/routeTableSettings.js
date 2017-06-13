@@ -10,33 +10,21 @@ let routeTableSettingsDefaults = {
     tags: {}
 };
 
-let validNextHopTypes = ['VirtualNetworkGateway', 'VnetLocal', 'Internet', 'HyperNetGateway', 'None', 'VirtualAppliance'];
+let validNextHopTypes = ['VirtualNetworkGateway', 'VnetLocal', 'Internet', 'HyperNetGateway', 'None'];
 
-let isValidNextHopType = (nextHopType) => {
-    return v.utilities.isStringInArray(nextHopType, validNextHopTypes);
-};
+let isValidNextHop = (nextHop) => {
+    return ((v.utilities.networking.isValidIpAddress(nextHop)) ||
+        (v.utilities.isStringInArray(nextHop, validNextHopTypes)));
+}
 
 let routeValidations = {
     name: v.validationUtilities.isNotNullOrWhitespace,
     addressPrefix: v.validationUtilities.isValidCidr,
-    nextHopType: (value) => {
+    nextHop: (value) => {
         return {
-            result: isValidNextHopType(value),
-            message: `Valid values are ${validNextHopTypes.join(',')}`
+            result: isValidNextHop(value),
+            message: `Valid values are an IPAddress or one of the following values: ${validNextHopTypes.join(',')}`
         };
-    },
-    nextHopIpAddress: (value, parent) => {
-        let result = {
-            result: true
-        };
-
-        if (parent.nextHopType === 'VirtualAppliance') {
-            result = {
-                validations: v.validationUtilities.isValidIpAddress
-            };
-        }
-        
-        return result;
     }
 };
 
@@ -137,13 +125,15 @@ function transform(settings) {
                 let result = {
                     name: value.name,
                     properties: {
-                        addressPrefix: value.addressPrefix,
-                        nextHopType: value.nextHopType
+                        addressPrefix: value.addressPrefix
                     }
                 };
 
-                if (value.nextHopIpAddress) {
-                    result.properties.nextHopIpAddress = value.nextHopIpAddress;
+                if (v.utilities.networking.isValidIpAddress(value.nextHop)) {
+                    result.properties.nextHopType = 'VirtualAppliance';
+                    result.properties.nextHopIpAddress = value.nextHop;
+                } else {
+                    result.properties.nextHopType = value.nextHop;
                 }
 
                 return result;
