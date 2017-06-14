@@ -262,11 +262,11 @@ let tagsValidations = (value) => {
         } else {
 
             let nameLengthViolated = _.some(value, (value, key) => {
-                return !_.inRange(key.length, 1, 257);
+                return !_.inRange(key.length, 1, 513);
             });
 
             let valueLengthViolated = _.some(value, (value) => {
-                return (value.length > 256);
+                return utilities.isNullOrWhitespace(value) || (value.length > 256);
             });
 
             let message = '';
@@ -275,7 +275,7 @@ let tagsValidations = (value) => {
             }
 
             if (valueLengthViolated) {
-                message = message.concat('Tag values cannot be greater than 256 characters in length.');
+                message = message.concat('Tag values cannot be null, empty, or greater than 256 characters in length.');
             }
 
             result = {

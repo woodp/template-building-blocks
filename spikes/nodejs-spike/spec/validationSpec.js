@@ -573,6 +573,32 @@ describe('validation', () => {
             expect(errors[0].name).toEqual('.tags');
         });
 
+        it('tags value is empty string', () => {
+            let settings = _.cloneDeep(tagsSettings);
+            settings.tags = {};
+            settings.tags['name1'] = '';
+            let errors = validation.validate({
+                settings: settings,
+                validations: tagsValidations
+            });
+
+            expect(errors.length).toEqual(1);
+            expect(errors[0].name).toEqual('.tags');
+        });
+
+        it('tags value is null', () => {
+            let settings = _.cloneDeep(tagsSettings);
+            settings.tags = {};
+            settings.tags['name1'] = null;
+            let errors = validation.validate({
+                settings: settings,
+                validations: tagsValidations
+            });
+
+            expect(errors.length).toEqual(1);
+            expect(errors[0].name).toEqual('.tags');
+        });
+
         it('tags value length exceeded', () => {
             let settings = _.cloneDeep(tagsSettings);
             settings.tags = {};
