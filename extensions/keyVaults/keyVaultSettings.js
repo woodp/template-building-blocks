@@ -305,7 +305,7 @@ module.exports = (application) => {
                         }
                         az.spawnAz({
                             args: args,
-                            options: {
+                            spawnOptions: {
                                 stdio: 'inherit',
                                 shell: true
                             }
@@ -333,7 +333,7 @@ module.exports = (application) => {
                     let objectIds = _.map(upns, (upn) => {
                         let child = az.spawnAz({
                             args: ['ad', 'user', 'show', '--query', 'objectId', '--upn-or-object-id', upn],
-                            options: {
+                            spawnOptions: {
                                 stdio: 'pipe',
                                 shell: true
                             }

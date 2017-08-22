@@ -4,7 +4,7 @@ let _ = require('lodash');
 let v = require('./validation');
 
 const AVAILABILITYSET_SETTINGS_DEFAULTS = {
-    platformFaultDomainCount: 3,
+    platformFaultDomainCount: 2,
     platformUpdateDomainCount: 5
 };
 
