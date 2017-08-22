@@ -170,6 +170,34 @@ module.exports = (application) => {
                 result: isValidCreateMode(value),
                 message: `Value must be one of the following values: ${validCreateModes.join(',')}`
             };
+        },
+        secrets: (value) => {
+            if ((_.isUndefined(value)) || ((_.isArray(value)) && (value.length === 0))) {
+                return { result: true };
+            }
+
+            if (_.isNil(value)) {
+                return {
+                    result: false,
+                    message: 'Value cannot be null'
+                };
+            }
+            
+            let validations = {
+                name: v.validationUtilities.isNotNullOrWhitespace,
+                description: (value) => {
+                    if (_.isUndefined(value)) {
+                        return { result: true };
+                    } else {
+                        return v.validationUtilities.isNotNullOrWhitespace(value);
+                    }
+                },
+                value: v.validationUtilities.isNotNullOrWhitespace
+            };
+
+            return {
+                validations: validations
+            };
         }
     };
 
@@ -245,8 +273,17 @@ module.exports = (application) => {
             throw new Error(JSON.stringify(errors));
         }
 
+        let postDeploymentParameter = {
+            keyVaults: []
+        };
+
         results = _.transform(results, (result, setting) => {
             result.keyVaults.push(transform(setting));
+            // Extract the secrets
+            postDeploymentParameter.keyVaults.push({
+                name: setting.name,
+                secrets: setting.secrets
+            });
         }, {
             keyVaults: []
         });
@@ -255,7 +292,27 @@ module.exports = (application) => {
         let resourceGroups = r.extractResourceGroups(results.keyVaults);
         return {
             resourceGroups: resourceGroups,
-            parameters: results
+            parameters: results,
+            postDeploymentParameter: postDeploymentParameter,
+            postDeployment: ({keyVaults}) => {
+                _.forEach(keyVaults, (keyVault) => {
+                    _.forEach(keyVault.secrets, (secret) => {
+                        let args = ['keyvault', 'secret', 'set', '--vault-name', keyVault.name,
+                            '--name', secret.name,
+                            '--value', secret.value];
+                        if (secret.description) {
+                            args = args.concat(['--description', `"${secret.description}"`]);
+                        }
+                        az.spawnAz({
+                            args: args,
+                            options: {
+                                stdio: 'inherit',
+                                shell: true
+                            }
+                        });
+                    });
+                });
+            }
         };
     }
 
