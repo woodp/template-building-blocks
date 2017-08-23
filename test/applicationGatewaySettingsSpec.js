@@ -278,6 +278,39 @@ describe('applicationGatewaySettings:', () => {
             let result = mergeAndValidate(settings, buildingBlockSettings);
             expect(result.length).toEqual(0);
         });
+        it('frontendIPConfigurations internalApplicationGatewaySettings cannot be specified if type is not Internal', () => {
+            settings.frontendIPConfigurations = [
+                {
+                    name: 'appGatewayFrontendIP',
+                    applicationGatewayType: 'Public',
+                    internalApplicationGatewaySettings: {
+                        subnetName: 'biz'
+                    }
+                }
+            ];
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(1);
+            expect(result[0].name).toEqual('.frontendIPConfigurations[0].internalApplicationGatewaySettings');
+        });
+        it('frontendIPConfigurations internalApplicationGatewaySettings must be specified if type is Internal', () => {
+            settings.frontendIPConfigurations = [
+                {
+                    name: 'appGatewayFrontendIP',
+                    applicationGatewayType: 'Internal'
+                }
+            ];
+            let merged = applicationGatewaySettings.merge({
+                settings: settings,
+                buildingBlockSettings: buildingBlockSettings
+            });
+            let result = v.validate({
+                settings: merged,
+                validations: applicationGatewaySettings.validations
+            });
+            expect(result.length).toEqual(1);
+            expect(result[0].name).toEqual('.frontendIPConfigurations[0].internalApplicationGatewaySettings');
+        });
+
         it('valid frontendPorts', () => {
             settings.frontendPorts = [
                 {
@@ -1104,6 +1137,371 @@ describe('applicationGatewaySettings:', () => {
             expect(result.length).toEqual(1);
             expect(result[0].name).toEqual('.sslPolicy.disabledSslProtocols');
         });
+
+        it('backendAddressPools valid backendAddresses', () => {
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(0);
+        });
+        it('backendAddressPools backendAddresses cannot specify both fqdn and ipAddress', () => {
+            settings.backendAddressPools[0].backendAddresses = [
+                {
+                    fqdn: 'www.contoso.com',
+                    ipAddress: '200.10.1.1'
+                }
+            ];
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(1);
+            expect(result[0].name).toEqual('.backendAddressPools[0].backendAddresses[0].fqdn');
+        });
+        it('backendAddressPools backendAddresses must specify fqdn or ipAddress', () => {
+            settings.backendAddressPools[0].backendAddresses = [
+                {
+                }
+            ];
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(2);
+            expect(result[0].name).toEqual('.backendAddressPools[0].backendAddresses[0].fqdn');
+            expect(result[1].name).toEqual('.backendAddressPools[0].backendAddresses[0].ipAddress');
+        });
+
+        describe('backendAddressPools backendIPConfigurations', () => {
+
+            beforeEach(() => {
+                settings.backendAddressPools = [
+                    {
+                        name: 'appGatewayBackendPool',
+                        backendAddresses: [
+                            {
+                                fqdn: 'www.contoso.com'
+                            }
+                        ],
+                        backendIPConfigurations: [
+                            {
+                                privateIPAllocationMethod: 'Dynamic',
+                                privateIPAddressVersion: 'IPv4',
+                                primary: true,
+                                publicIPAddress: {
+                                    name: 'my-pip',
+                                    subscriptionId: '00000000-0000-1000-8000-000000000000',
+                                    resourceGroupName: 'test-rg',
+                                    publicIPAllocationMethod: 'Static',
+                                    publicIPAddressVersion: 'IPv4',
+                                    idleTimeoutInMinutes: 1,
+                                    domainNameLabel: 'mydomain',
+                                    reverseFqdn: 'niamodym'
+                                },
+                                loadBalancerInboundNatRules: [
+                                    {
+                                        name: 'lb1',
+                                        frontendIPConfigurationName: 'appGatewayFrontendIP',
+                                        backendPoolName: 'appGatewayBackendPool',
+                                        frontendPort: 55,
+                                        backendPort: 1,
+                                        protocol: 'Tcp',
+                                        enableFloatingIP: false,
+                                        idleTimeoutInMinutes: 5
+                                    }
+                                ],
+                                subnet: {
+                                    name: 'subnet1',
+                                    addressPrefix: 'asdf',
+                                    networkSecurityGroup: {
+                                        securityRules: {
+                                            description: 'sadasd',
+                                            protocol: 'Tcp',
+                                            sourcePortRange: 30,
+                                            destinationPortRange: '*',
+                                            sourceAddressPrefix: ['10.0.1.0/24'],
+                                            destinationAddressPrefix: '*',
+                                            access:	'Allow',
+                                            priority: 200,
+                                            direction:	'Outbound'
+                                        },
+                                        defaultSecurityRules: {
+                                            description: 'sadasd',
+                                            protocol: 'Tcp',
+                                            sourcePortRange: 30,
+                                            destinationPortRange: '*',
+                                            sourceAddressPrefix: ['10.0.1.0/24'],
+                                            destinationAddressPrefix: '*',
+                                            access:	'Allow',
+                                            priority: 200,
+                                            direction:	'Outbound'
+                                        }
+                                    },
+                                    routeTable: {
+                                        routes: [
+                                            {
+                                                name: 'sadasdasd',
+                                                addressPrefix: ['10.0.1.0/24'],
+                                                nextHopType: 'VirtualAppliance',
+                                                nextHopIpAddress: '11.10.2.3'
+                                            }
+                                        ]
+                                    },
+                                    resourceNavigationLinks: []
+                                }
+                            }
+                        ]
+                    }
+                ];
+            });
+
+            it('valid configuration', () => {
+                let result = mergeAndValidate(settings, buildingBlockSettings);
+                expect(result.length).toEqual(0);
+            });
+            it('invalid privateIPAllocationMethod', () => {
+                settings.backendAddressPools[0].backendIPConfigurations[0].privateIPAllocationMethod = 'invalid';
+                let result = mergeAndValidate(settings, buildingBlockSettings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.backendAddressPools[0].backendIPConfigurations[0].privateIPAllocationMethod');
+            });
+            it('invalid privateIPAddressVersion', () => {
+                settings.backendAddressPools[0].backendIPConfigurations[0].privateIPAddressVersion = 'invalid';
+                let result = mergeAndValidate(settings, buildingBlockSettings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.backendAddressPools[0].backendIPConfigurations[0].privateIPAddressVersion');
+            });
+            it('invalid primary', () => {
+                settings.backendAddressPools[0].backendIPConfigurations[0].primary = 'invalid';
+                let result = mergeAndValidate(settings, buildingBlockSettings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.backendAddressPools[0].backendIPConfigurations[0].primary');
+            });
+            it('invalid publicIPAddress', () => {
+                settings.backendAddressPools[0].backendIPConfigurations[0].publicIPAddress = 'invalid';
+                let result = mergeAndValidate(settings, buildingBlockSettings);
+                expect(result.length > 0).toEqual(true);
+                expect(result[0].name.indexOf('.publicIPAddress') > -1).toEqual(true);
+            });
+            it('invalid loadBalancerInboundNatRules frontendIPConfigurationName', () => {
+                settings.backendAddressPools[0].backendIPConfigurations[0].loadBalancerInboundNatRules[0].frontendIPConfigurationName = 'invalid';
+                let result = mergeAndValidate(settings, buildingBlockSettings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.backendAddressPools[0].backendIPConfigurations[0].loadBalancerInboundNatRules[0].frontendIPConfigurationName');
+            });
+            it('invalid loadBalancerInboundNatRules backendPoolName', () => {
+                settings.backendAddressPools[0].backendIPConfigurations[0].loadBalancerInboundNatRules[0].backendPoolName = 'invalid';
+                let result = mergeAndValidate(settings, buildingBlockSettings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.backendAddressPools[0].backendIPConfigurations[0].loadBalancerInboundNatRules[0].backendPoolName');
+            });
+            it('invalid loadBalancerInboundNatRules frontendPort', () => {
+                settings.backendAddressPools[0].backendIPConfigurations[0].loadBalancerInboundNatRules[0].frontendPort = 99999;
+                let result = mergeAndValidate(settings, buildingBlockSettings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.backendAddressPools[0].backendIPConfigurations[0].loadBalancerInboundNatRules[0].frontendPort');
+            });
+            it('invalid loadBalancerInboundNatRules backendPort', () => {
+                settings.backendAddressPools[0].backendIPConfigurations[0].loadBalancerInboundNatRules[0].backendPort = 'invalid';
+                let result = mergeAndValidate(settings, buildingBlockSettings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.backendAddressPools[0].backendIPConfigurations[0].loadBalancerInboundNatRules[0].backendPort');
+            });
+            it('invalid loadBalancerInboundNatRules protocol', () => {
+                settings.backendAddressPools[0].backendIPConfigurations[0].loadBalancerInboundNatRules[0].protocol = 'invalid';
+                let result = mergeAndValidate(settings, buildingBlockSettings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.backendAddressPools[0].backendIPConfigurations[0].loadBalancerInboundNatRules[0].protocol');
+            });
+            it('invalid loadBalancerInboundNatRules enableFloatingIP', () => {
+                settings.backendAddressPools[0].backendIPConfigurations[0].loadBalancerInboundNatRules[0].enableFloatingIP = 'invalid';
+                let result = mergeAndValidate(settings, buildingBlockSettings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.backendAddressPools[0].backendIPConfigurations[0].loadBalancerInboundNatRules[0].enableFloatingIP');
+            });
+            it('invalid loadBalancerInboundNatRules idleTimeoutInMinutes', () => {
+                settings.backendAddressPools[0].backendIPConfigurations[0].loadBalancerInboundNatRules[0].idleTimeoutInMinutes = 99999;
+                let result = mergeAndValidate(settings, buildingBlockSettings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.backendAddressPools[0].backendIPConfigurations[0].loadBalancerInboundNatRules[0].idleTimeoutInMinutes');
+            });
+
+            it('subnet networkSecurityGroup securityRules description cannot have more than 140 chars', () => {
+                settings.backendAddressPools[0].backendIPConfigurations[0].subnet.networkSecurityGroup.securityRules.description = 'more than 140 chars asdsdasdsadsaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaakamdkasmdkasdmaskmdas dkasmdaskdmkasmdas dkasmdkasmdkasmd asdkasmkdmaskdmas daskmdksadmkasmdas dkasmdkamdkmaskdmasd askdmaskdmaskdmask daskdmsakdmsa';
+                let result = mergeAndValidate(settings, buildingBlockSettings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.backendAddressPools[0].backendIPConfigurations[0].subnet.networkSecurityGroup.securityRules.description');
+            });
+            it('subnet networkSecurityGroup securityRules invalid protocol', () => {
+                settings.backendAddressPools[0].backendIPConfigurations[0].subnet.networkSecurityGroup.securityRules.protocol = 'invalid';
+                let result = mergeAndValidate(settings, buildingBlockSettings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.backendAddressPools[0].backendIPConfigurations[0].subnet.networkSecurityGroup.securityRules.protocol');
+            });
+            it('subnet networkSecurityGroup securityRules invalid sourcePortRange', () => {
+                settings.backendAddressPools[0].backendIPConfigurations[0].subnet.networkSecurityGroup.securityRules.sourcePortRange = 99999;
+                let result = mergeAndValidate(settings, buildingBlockSettings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.backendAddressPools[0].backendIPConfigurations[0].subnet.networkSecurityGroup.securityRules.sourcePortRange');
+            });
+            it('subnet networkSecurityGroup securityRules sourcePortRange can be *', () => {
+                settings.backendAddressPools[0].backendIPConfigurations[0].subnet.networkSecurityGroup.securityRules.sourcePortRange = '*';
+                let result = mergeAndValidate(settings, buildingBlockSettings);
+                expect(result.length).toEqual(0);
+            });
+            it('subnet networkSecurityGroup securityRules invalid destinationPortRange', () => {
+                settings.backendAddressPools[0].backendIPConfigurations[0].subnet.networkSecurityGroup.securityRules.destinationPortRange = 99999;
+                let result = mergeAndValidate(settings, buildingBlockSettings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.backendAddressPools[0].backendIPConfigurations[0].subnet.networkSecurityGroup.securityRules.destinationPortRange');
+            });
+            it('subnet networkSecurityGroup securityRules destinationPortRange can be *', () => {
+                settings.backendAddressPools[0].backendIPConfigurations[0].subnet.networkSecurityGroup.securityRules.destinationPortRange = '*';
+                let result = mergeAndValidate(settings, buildingBlockSettings);
+                expect(result.length).toEqual(0);
+            });
+            it('subnet networkSecurityGroup securityRules invalid sourceAddressPrefix', () => {
+                settings.backendAddressPools[0].backendIPConfigurations[0].subnet.networkSecurityGroup.securityRules.sourceAddressPrefix = 'invalid';
+                let result = mergeAndValidate(settings, buildingBlockSettings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.backendAddressPools[0].backendIPConfigurations[0].subnet.networkSecurityGroup.securityRules.sourceAddressPrefix');
+            });
+            it('subnet networkSecurityGroup securityRules sourceAddressPrefix can be *', () => {
+                settings.backendAddressPools[0].backendIPConfigurations[0].subnet.networkSecurityGroup.securityRules.sourceAddressPrefix = '*';
+                let result = mergeAndValidate(settings, buildingBlockSettings);
+                expect(result.length).toEqual(0);
+            });
+            it('subnet networkSecurityGroup securityRules invalid destinationAddressPrefix', () => {
+                settings.backendAddressPools[0].backendIPConfigurations[0].subnet.networkSecurityGroup.securityRules.destinationAddressPrefix = 'invalid';
+                let result = mergeAndValidate(settings, buildingBlockSettings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.backendAddressPools[0].backendIPConfigurations[0].subnet.networkSecurityGroup.securityRules.destinationAddressPrefix');
+            });
+            it('subnet networkSecurityGroup securityRules destinationAddressPrefix can be *', () => {
+                settings.backendAddressPools[0].backendIPConfigurations[0].subnet.networkSecurityGroup.securityRules.destinationAddressPrefix = '*';
+                let result = mergeAndValidate(settings, buildingBlockSettings);
+                expect(result.length).toEqual(0);
+            });
+            it('subnet networkSecurityGroup securityRules invalid access', () => {
+                settings.backendAddressPools[0].backendIPConfigurations[0].subnet.networkSecurityGroup.securityRules.access = 'invalid';
+                let result = mergeAndValidate(settings, buildingBlockSettings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.backendAddressPools[0].backendIPConfigurations[0].subnet.networkSecurityGroup.securityRules.access');
+            });
+            it('subnet networkSecurityGroup securityRules invalid priority', () => {
+                settings.backendAddressPools[0].backendIPConfigurations[0].subnet.networkSecurityGroup.securityRules.priority = 1;
+                let result = mergeAndValidate(settings, buildingBlockSettings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.backendAddressPools[0].backendIPConfigurations[0].subnet.networkSecurityGroup.securityRules.priority');
+            });
+            it('subnet networkSecurityGroup securityRules invalid direction', () => {
+                settings.backendAddressPools[0].backendIPConfigurations[0].subnet.networkSecurityGroup.securityRules.direction = 'invalid';
+                let result = mergeAndValidate(settings, buildingBlockSettings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.backendAddressPools[0].backendIPConfigurations[0].subnet.networkSecurityGroup.securityRules.direction');
+            });
+
+            it('subnet networkSecurityGroup defaultSecurityRules description cannot have more than 140 chars', () => {
+                settings.backendAddressPools[0].backendIPConfigurations[0].subnet.networkSecurityGroup.defaultSecurityRules.description = 'more than 140 chars asdsdasdsadsaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaakamdkasmdkasdmaskmdas dkasmdaskdmkasmdas dkasmdkasmdkasmd asdkasmkdmaskdmas daskmdksadmkasmdas dkasmdkamdkmaskdmasd askdmaskdmaskdmask daskdmsakdmsa';
+                let result = mergeAndValidate(settings, buildingBlockSettings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.backendAddressPools[0].backendIPConfigurations[0].subnet.networkSecurityGroup.defaultSecurityRules.description');
+            });
+            it('subnet networkSecurityGroup defaultSecurityRules invalid protocol', () => {
+                settings.backendAddressPools[0].backendIPConfigurations[0].subnet.networkSecurityGroup.defaultSecurityRules.protocol = 'invalid';
+                let result = mergeAndValidate(settings, buildingBlockSettings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.backendAddressPools[0].backendIPConfigurations[0].subnet.networkSecurityGroup.defaultSecurityRules.protocol');
+            });
+            it('subnet networkSecurityGroup defaultSecurityRules invalid sourcePortRange', () => {
+                settings.backendAddressPools[0].backendIPConfigurations[0].subnet.networkSecurityGroup.defaultSecurityRules.sourcePortRange = 99999;
+                let result = mergeAndValidate(settings, buildingBlockSettings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.backendAddressPools[0].backendIPConfigurations[0].subnet.networkSecurityGroup.defaultSecurityRules.sourcePortRange');
+            });
+            it('subnet networkSecurityGroup defaultSecurityRules sourcePortRange can be *', () => {
+                settings.backendAddressPools[0].backendIPConfigurations[0].subnet.networkSecurityGroup.defaultSecurityRules.sourcePortRange = '*';
+                let result = mergeAndValidate(settings, buildingBlockSettings);
+                expect(result.length).toEqual(0);
+            });
+            it('subnet networkSecurityGroup defaultSecurityRules invalid destinationPortRange', () => {
+                settings.backendAddressPools[0].backendIPConfigurations[0].subnet.networkSecurityGroup.defaultSecurityRules.destinationPortRange = 99999;
+                let result = mergeAndValidate(settings, buildingBlockSettings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.backendAddressPools[0].backendIPConfigurations[0].subnet.networkSecurityGroup.defaultSecurityRules.destinationPortRange');
+            });
+            it('subnet networkSecurityGroup defaultSecurityRules destinationPortRange can be *', () => {
+                settings.backendAddressPools[0].backendIPConfigurations[0].subnet.networkSecurityGroup.defaultSecurityRules.destinationPortRange = '*';
+                let result = mergeAndValidate(settings, buildingBlockSettings);
+                expect(result.length).toEqual(0);
+            });
+            it('subnet networkSecurityGroup defaultSecurityRules invalid sourceAddressPrefix', () => {
+                settings.backendAddressPools[0].backendIPConfigurations[0].subnet.networkSecurityGroup.defaultSecurityRules.sourceAddressPrefix = 'invalid';
+                let result = mergeAndValidate(settings, buildingBlockSettings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.backendAddressPools[0].backendIPConfigurations[0].subnet.networkSecurityGroup.defaultSecurityRules.sourceAddressPrefix');
+            });
+            it('subnet networkSecurityGroup defaultSecurityRules sourceAddressPrefix can be *', () => {
+                settings.backendAddressPools[0].backendIPConfigurations[0].subnet.networkSecurityGroup.defaultSecurityRules.sourceAddressPrefix = '*';
+                let result = mergeAndValidate(settings, buildingBlockSettings);
+                expect(result.length).toEqual(0);
+            });
+            it('subnet networkSecurityGroup defaultSecurityRules invalid destinationAddressPrefix', () => {
+                settings.backendAddressPools[0].backendIPConfigurations[0].subnet.networkSecurityGroup.defaultSecurityRules.destinationAddressPrefix = 'invalid';
+                let result = mergeAndValidate(settings, buildingBlockSettings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.backendAddressPools[0].backendIPConfigurations[0].subnet.networkSecurityGroup.defaultSecurityRules.destinationAddressPrefix');
+            });
+            it('subnet networkSecurityGroup defaultSecurityRules destinationAddressPrefix can be *', () => {
+                settings.backendAddressPools[0].backendIPConfigurations[0].subnet.networkSecurityGroup.defaultSecurityRules.destinationAddressPrefix = '*';
+                let result = mergeAndValidate(settings, buildingBlockSettings);
+                expect(result.length).toEqual(0);
+            });
+            it('subnet networkSecurityGroup defaultSecurityRules invalid access', () => {
+                settings.backendAddressPools[0].backendIPConfigurations[0].subnet.networkSecurityGroup.defaultSecurityRules.access = 'invalid';
+                let result = mergeAndValidate(settings, buildingBlockSettings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.backendAddressPools[0].backendIPConfigurations[0].subnet.networkSecurityGroup.defaultSecurityRules.access');
+            });
+            it('subnet networkSecurityGroup defaultSecurityRules invalid priority', () => {
+                settings.backendAddressPools[0].backendIPConfigurations[0].subnet.networkSecurityGroup.defaultSecurityRules.priority = 1;
+                let result = mergeAndValidate(settings, buildingBlockSettings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.backendAddressPools[0].backendIPConfigurations[0].subnet.networkSecurityGroup.defaultSecurityRules.priority');
+            });
+            it('subnet networkSecurityGroup defaultSecurityRules invalid direction', () => {
+                settings.backendAddressPools[0].backendIPConfigurations[0].subnet.networkSecurityGroup.defaultSecurityRules.direction = 'invalid';
+                let result = mergeAndValidate(settings, buildingBlockSettings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.backendAddressPools[0].backendIPConfigurations[0].subnet.networkSecurityGroup.defaultSecurityRules.direction');
+            });
+
+            it('subnet routeTable routes must have a name', () => {
+                delete settings.backendAddressPools[0].backendIPConfigurations[0].subnet.routeTable.routes[0].name;
+                let result = mergeAndValidate(settings, buildingBlockSettings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.backendAddressPools[0].backendIPConfigurations[0].subnet.routeTable.routes[0].name');
+            });
+            it('subnet routeTable routes invalid addressPrefix', () => {
+                settings.backendAddressPools[0].backendIPConfigurations[0].subnet.routeTable.routes[0].addressPrefix = 'invalid';
+                let result = mergeAndValidate(settings, buildingBlockSettings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.backendAddressPools[0].backendIPConfigurations[0].subnet.routeTable.routes[0].addressPrefix');
+            });
+            it('subnet routeTable routes invalid nextHopType', () => {
+                settings.backendAddressPools[0].backendIPConfigurations[0].subnet.routeTable.routes[0].nextHopType = 'invalid';
+                delete settings.backendAddressPools[0].backendIPConfigurations[0].subnet.routeTable.routes[0].nextHopIpAddress;
+                let result = mergeAndValidate(settings, buildingBlockSettings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.backendAddressPools[0].backendIPConfigurations[0].subnet.routeTable.routes[0].nextHopType');
+            });
+            it('subnet routeTable routes nextHopIpAddress cannot only have a value when nextHopType is VirtualAppliance', () => {
+                settings.backendAddressPools[0].backendIPConfigurations[0].subnet.routeTable.routes[0].nextHopType = 'VnetLocal';
+                let result = mergeAndValidate(settings, buildingBlockSettings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.backendAddressPools[0].backendIPConfigurations[0].subnet.routeTable.routes[0].nextHopIpAddress');
+            });
+            it('subnet routeTable routes invalid nextHopIpAddress', () => {
+                settings.backendAddressPools[0].backendIPConfigurations[0].subnet.routeTable.routes[0].nextHopIpAddress = 'invalid';
+                let result = mergeAndValidate(settings, buildingBlockSettings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.backendAddressPools[0].backendIPConfigurations[0].subnet.routeTable.routes[0].nextHopIpAddress');
+            });
+
+        });
+
     });
 
     if (global.testConfiguration.runTransform) {
