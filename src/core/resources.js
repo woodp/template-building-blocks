@@ -47,37 +47,37 @@ function getObject(collection, parentKey, stack, callback) {
 
 exports.resourceId = function (subscriptionId, resourceGroupName, resourceType, resourceName, subresourceName) {
     if (validation.utilities.isNullOrWhitespace(subscriptionId)) {
-        throw `subscriptionId: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`;
+        throw new Error(`subscriptionId: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`);
     }
 
     if (!validation.utilities.isGuid(subscriptionId)) {
-        throw `subscriptionId: ${validationMessages.StringIsNotAValidGuid}`;
+        throw new Error(`subscriptionId: ${validationMessages.StringIsNotAValidGuid}`);
     }
 
     if (validation.utilities.isNullOrWhitespace(resourceGroupName)) {
-        throw `resourceGroupName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`;
+        throw new Error(`resourceGroupName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`);
     }
 
     if (validation.utilities.isNullOrWhitespace(resourceType)) {
-        throw `resourceType: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`;
+        throw new Error(`resourceType: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`);
     }
 
     let resourceTypeParts = _.split(_.trimEnd(resourceType, '/'), '/');
     if ((resourceTypeParts.length < 2) || (resourceTypeParts.length > 3)) {
-        throw `resourceType: Invalid length ${resourceTypeParts.length}`;
+        throw new Error(`resourceType: Invalid length ${resourceTypeParts.length}`);
     }
 
     if ((resourceTypeParts.length === 2) && (validation.utilities.isNullOrWhitespace(resourceName))) {
-        throw `resourceName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`;
+        throw new Error(`resourceName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`);
     }
 
     // This is not strictly necessary, but could save from some misuse
     if ((resourceTypeParts.length === 2) && (!validation.utilities.isNullOrWhitespace(subresourceName))) {
-        throw `subresourceName: ${validationMessages.resources.SubresourceNameShouldNotBeSpecifiedForTopLevelResourceType}`;
+        throw new Error(`subresourceName: ${validationMessages.resources.SubresourceNameShouldNotBeSpecifiedForTopLevelResourceType}`);
     }
 
     if ((resourceTypeParts.length === 3) && (validation.utilities.isNullOrWhitespace(subresourceName))) {
-        throw `subresourceName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`;
+        throw new Error(`subresourceName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`);
     }
 
     let resourceId = `/subscriptions/${subscriptionId}/resourceGroups/${resourceGroupName}/providers/${resourceTypeParts[0]}/${resourceTypeParts[1]}/${resourceName}`;

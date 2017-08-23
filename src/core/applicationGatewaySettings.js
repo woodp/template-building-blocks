@@ -8,7 +8,7 @@ const os = require('os');
 
 const APPLICATIONGATEWAY_SETTINGS_DEFAULTS = {
     sku: {
-        name: 'Standard_Small',
+        size: 'Small',
         tier: 'Standard',
         capacity: 2
     },
@@ -53,7 +53,7 @@ const APPLICATIONGATEWAY_SETTINGS_DEFAULTS = {
     ],
     redirectConfigurations: [],
     webApplicationFirewallConfiguration: {
-        enabled: false,
+        enabled: true,
         firewallMode: 'Prevention',
         ruleSetType: 'OWASP',
         ruleSetVersion: '3.0',
@@ -97,7 +97,8 @@ function defaultsCustomizer(objValue, srcValue, key) {
     }
 }
 
-let validSkuNames = ['Standard_Small', 'Standard_Medium', 'Standard_Large', 'WAF_Medium', 'WAF_Large'];
+let validStandardSkuSizes = ['Small', 'Medium', 'Large'];
+let validWAFSkuSizes = ['Medium', 'Large'];
 let validSkuTiers = ['Standard', 'WAF'];
 let validRedirectTypes = ['Permanent', 'Found', 'SeeOther', 'Temporary'];
 let validAppGatewayTypes = ['Public', 'Internal'];
@@ -144,8 +145,12 @@ let isNilOrInRange = (value, from, to) => {
     };
 };
 
-let isValidSkuName = (skuName) => {
-    return v.utilities.isStringInArray(skuName, validSkuNames);
+let isValidStandardSkuSize = (size) => {
+    return v.utilities.isStringInArray(size, validStandardSkuSizes);
+};
+
+let isValidWAFSkuSize = (size) => {
+    return v.utilities.isStringInArray(size, validWAFSkuSizes);
 };
 
 let isValidSkuTier = (skuTier) => {
@@ -201,7 +206,7 @@ let frontendIPConfigurationValidations = {
     applicationGatewayType: (value) => {
         return {
             result: isValidAppGatewayType(value),
-            message: `Valid values are ${validAppGatewayTypes.join(' ,')}`
+            message: `Valid values are ${validAppGatewayTypes.join(',')}`
         };
     },
     internalApplicationGatewaySettings: (value, parent) => {
@@ -232,16 +237,30 @@ let frontendIPConfigurationValidations = {
 };
 
 let skuValidations = {
-    name: (value) => {
-        return {
-            result: isValidSkuName(value),
-            message: `Valid values are ${validSkuNames.join(' ,')}`
+    size: (value, parent) => {
+        let result = {
+            result: false,
+            message: 'Unable to validate size due to invalid tier value'
         };
+
+        if (parent.tier === 'Standard') {
+            result = {
+                result: isValidStandardSkuSize(value),
+                message: `Valid values are ${validStandardSkuSizes.join(',')}`
+            };
+        } else if (parent.tier === 'WAF') {
+            result = {
+                result: isValidWAFSkuSize(value),
+                message: `Valid values are ${validWAFSkuSizes.join(',')}`
+            };
+        }
+
+        return result;
     },
     tier: (value) => {
         return {
             result: isValidSkuTier(value),
-            message: `Valid values are ${validSkuTiers.join(' ,')}`
+            message: `Valid values are ${validSkuTiers.join(',')}`
         };
     }
 };
@@ -257,21 +276,21 @@ let protocolValidation = (protocol) => {
 
     return {
         result: isValidProtocol(protocol),
-        message: `Valid values are ${validProtocols.join(' ,')}`
+        message: `Valid values are ${validProtocols.join(',')}`
     };
 };
 
 let cookieBasedAffinityValidation = (value) => {
     return {
         result: isValidCookieBasedAffinityValue(value),
-        message: `Valid values are ${validCookieBasedAffinityValues.join(' ,')}`
+        message: `Valid values are ${validCookieBasedAffinityValues.join(',')}`
     };
 };
 
 let requestRoutingRuleTypeValidation = (value) => {
     return {
         result: isValidRequestRoutingRuleType(value),
-        message: `Valid values are ${validApplicationGatewayRequestRoutingRuleTypes.join(' ,')}`
+        message: `Valid values are ${validApplicationGatewayRequestRoutingRuleTypes.join(',')}`
     };
 };
 
@@ -385,7 +404,19 @@ let applicationGatewayValidations = {
 
         let baseSettings = parent;
         let urlPathMapsValidations = {
-            defaultBackendAddressPoolName: (value) => {
+            defaultBackendAddressPoolName: (value, parent) => {
+                if (parent.defaultRedirectConfigurationName) {
+                    if (_.isUndefined(value)) {
+                        return {
+                            result: true
+                        };
+                    } else {
+                        return {
+                            result: false,
+                            message: 'Value cannot be specified if defaultRedirectConfigurationName is defined'
+                        };
+                    }
+                }
                 let result = {
                     result: false,
                     message: `Invalid defaultBackendAddressPoolName ${value} in urlPathMaps`
@@ -393,13 +424,45 @@ let applicationGatewayValidations = {
                 let matched = _.filter(baseSettings.backendAddressPools, (o) => { return (o.name === value); });
                 return (baseSettings.backendAddressPools.length > 0 && matched.length === 0) ? result : { result: true };
             },
-            defaultBackendHttpSettingName: (value) => {
+            defaultBackendHttpSettingName: (value, parent) => {
+                if (parent.defaultRedirectConfigurationName) {
+                    if (_.isUndefined(value)) {
+                        return {
+                            result: true
+                        };
+                    } else {
+                        return {
+                            result: false,
+                            message: 'Value cannot be specified if defaultRedirectConfigurationName is defined'
+                        };
+                    }
+                }
                 let result = {
                     result: false,
                     message: `Invalid defaultBackendHttpSettingName ${value} in urlPathMaps`
                 };
                 let matched = _.filter(baseSettings.backendHttpSettingsCollection, (o) => { return (o.name === value); });
                 return (baseSettings.backendHttpSettingsCollection.length > 0 && matched.length === 0) ? result : { result: true };
+            },
+            defaultRedirectConfigurationName: (value, parent) => {
+                if ((parent.defaultBackendAddressPoolName) || (parent.defaultBackendHttpSettingName)) {
+                    if (_.isUndefined(value)) {
+                        return {
+                            result: true
+                        };
+                    } else {
+                        return {
+                            result: false,
+                            message: 'Value cannot be specified if defaultBackendAddressPoolName or defaultBackendHttpSettingName is defined'
+                        };
+                    }
+                }
+                let result = {
+                    result: false,
+                    message: `Invalid defaultRedirectConfigurationName ${value} in urlPathMaps`
+                };
+                let matched = _.filter(baseSettings.redirectConfigurations, (o) => { return (o.name === value); });
+                return (baseSettings.redirectConfigurations.length > 0 && matched.length === 0) ? result : { result: true };
             },
             pathRules: (value) => {
                 if (_.isUndefined(value) || (_.isArray(value) && value.length === 0)) {
@@ -421,7 +484,20 @@ let applicationGatewayValidations = {
                     };
                 }
                 let pathRulesValidations = {
-                    backendAddressPoolName: (value) => {
+                    backendAddressPoolName: (value, parent) => {
+                        if (parent.redirectConfigurationName) {
+                            if (_.isUndefined(value)) {
+                                return {
+                                    result: true
+                                };
+                            } else {
+                                return {
+                                    result: false,
+                                    message: 'Value cannot be specified if redirectConfigurationName is defined'
+                                };
+                            }
+                        }
+
                         let result = {
                             result: false,
                             message: `Invalid backendAddressPoolName ${value} in urlPathMaps`
@@ -429,13 +505,46 @@ let applicationGatewayValidations = {
                         let matched = _.filter(baseSettings.backendAddressPools, (o) => { return (o.name === value); });
                         return (baseSettings.backendAddressPools.length > 0 && matched.length === 0) ? result : { result: true };
                     },
-                    backendHttpSettingName: (value) => {
+                    backendHttpSettingName: (value, parent) => {
+                        if (parent.redirectConfigurationName) {
+                            if (_.isUndefined(value)) {
+                                return {
+                                    result: true
+                                };
+                            } else {
+                                return {
+                                    result: false,
+                                    message: 'Value cannot be specified if redirectConfigurationName is defined'
+                                };
+                            }
+                        }
+
                         let result = {
                             result: false,
                             message: `Invalid backendHttpSettingName ${value} in urlPathMaps`
                         };
                         let matched = _.filter(baseSettings.backendHttpSettingsCollection, (o) => { return (o.name === value); });
                         return (baseSettings.backendHttpSettingsCollection.length > 0 && matched.length === 0) ? result : { result: true };
+                    },
+                    redirectConfigurationName: (value, parent) => {
+                        if ((parent.backendAddressPoolName) || (parent.backendHttpSettingName)) {
+                            if (_.isUndefined(value)) {
+                                return {
+                                    result: true
+                                };
+                            } else {
+                                return {
+                                    result: false,
+                                    message: 'Value cannot be specified if backendAddressPoolName or backendHttpSettingName is defined'
+                                };
+                            }
+                        }
+                        let result = {
+                            result: false,
+                            message: `Invalid redirectConfigurationName ${value} in urlPathMaps`
+                        };
+                        let matched = _.filter(baseSettings.redirectConfigurations, (o) => { return (o.name === value); });
+                        return (baseSettings.redirectConfigurations.length > 0 && matched.length === 0) ? result : { result: true };
                     }
                 };
                 return { validations: pathRulesValidations };
@@ -453,7 +562,26 @@ let applicationGatewayValidations = {
         let baseSettings = parent;
         let requestRoutingRulesValidations = {
             name: v.validationUtilities.isNotNullOrWhitespace,
-            backendAddressPoolName: (value) => {
+            backendAddressPoolName: (value, parent) => {
+                if (parent.ruleType === 'PathBasedRouting') {
+                    if (_.isUndefined(value)) {
+                        return { result: true };
+                    } else {
+                        return {
+                            result: false,
+                            message: 'Value cannot be specified for ruleType === PathBasedRouting'
+                        };
+                    }
+                } else if ((parent.ruleType === 'Basic') && (parent.redirectConfigurationName)) {
+                    if (_.isUndefined(value)) {
+                        return { result: true };
+                    } else {
+                        return {
+                            result: false,
+                            message: 'Value cannot be specified if redirectConfigurationName is specified'
+                        };
+                    }
+                }
                 let result = {
                     result: false,
                     message: `Invalid backendAddressPoolName ${value} in requestRoutingRules`
@@ -461,7 +589,26 @@ let applicationGatewayValidations = {
                 let matched = _.filter(baseSettings.backendAddressPools, (o) => { return (o.name === value); });
                 return (baseSettings.backendAddressPools.length > 0 && matched.length === 0) ? result : { result: true };
             },
-            backendHttpSettingName: (value) => {
+            backendHttpSettingName: (value, parent) => {
+                if (parent.ruleType === 'PathBasedRouting') {
+                    if (_.isUndefined(value)) {
+                        return { result: true };
+                    } else {
+                        return {
+                            result: false,
+                            message: 'Value cannot be specified for ruleType === PathBasedRouting'
+                        };
+                    }
+                } else if ((parent.ruleType === 'Basic') && (parent.redirectConfigurationName)) {
+                    if (_.isUndefined(value)) {
+                        return { result: true };
+                    } else {
+                        return {
+                            result: false,
+                            message: 'Value cannot be specified if redirectConfigurationName is specified'
+                        };
+                    }
+                }
                 let result = {
                     result: false,
                     message: `Invalid backendHttpSettingName ${value} in requestRoutingRules`
@@ -527,8 +674,99 @@ let applicationGatewayValidations = {
         return { validations: probesValidation };
     },
     redirectConfigurations: () => {
-        return { result: true };
-        // TODO: if provided, than in correct schema
+        let validations = {
+            name: v.validationUtilities.isNotNullOrWhitespace,
+            redirectType: (value) => {
+                return {
+                    result: isValidRedirectType(value),
+                    message: `Valid values are ${validRedirectTypes.join(',')}`
+                };
+            },
+            targetUrl: (value, parent) => {
+                // This canot be specified with targetListenerName
+                if ((!_.isUndefined(value)) && (!_.isUndefined(parent.targetListenerName))) {
+                    return {
+                        result: false,
+                        message: 'Value cannot be specified if targetListenerName is specified'
+                    };
+                }
+
+                if ((_.isUndefined(value)) && (_.isUndefined(parent.targetListenerName))) {
+                    return {
+                        result: false,
+                        message: 'Either targetUrl or targetListenerName must be specified, but not both'
+                    };
+                }
+
+                if ((_.isUndefined(value)) && (!_.isUndefined(parent.targetListenerName))) {
+                    return {
+                        result: true
+                    };
+                }
+
+                if (!_.isUndefined(parent.includePath)) {
+                    return {
+                        result: false,
+                        message: 'Value cannot be specified if includePath is specified'
+                    };
+                }
+
+                return v.validationUtilities.isNotNullOrWhitespace(value);
+            },
+            targetListenerName: (value, parent) => {
+                // This canot be specified with targetUrl
+                if ((!_.isUndefined(value)) && (!_.isUndefined(parent.targetUrl))) {
+                    return {
+                        result: false,
+                        message: 'Value cannot be specified if targetUrl is specified'
+                    };
+                }
+
+                if ((_.isUndefined(value)) && (_.isUndefined(parent.targetUrl))) {
+                    return {
+                        result: false,
+                        message: 'Either targetListenerName or targetUrl must be specified, but not both'
+                    };
+                }
+
+                if ((_.isUndefined(value)) && (!_.isUndefined(parent.targetUrl))) {
+                    return {
+                        result: true
+                    };
+                }
+
+                return v.validationUtilities.isNotNullOrWhitespace(value);
+            },
+            includePath: (value, parent) => {
+                if (_.isUndefined(value)) {
+                    return {
+                        result: true
+                    };
+                }
+
+                if (!_.isUndefined(parent.targetUrl)) {
+                    return {
+                        result: false,
+                        message: 'Value cannot be specified if targetUrl is specified'
+                    };
+                }
+
+                return v.validationUtilities.isBoolean(value);
+            },
+            includeQueryString: (value) => {
+                if (_.isUndefined(value)) {
+                    return {
+                        result: true
+                    };
+                } else {
+                    return v.validationUtilities.isBoolean(value);
+                }
+            }
+        };
+
+        return {
+            validations: validations
+        };
     },
     webApplicationFirewallConfiguration: (value) => {
         if (_.isUndefined(value)) {
@@ -540,13 +778,13 @@ let applicationGatewayValidations = {
             firewallMode: (value) => {
                 return {
                     result: isValidFirewallMode(value),
-                    message: `Valid values are ${validFirewallModes.join(' ,')}`
+                    message: `Valid values are ${validFirewallModes.join(',')}`
                 };
             },
             ruleSetType: (value) => {
                 return {
                     result: isValidRuleSetType(value),
-                    message: `Valid values for ruleSetType are ${validRuleSetTypes.join(', ')}`
+                    message: `Valid values for ruleSetType are ${validRuleSetTypes.join(',')}`
                 };
             },
             ruleSetVersion: v.validationUtilities.isNotNullOrWhitespace,
@@ -567,7 +805,7 @@ let applicationGatewayValidations = {
                 let errorMessage = '';
                 value.forEach((sslProtocol, index) => {
                     if (!isValidSslProtocol(sslProtocol)) {
-                        errorMessage += `Valid values for sslPolicy.disabledSslProtocols[${index}] are ${validSslProtocols.join(', ')}.${os.EOL}`;
+                        errorMessage += `Valid values for sslPolicy.disabledSslProtocols[${index}] are ${validSslProtocols.join(',')}.${os.EOL}`;
                     }
                 });
 
@@ -584,7 +822,11 @@ let applicationGatewayValidations = {
 
 let processProperties = {
     sku: (value, key, parent, properties) => {
-        properties['sku'] = value;
+        properties['sku'] = {
+            name: `${value.tier}_${value.size}`,
+            tier: value.tier,
+            capacity: value.capacity
+        };
     },
     gatewayIPConfigurations: (value, key, parent, properties) => {
         let gwConfigs = _.map(value, (gwConfig) => {
@@ -702,32 +944,50 @@ let processProperties = {
     urlPathMaps: (value, key, parent, properties) => {
         properties['urlPathMaps'] = _.map(value, (map) => {
             let rules = _.map(map.pathRules, (rule) => {
-                return {
+                let result = {
                     name: rule.name,
                     properties: {
-                        paths: rule.paths,
-                        backendAddressPool: {
-                            id: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/applicationGateways/backendAddressPools', parent.name, rule.backendAddressPoolName)
-                        },
-                        backendHttpSettings: {
-                            id: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/applicationGateways/backendHttpSettingsCollection', parent.name, rule.backendHttpSettingName)
-                        }
+                        paths: rule.paths
                     }
                 };
+
+                if (rule.redirectConfigurationName) {
+                    result.properties.redirectConfiguration = {
+                        id: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/applicationGateways/redirectConfigurations', parent.name, rule.redirectConfigurationName)
+                    };
+                } else {
+                    result.properties.backendAddressPool = {
+                        id: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/applicationGateways/backendAddressPools', parent.name, rule.backendAddressPoolName)
+                    };
+                    result.properties.backendHttpSettings = {
+                        id: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/applicationGateways/backendHttpSettingsCollection', parent.name, rule.backendHttpSettingName)
+                    };
+                }
+
+                return result;
             });
 
-            return {
+            let result = {
                 name: map.name,
                 properties: {
-                    defaultBackendAddressPool: {
-                        id: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/applicationGateways/backendAddressPools', parent.name, map.defaultBackendAddressPoolName)
-                    },
-                    defaultBackendHttpSettings: {
-                        id: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/applicationGateways/backendHttpSettingsCollection', parent.name, map.defaultBackendHttpSettingName)
-                    },
                     pathRules: rules
                 }
             };
+
+            if (map.defaultRedirectConfigurationName) {
+                result.properties.defaultRedirectConfiguration = {
+                    id: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/applicationGateways/redirectConfigurations', parent.name, map.defaultRedirectConfigurationName)
+                };
+            } else {
+                result.properties.defaultBackendAddressPool = {
+                    id: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/applicationGateways/backendAddressPools', parent.name, map.defaultBackendAddressPoolName)
+                };
+                result.properties.defaultBackendHttpSettings = {
+                    id: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/applicationGateways/backendHttpSettingsCollection', parent.name, map.defaultBackendHttpSettingName)
+                };
+            }
+
+            return result;
         });
     },
     requestRoutingRules: (value, key, parent, properties) => {
@@ -743,12 +1003,18 @@ let processProperties = {
             };
 
             if (rule.ruleType === 'Basic') {
-                routingRule.properties.backendAddressPool = {
-                    id: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/applicationGateways/backendAddressPools', parent.name, rule.backendAddressPoolName)
-                };
-                routingRule.properties.backendHttpSettings = {
-                    id: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/applicationGateways/backendHttpSettingsCollection', parent.name, rule.backendHttpSettingName)
-                };
+                if (rule.redirectConfigurationName) {
+                    routingRule.properties.redirectConfiguration = {
+                        id: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/applicationGateways/redirectConfigurations', parent.name, rule.redirectConfigurationName)
+                    };
+                } else {
+                    routingRule.properties.backendAddressPool = {
+                        id: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/applicationGateways/backendAddressPools', parent.name, rule.backendAddressPoolName)
+                    };
+                    routingRule.properties.backendHttpSettings = {
+                        id: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/applicationGateways/backendHttpSettingsCollection', parent.name, rule.backendHttpSettingName)
+                    };
+                }
             } else {
                 routingRule.properties.urlPathMap = {
                     id: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/applicationGateways/urlPathMaps', parent.name, rule.urlPathMapName)
@@ -781,6 +1047,33 @@ let processProperties = {
     },
     sslPolicy: (value, key, parent, properties) => {
         properties['sslPolicy'] = value;
+    },
+    redirectConfigurations: (value, key, parent, properties) => {
+        properties['redirectConfigurations'] = _.map(value, (redirect) => {
+            let result = {
+                name: redirect.name,
+                properties: {
+                    redirectType: redirect.redirectType
+                }
+            };
+
+            if (redirect.targetUrl) {
+                result.properties.targetUrl = redirect.targetUrl;
+            } else if (redirect.targetListenerName) {
+                result.properties.targetListener = {
+                    id: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/applicationGateways/httpListeners', parent.name, redirect.targetListenerName)
+                };
+                // includePath can only be used with targetListener
+                if (!_.isUndefined(redirect.includePath)) {
+                    result.properties.includePath = redirect.includePath;
+                }
+            }
+
+            if (!_.isUndefined(redirect.includeQueryString)) {
+                result.properties.includeQueryString = redirect.includeQueryString;
+            }
+            return result;
+        });
     }
 };
 
@@ -811,6 +1104,7 @@ function transform(param) {
         resourceGroupName: param.resourceGroupName,
         subscriptionId: param.subscriptionId,
         location: param.location,
+        tags: param.tags,
         properties: gatewayProperties
     }];
 

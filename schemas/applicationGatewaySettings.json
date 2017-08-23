@@ -20,7 +20,7 @@
                     "oneOf": [
                         {
                             "properties": {
-                                "name": {
+                                "size": {
                                     "type": "string",
                                     "enum": [
                                         "Small",
@@ -38,7 +38,7 @@
                         },
                         {
                             "properties": {
-                                "name": {
+                                "size": {
                                     "type": "string",
                                     "enum": [
                                         "Medium",
@@ -58,7 +58,7 @@
             ],
             "required": [
                 "capacity",
-                "name",
+                "size",
                 "tier"
             ]
         },
@@ -694,34 +694,10 @@
                         },
                         "includeQueryString": {
                             "type": "boolean"
-                        },
-                        "requestRoutingRules": {
-                            "type": "array",
-                            "default": [],
-                            "items": {
-                                "type": "string"
-                            }
-                        },
-                        "urlPathMaps": {
-                            "type": "array",
-                            "default": [],
-                            "items": {
-                                "type": "string"
-                            }
-                        },
-                        "pathRules": {
-                            "type": "array",
-                            "default": [],
-                            "items": {
-                                "type": "string"
-                            }
                         }
                     },
                     "required": [
-                        "redirectType",
-                        "requestRoutingRules",
-                        "urlPathMaps",
-                        "pathRules"
+                        "redirectType"
                     ]
                 },
                 {
