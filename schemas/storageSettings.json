@@ -24,47 +24,54 @@
         },
         "baseStorageSettings": {
             "type": "object",
-            "properties": {
-                "nameSuffix": {
-                    "type": "string",
-                    "minLength": 1
+            "allOf": [
+                {
+                    "$ref": "types.json#/definitions/deploymentInformation"
                 },
-                "count": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "default": 1
-                },
-                "skuType": {
-                    "type": "string"
-                },
-                "supportsHttpsTrafficOnly": {
-                    "type": "boolean",
-                    "default": false
-                },
-                "encryptBlobStorage": {
-                    "type": "boolean",
-                    "default": false
-                },
-                "encryptFileStorage": {
-                    "type": "boolean",
-                    "default": false
-                },
-                "keyVaultProperties": {
-                    "$ref": "#/definitions/keyVaultProperties"
-                },
-                "accounts": {
-                    "type": "array",
-                    "items":{
-                        "type": "string"
-                    },
-                    "minItems": 0,
-                    "default": []
+                {
+                    "properties": {
+                        "nameSuffix": {
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "count": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "default": 1
+                        },
+                        "skuType": {
+                            "type": "string"
+                        },
+                        "supportsHttpsTrafficOnly": {
+                            "type": "boolean",
+                            "default": false
+                        },
+                        "encryptBlobStorage": {
+                            "type": "boolean",
+                            "default": false
+                        },
+                        "encryptFileStorage": {
+                            "type": "boolean",
+                            "default": false
+                        },
+                        "keyVaultProperties": {
+                            "$ref": "#/definitions/keyVaultProperties"
+                        },
+                        "accounts": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            },
+                            "minItems": 0,
+                            "default": []
+                        }
+                    }
                 }
-            }
+            ]
         },
         "storageSettings": {
             "type": "object",
-            "allOf":[
+            "allOf": [
                 {
                     "$ref": "#/definitions/baseStorageSettings"
                 },
@@ -86,7 +93,7 @@
         },
         "diagnosticStorageSettings": {
             "type": "object",
-            "allOf":[
+            "allOf": [
                 {
                     "$ref": "#/definitions/baseStorageSettings"
                 },

@@ -41,6 +41,9 @@
             "type": "object",
             "allOf": [
                 {
+                    "$ref": "types.json#/definitions/deploymentInformation"
+                },
+                {
                     "properties": {
                         "isPrimary": {
                             "type": "boolean"

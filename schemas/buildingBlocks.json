@@ -5,24 +5,11 @@
     "description": "A building blocks settings file",
     "type": "object",
     "definitions": {
-        "deploymentInformation": {
-            "properties": {
-                "subscriptionId": {
-                    "$ref": "types.json#/definitions/guid"
-                },
-                "resourceGroupName": {
-                    "type": "string"
-                },
-                "location": {
-                    "type": "string"
-                }
-            }
-        },
         "buildingBlock": {
             "type": "object",
             "allOf":[
                 {
-                    "$ref": "#/definitions/deploymentInformation"
+                    "$ref": "types.json#/definitions/deploymentInformation"
                 },
                 {
                     "oneOf": [
@@ -119,7 +106,18 @@
                                     ]
                                 },
                                 "settings": {
-                                    "$ref": "virtualMachineSettings.json#/definitions/settings"
+                                    "oneOf": [
+                                        {
+                                            "$ref": "virtualMachineSettings.json#/definitions/settings"
+                                        },
+                                        {
+                                            "type": "array",
+                                            "minItems": 1,
+                                            "items": {
+                                                "$ref": "virtualMachineSettings.json#/definitions/settings"
+                                            }
+                                        }
+                                    ]
                                 }
                             },
                             "required": [
@@ -132,7 +130,7 @@
                                 "type": {
                                     "type": "string",
                                     "enum": [
-                                        "VirtualMachineExtensions"
+                                        "VirtualMachineExtension"
                                     ]
                                 },
                                 "settings": {

@@ -304,10 +304,7 @@
                                         "$ref": "#/definitions/inboundNatRule"
                                     }
                                 }
-                            },
-                            "required": [
-                                "inboundNatRules"
-                            ]
+                            }
                         },
                         {
                             "properties": {
@@ -317,10 +314,7 @@
                                         "$ref": "#/definitions/inboundNatPool"
                                     }
                                 }
-                            },
-                            "required": [
-                                "inboundNatPools"
-                            ]
+                            }
                         }
                     ]
                 },
