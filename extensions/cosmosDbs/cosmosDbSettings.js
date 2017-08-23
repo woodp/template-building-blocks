@@ -441,7 +441,7 @@ module.exports = (application) => {
                 let existingCosmosDbNames = _.filter(cosmosDbNames, (value) => {
                     let child = az.spawnAz({
                         args: ['cosmosdb', 'check-name-exists', '--name', value],
-                        options: {
+                        spawnOptions: {
                             stdio: 'pipe',
                             shell: true
                         }
@@ -467,7 +467,7 @@ module.exports = (application) => {
                             args: ['cosmosdb', 'database', 'create', '--name', value.name,
                                 '--resource-group', value.resourceGroupName,
                                 '--db-name', database.name],
-                            options: {
+                            spawnOptions: {
                                 stdio: 'inherit',
                                 shell: true
                             }
@@ -488,7 +488,7 @@ module.exports = (application) => {
 
                             az.spawnAz({
                                 args: args,
-                                options: {
+                                spawnOptions: {
                                     stdio: 'inherit',
                                     shell: true
                                 }

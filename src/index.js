@@ -515,7 +515,7 @@ try {
         console.log(output);
     } else if (options.outputFormat === 'files') {
         _.forEach(results, (value) => {
-            let output = JSON.stringify(value.templateParameters, null, 2);
+            let output = JSON.stringify(value.templateParameters);
             fs.writeFileSync(value.outputFilename, output);
             console.log();
             console.log(`  parameters written to ${value.outputFilename}`);

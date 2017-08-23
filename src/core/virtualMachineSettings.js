@@ -821,13 +821,6 @@ let virtualMachineValidations = {
                 message: 'createOption attach is not allowed for scaleset data disks'
             };
         }
-        // TODO - Revisit this when VMSS fromImage is complete.
-        // if (!_.isNil(parent.dataDisks.properties.image)) {
-        //     return {
-        //         result: false,
-        //         message: '.dataDisks.properties.image cannot be provided for scalesets.'
-        //     };
-        // }
 
         if (value.location !== parent.virtualNetwork.location || value.subscriptionId !== parent.virtualNetwork.subscriptionId) {
             return {
@@ -1193,7 +1186,15 @@ function processVMStamps(param) {
 }
 
 function transform(settings, buildingBlockSettings) {
-    let accumulator = { publicIpAddresses: [], networkInterfaces: [] };
+    let accumulator = {
+        publicIpAddresses: [],
+        networkInterfaces: [],
+        availabilitySet: [],
+        scaleSet: [],
+        autoScaleSettings: [],
+        loadBalancer: [],
+        applicationGateways: []
+    };
 
     // process storageAccounts
     accumulator.storageAccounts = (storageSettings.transform(settings.storageAccounts, settings)).accounts;
@@ -1204,8 +1205,6 @@ function transform(settings, buildingBlockSettings) {
     // process availabilitySet
     if (!v.utilities.isNullOrWhitespace(settings.availabilitySet.name)) {
         _.merge(accumulator, avSetSettings.transform(settings.availabilitySet, settings));
-    } else {
-        accumulator.availabilitySet = [];
     }
 
     // process VMs
@@ -1263,11 +1262,17 @@ function transform(settings, buildingBlockSettings) {
         accumulator.availabilitySet = [];
     }
 
-    // process secrets
+    // Process secrets.  We need to put them into a shape that can be assigned to a secureString parameter.
     if (settings.osType === 'linux' && !_.isNil(settings.sshPublicKey)) {
         accumulator.secret = settings.sshPublicKey;
     } else {
         accumulator.secret = settings.adminPassword;
+    }
+
+    if (_.isUndefined(accumulator.secret.reference)) {
+        accumulator.secret = {
+            value: accumulator.secret
+        };
     }
 
     // process load balancer if specified
@@ -1292,11 +1297,15 @@ function transform(settings, buildingBlockSettings) {
 }
 
 function process({ settings, buildingBlockSettings, defaultSettings }) {
+    settings = _.castArray(settings);
     // Merge
-    let mergedSettings = merge({
-        settings: settings,
-        buildingBlockSettings: buildingBlockSettings,
-        defaultSettings: defaultSettings
+
+    let mergedSettings = _.map(settings, (value) => {
+        return merge({
+            settings: value,
+            buildingBlockSettings: buildingBlockSettings,
+            defaultSettings: defaultSettings
+        });
     });
 
     // Validate
@@ -1307,24 +1316,50 @@ function process({ settings, buildingBlockSettings, defaultSettings }) {
     }
 
     // Transform
-    let results = transform(mergedSettings, buildingBlockSettings);
-    let resourceGroups = resources.extractResourceGroups(
-        results.availabilitySet,
-        results.diagnosticStorageAccounts,
-        results.loadBalancer,
-        results.applicationGateways,
-        results.scaleSet,
-        results.autoScaleSettings,
-        results.networkInterfaces,
-        results.publicIpAddresses,
-        results.storageAccounts,
-        results.virtualMachines,
-        results.applicationGateways
-    );
+    let results = _.map(mergedSettings, (value) => {
+        let result = transform(value, buildingBlockSettings);
+        let resourceGroups = resources.extractResourceGroups(
+            result.availabilitySet,
+            result.diagnosticStorageAccounts,
+            result.loadBalancer,
+            result.applicationGateways,
+            result.scaleSet,
+            result.autoScaleSettings,
+            result.networkInterfaces,
+            result.publicIpAddresses,
+            result.storageAccounts,
+            result.virtualMachines,
+            result.applicationGateways
+        );
+    
+        return {
+            resourceGroups: resourceGroups,
+            parameters: result
+        };
+    });
+
+    // We need to merge and unique-ify the resource groups and get things into the right shape
+    let uniqueResourceGroups = _.uniqWith(_.reduce(results, (result, value) => {
+        return result.concat(value.resourceGroups);
+    }, []), _.isEqual);
+    // Extract the secrets into their own object and delete them from the virtual machine parameters
+    results = _.transform(results, (result, value) => {
+        result.secrets.secrets.push(value.parameters.secret);
+        delete value.parameters.secret;
+        result.virtualMachineParameters.push(value.parameters);
+    }, {
+        virtualMachineParameters: [],
+        secrets: {
+            secrets: []
+        }
+    });
 
     return {
-        resourceGroups: resourceGroups,
-        parameters: results
+        resourceGroups: uniqueResourceGroups,
+        parameters: {
+            virtualMachines: results.virtualMachineParameters,
+            secrets: results.secrets
+        }
     };
 }
 

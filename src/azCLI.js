@@ -1,18 +1,18 @@
 'use strict';
 const childProcess = require('child_process');
 const os = require('os');
-const _ = require('lodash');
 const v = require('./core/validation');
 
-let spawnAz = ({args, options}) => {
-    if (_.isNil(options)) {
-        // Assign default options so nothing unexpected happens
-        options = {
-            stdio: 'pipe',
-            shell: true
-        };
+let spawnAz = ({args = [], spawnOptions = {
+    stdio: 'pipe',
+    shell: true
+}, azOptions = {
+    debug: false
+}}) => {
+    if (azOptions.debug === true) {
+        args.push('--debug');
     }
-    let child = childProcess.spawnSync('az', args, options);
+    let child = childProcess.spawnSync('az', args, spawnOptions);
     if (child.status !== 0) {
         throw new Error(`error executing az${os.EOL}  status: ${child.status}${os.EOL}  arguments: ${args.join(' ')}`);
     }
@@ -20,39 +20,41 @@ let spawnAz = ({args, options}) => {
     return child;
 };
 
-let setSubscription = ({subscriptionId}) => {
+let setSubscription = ({subscriptionId, azOptions}) => {
     if (v.utilities.isNullOrWhitespace(subscriptionId)) {
         throw new Error('subscriptionId cannot be undefined, null, empty, or only whitespace');
     }
 
     let child = spawnAz({
         args: ['account', 'set', '--subscription', subscriptionId],
-        options: {
+        spawnOptions: {
             stdio: 'inherit',
             shell: true
-        }
+        },
+        azOptions: azOptions
     });
 
     return child;
 };
 
-let setCloud = ({name}) => {
+let setCloud = ({name, azOptions}) => {
     if (v.utilities.isNullOrWhitespace(name)) {
         throw new Error('name cannot be undefined, null, empty, or only whitespace');
     }
 
     let child = spawnAz({
         args: ['cloud', 'set', '--name', name],
-        options: {
+        spawnOptions: {
             stdio: 'inherit',
             shell: true
-        }
+        },
+        azOptions: azOptions
     });
 
     return child;
 };
 
-let createResourceGroupIfNotExists = ({resourceGroupName, location}) => {
+let createResourceGroupIfNotExists = ({resourceGroupName, location, azOptions}) => {
 
     if (v.utilities.isNullOrWhitespace(resourceGroupName)) {
         throw new Error('resourceGroupName cannot be undefined, null, empty, or only whitespace');
@@ -65,7 +67,7 @@ let createResourceGroupIfNotExists = ({resourceGroupName, location}) => {
      // See if the resource group exists, and if not create it.
     let child = spawnAz({
         args: ['group', 'exists', '--name', resourceGroupName],
-        options: {
+        spawnOptions: {
             stdio: 'pipe',
             shell: true
         }
@@ -76,34 +78,39 @@ let createResourceGroupIfNotExists = ({resourceGroupName, location}) => {
         // Create the resource group
         child = spawnAz({
             args: ['group', 'create', '--location', location, '--name', resourceGroupName],
-            options: {
+            spawnOptions: {
                 stdio: 'inherit',
                 shell: true
-            }
+            },
+            azOptions: azOptions
         });
     }
 
     return child;
 };
 
-let deployTemplate = ({deploymentName, resourceGroupName, templateUri, parameterFile}) => {
+let deployTemplate = ({deploymentName, resourceGroupName, templateUri, parameterFile, azOptions}) => {
+    let args = ['group', 'deployment', 'create', '--name', deploymentName,
+        '--resource-group', resourceGroupName,
+        '--template-uri', templateUri.replace(/&/g, (os.platform() === 'win32' ? '^^^&' : '\\&')),
+        '--parameters', `@${parameterFile}`];
+
     let child = spawnAz({
-        args: ['group', 'deployment', 'create', '--name', deploymentName,
-            '--resource-group', resourceGroupName,
-            '--template-uri', templateUri.replace(/&/g, (os.platform() === 'win32' ? '^^^&' : '\\&')),
-            '--parameters', `@${parameterFile}`],
-        options: {
+        args: args,
+        spawnOptions: {
             stdio: 'inherit',
             shell: true
-        }
+        },
+        azOptions: azOptions
     });
 
     return child;
 };
 
-let getRegisteredClouds = () => {
+let getRegisteredClouds = ({azOptions} = {}) => {
     let child = spawnAz({
-        args: ['cloud', 'list']
+        args: ['cloud', 'list'],
+        azOptions: azOptions
     });
 
     return JSON.parse(child.stdout.toString());
