@@ -103,8 +103,6 @@ let validSkuTiers = ['Standard', 'WAF'];
 let validRedirectTypes = ['Permanent', 'Found', 'SeeOther', 'Temporary'];
 let validAppGatewayTypes = ['Public', 'Internal'];
 let validProtocols = ['Http', 'Https'];
-let validBackendAddressProtocols = ['Tcp', 'Udp'];
-let validSecurityRulesProtocols = ['Tcp', 'Udp', '*'];
 let validFirewallModes = ['Detection', 'Prevention'];
 let validApplicationGatewaySslCipherSuites = [
     'TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384',
@@ -137,16 +135,8 @@ let validSslProtocols = ['TLSv1_0', 'TLSv1_1', 'TLSv1_2'];
 let validSslPolicyTypes = ['Predefined', 'Custom'];
 let validApplicationGatewayRequestRoutingRuleTypes = ['Basic', 'PathBasedRouting'];
 let validCookieBasedAffinityValues = ['Enabled', 'Disabled'];
-let validIPAllocationMethods = ['Static', 'Dynamic'];
 let validRuleSetTypes = ['OWASP'];
-let validIPAddressVersions = ['IPv4', 'IPv6'];
-let validAccess = ['Allow', 'Deny'];
-let validDirections = ['Inbound', 'Outbound'];
-let validHopTypes = ['VirtualNetworkGateway', 'VnetLocal', 'Internet', 'VirtualAppliance', 'None'];
 
-let isValidIPAddressVersion = (ipAddressVersion) => {
-    return v.utilities.isStringInArray(ipAddressVersion, validIPAddressVersions);
-};
 let isNilOrInRange = (value, from, to) => {
     return {
         result: _.isUndefined(value) || _.inRange(_.toSafeInteger(value), from, to),
@@ -178,14 +168,6 @@ let isValidProtocol = (protocol) => {
     return v.utilities.isStringInArray(protocol, validProtocols);
 };
 
-let isValidBackendAddressProtocol = (protocol) => {
-    return v.utilities.isStringInArray(protocol, validBackendAddressProtocols);
-};
-
-let isValidSecurityRulesProtocol = (protocol) => {
-    return v.utilities.isStringInArray(protocol, validSecurityRulesProtocols);
-};
-
 let isValidFirewallMode = (firewallMode) => {
     return v.utilities.isStringInArray(firewallMode, validFirewallModes);
 };
@@ -210,31 +192,8 @@ let isValidCookieBasedAffinityValue = (cookieBasedAffinityValue) => {
     return v.utilities.isStringInArray(cookieBasedAffinityValue, validCookieBasedAffinityValues);
 };
 
-let isValidIPAllocationMethod = (privateIPAllocationMethod) => {
-    return v.utilities.isStringInArray(privateIPAllocationMethod, validIPAllocationMethods);
-};
-
 let isValidRuleSetType = (ruleSetType) => {
     return v.utilities.isStringInArray(ruleSetType, validRuleSetTypes);
-};
-
-let isValidAccess = (access) => {
-    return v.utilities.isStringInArray(access, validAccess);
-};
-
-let isValidDirection = (direction) => {
-    return v.utilities.isStringInArray(direction, validDirections);
-};
-
-let isValidHopType = (hop) => {
-    return v.utilities.isStringInArray(hop, validHopTypes);
-};
-
-let isValidCidrOrAsterisk = (cidr) => {
-    if (_.isUndefined(cidr) || cidr === '*') {
-        return { result: true };
-    }
-    return { validations: v.validationUtilities.isValidCidr };
 };
 
 let frontendIPConfigurationValidations = {
@@ -355,71 +314,6 @@ let disabledRuleGroupsValidations = (value) => {
     };
 };
 
-let loadBalancerInboundNatRulesValidations = (value, baseSettings) => {
-    let inboundNatRulesValidations = {
-        name: v.validationUtilities.isNotNullOrWhitespace,
-        frontendIPConfigurationName: (value, parent) => {
-            let result = {
-                result: false,
-                message: `Invalid frontendIPConfigurationName. loadBalancingRule: ${parent.name}, frontendIPConfigurationName: ${value}`
-            };
-            let matched = _.filter(baseSettings.frontendIPConfigurations, (o) => { return (o.name === value); });
-
-            return ((matched.length > 0) ? { result: true } : result);
-        },
-        backendPoolName: (value, parent) => {
-            let result = {
-                result: false,
-                message: `Invalid backendPoolName. loadBalancingRule: ${parent.name}, backendPoolName: ${value}`
-            };
-            let matched = _.filter(baseSettings.backendAddressPools, (o) => { return (o.name === value); });
-
-            return ((matched.length > 0) ? { result: true } : result);
-        },
-        frontendPort: (value) => {
-            return {
-                result: _.inRange(_.toSafeInteger(value), 1, 65535),
-                message: 'Valid values are from 1 to 65534'
-            };
-        },
-        backendPort: (value) => {
-            return {
-                result: _.inRange(_.toSafeInteger(value), 1, 65536),
-                message: 'Valid values are from 1 to 65535'
-            };
-        },
-        protocol: (value) => {
-            return {
-                result: isValidBackendAddressProtocol(value),
-                message: `Valid values are ${validBackendAddressProtocols.join(',')}`
-            };
-        },
-        enableFloatingIP: v.validationUtilities.isBoolean,
-        idleTimeoutInMinutes: (value, parent) => {
-            let result = {
-                result: true
-            };
-
-            if ((parent.protocol === 'Tcp') && (!_.isNil(value) && !_.inRange(value, 4, 31))) {
-                result = {
-                    result: false,
-                    message: 'Valid values are from 4 to 30'
-                };
-            } else if ((parent.protocol === 'Udp') && (!_.isNil(value))) {
-                result = {
-                    result: false,
-                    message: 'If protocol is Udp, idleTimeoutInMinutes cannot be specified'
-                };
-            }
-
-            return result;
-        }
-    };
-    return {
-        validations: inboundNatRulesValidations
-    };
-};
-
 let backendAddressesValidations = (value) => {
     if (_.isUndefined(value)) {
         return { result: true };
@@ -447,89 +341,6 @@ let backendAddressesValidations = (value) => {
         }
     };
     return { validations: validations };
-};
-
-let securityRulesValidations = (value) => {
-    if (_.isUndefined(value)) {
-        return { result: true };
-    }
-
-    let validations = {
-        description: (value) => {
-            if (_.isUndefined(value)) {
-                return { result: true };
-            }
-            return {
-                result: value.length <= 140,
-                message: 'securityRules description cannot have more than 140 chars'
-            };
-        },
-        protocol: (value) => {
-            return {
-                result: isValidSecurityRulesProtocol(value),
-                message: `Valid values are ${validSecurityRulesProtocols.join(', ')}`
-            };
-        },
-        sourcePortRange: v.validationUtilities.isValidPortRange,
-        destinationPortRange: v.validationUtilities.isValidPortRange,
-        sourceAddressPrefix: isValidCidrOrAsterisk,
-        destinationAddressPrefix:	isValidCidrOrAsterisk,
-        access: (value) => {
-            return {
-                result: isValidAccess(value),
-                message: `Valid values are ${validAccess.join(', ')}`
-            };
-        },
-        priority: (value) => {
-            return isNilOrInRange(value, 100, 4097);
-        },
-        direction: (value) => {
-            return {
-                result: isValidDirection(value),
-                message: `Valid values are ${validDirections.join(', ')}`
-            };
-        }
-    };
-    return { validations: validations };
-};
-
-let subnetValidations = {
-    name: v.validationUtilities.isNotNullOrWhitespace,
-    networkSecurityGroup: {
-        securityRules: securityRulesValidations,
-        defaultSecurityRules: securityRulesValidations
-    },
-    routeTable:	{
-        routes: (value) => {
-            if (_.isUndefined(value)) {
-                return { result: true };
-            }
-
-            let validations = {
-                name: v.validationUtilities.isNotNullOrWhitespace,
-                addressPrefix: v.validationUtilities.isValidCidr,
-                nextHopType:  (value) => {
-                    return {
-                        result: isValidHopType(value),
-                        message: `Valid values are ${validHopTypes.join(', ')}`
-                    };
-                },
-                nextHopIpAddress: (value, parent) => {
-                    if (_.isUndefined(value)) {
-                        return { result: true };
-                    }
-                    if (parent.nextHopType !== 'VirtualAppliance') {
-                        return {
-                            result: false,
-                            message: 'nextHopIpAddress is only allowed in routes where the nextHopTypee is VirtualAppliance'
-                        };
-                    }
-                    return { validations: v.validationUtilities.isValidIpAddress };
-                }
-            };
-            return { validations: validations };
-        }
-    }
 };
 
 let applicationGatewayValidations = {
@@ -573,44 +384,13 @@ let applicationGatewayValidations = {
             validations: frontendPortsValidations
         };
     },
-    backendAddressPools: (value, parent) => {
-        let baseSettings = parent;
+    backendAddressPools: (value) => {
         if (_.isUndefined(value)) {
             return { result: true };
         }
 
-        let backendIPConfigurationsValidations = (value) => {
-            if (_.isUndefined(value)) {
-                return { result: true };
-            }
-
-            let validations = {
-                // TODO: applicationGatewayBackendAddressPools:
-                loadBalancerInboundNatRules: (value) => {
-                    return loadBalancerInboundNatRulesValidations(value, baseSettings);
-                },
-                privateIPAllocationMethod: (value) => {
-                    return {
-                        result: isValidIPAllocationMethod(value),
-                        message: `Valid values are ${validIPAllocationMethods.join(', ')}`
-                    };
-                },
-                privateIPAddressVersion:  (value) => {
-                    return {
-                        result: isValidIPAddressVersion(value),
-                        message: `Valid values are ${validIPAddressVersions.join(', ')}`
-                    };
-                },
-                subnet: subnetValidations,
-                primary: v.validationUtilities.isBoolean,
-                publicIPAddress: publicIpAddressSettings.validations
-            };
-            return { validations: validations };
-        };
-
         let backendAddressPoolsValidations = {
             backendAddresses: backendAddressesValidations,
-            backendIPConfigurations: backendIPConfigurationsValidations
         };
 
         return {
