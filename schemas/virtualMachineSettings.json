@@ -330,6 +330,9 @@
             "description": "Settings for virtual machine building blocks",
             "allOf": [
                 {
+                    "$ref": "types.json#/definitions/deploymentInformation"
+                },
+                {
                     "oneOf": [
                         {
                             "properties":{

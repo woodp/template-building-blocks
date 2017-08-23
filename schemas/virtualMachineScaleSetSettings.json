@@ -16,7 +16,7 @@
             "type": "object",
             "allOf": [
                 {
-                    "$ref": "types.json#/definitions/subResource"
+                    "$ref": "types.json#/definitions/resource"
                 },
                 {
                     "properties": {
