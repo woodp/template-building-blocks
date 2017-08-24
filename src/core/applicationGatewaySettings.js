@@ -37,11 +37,7 @@ const APPLICATIONGATEWAY_SETTINGS_DEFAULTS = {
         }
     ],
     urlPathMaps: [],
-    requestRoutingRules: [
-        {
-            ruleType: 'Basic' //TODO: this is set by default, should be here or not ?
-        }
-    ],
+    requestRoutingRules: [],
     probes: [
         {
             interval: 30,
@@ -58,8 +54,7 @@ const APPLICATIONGATEWAY_SETTINGS_DEFAULTS = {
         ruleSetType: 'OWASP',
         ruleSetVersion: '3.0',
         disabledRuleGroups: []
-    },
-    sslPolicy: {}
+    }
 };
 
 function merge({ settings, buildingBlockSettings, defaultSettings }) {
@@ -135,8 +130,8 @@ let validSslProtocols = ['TLSv1_0', 'TLSv1_1', 'TLSv1_2'];
 let validSslPolicyTypes = ['Predefined', 'Custom'];
 let validApplicationGatewayRequestRoutingRuleTypes = ['Basic', 'PathBasedRouting'];
 let validCookieBasedAffinityValues = ['Enabled', 'Disabled'];
-let validPrivateIPAllocationMethods = ['Static', 'Dynamic'];
 let validRuleSetTypes = ['OWASP'];
+let validSslPolicyNames = ['AppGwSslPolicy20150501', 'AppGwSslPolicy20170401', 'AppGwSslPolicy20170401S'];
 
 let isNilOrInRange = (value, from, to) => {
     return {
@@ -193,13 +188,14 @@ let isValidCookieBasedAffinityValue = (cookieBasedAffinityValue) => {
     return v.utilities.isStringInArray(cookieBasedAffinityValue, validCookieBasedAffinityValues);
 };
 
-let isValidPrivateIPAllocationMethod = (privateIPAllocationMethod) => {
-    return v.utilities.isStringInArray(privateIPAllocationMethod, validPrivateIPAllocationMethods);
-};
-
 let isValidRuleSetType = (ruleSetType) => {
     return v.utilities.isStringInArray(ruleSetType, validRuleSetTypes);
 };
+
+let isValidSslPolicyName = (policyName) => {
+    return v.utilities.isStringInArray(policyName, validSslPolicyNames);
+};
+
 
 let frontendIPConfigurationValidations = {
     name: v.validationUtilities.isNotNullOrWhitespace,
@@ -319,6 +315,35 @@ let disabledRuleGroupsValidations = (value) => {
     };
 };
 
+let backendAddressesValidations = (value) => {
+    if (_.isUndefined(value)) {
+        return { result: true };
+    }
+
+    let validations = {
+        fqdn: (value, parent) => {
+            if ((!_.isUndefined(value) && _.isUndefined(parent.ipAddress)) ||
+                (_.isUndefined(value) && !_.isUndefined(parent.ipAddress))) {
+                return { result: true };
+            }
+            return {
+                result: false,
+                message: 'Either ipAddress or fqdn must be specified'
+            };
+        },
+        ipAddress: (value, parent) => {
+            if (_.isUndefined(value)) {
+                return {
+                    result: !_.isUndefined(parent.fqdn),
+                    message: 'Either ipAddress or fqdn must be specified'
+                };
+            }
+            return { validations: v.validationUtilities.isValidIpAddress };
+        }
+    };
+    return { validations: validations };
+};
+
 let applicationGatewayValidations = {
     //TODO: ApplicationGatewaySubnetCannotBeUsedByOtherResources\\\
     //TODO: ApplicationGatewayBackendAddressPoolAlreadyHasBackendAddresses: nic cannot reference Backend Address Pool because the pool contains
@@ -334,13 +359,28 @@ let applicationGatewayValidations = {
             }
         };
     },
-    sslCertificates: () => {
-        return { result: true };
-        // TODO: if provided, than in correct schema
+    sslCertificates: (value) => {
+        if (_.isUndefined(value)) {
+            return { result: true };
+        }
+
+        let validations = {
+            name: v.validationUtilities.isNotNullOrWhitespace,
+            data: v.validationUtilities.isNotNullOrWhitespace,
+            password: v.validationUtilities.isNotNullOrWhitespace,
+        };
+        return { validations: validations };
     },
-    authenticationCertificates: () => {
-        return { result: true };
-        // TODO: if provided, than in correct schema
+    authenticationCertificates: (value) => {
+        if (_.isUndefined(value)) {
+            return { result: true };
+        }
+
+        let validations = {
+            name: v.validationUtilities.isNotNullOrWhitespace,
+            data: v.validationUtilities.isNotNullOrWhitespace
+        };
+        return { validations: validations };
     },
     frontendIPConfigurations: (value) => {
         let publicConfigs = _.filter(value, c => { return c.applicationGatewayType === 'Public'; });
@@ -360,8 +400,18 @@ let applicationGatewayValidations = {
             validations: frontendPortsValidations
         };
     },
-    backendAddressPools: () => {
-        return { result: true };
+    backendAddressPools: (value) => {
+        if (_.isUndefined(value)) {
+            return { result: true };
+        }
+
+        let backendAddressPoolsValidations = {
+            backendAddresses: backendAddressesValidations,
+        };
+
+        return {
+            validations: backendAddressPoolsValidations
+        };
         // TODO: Mixing IP/FQDN and virtual machine types is not allowed.
     },
     backendHttpSettingsCollection: () => {
@@ -659,14 +709,35 @@ let applicationGatewayValidations = {
             name: v.validationUtilities.isNotNullOrWhitespace,
             protocol: protocolValidation,
             pickHostNameFromBackendHttpSettings: v.validationUtilities.isBoolean,
-            interval: (value) => isNilOrInRange(value, 1, 86400),
-            timeout: (value) => isNilOrInRange(value, 1, 86400),
-            unhealthyThreshold: (value) => isNilOrInRange(value, 1, 20),
+            interval: (value) => isNilOrInRange(value, 1, 86401),
+            timeout: (value) => isNilOrInRange(value, 1, 86401),
+            unhealthyThreshold: (value) => isNilOrInRange(value, 1, 21),
             path: (value) => {
                 return {
                     result: _.isUndefined(value) || value.indexOf('/') === 0,
                     message: 'Path must start with "/"'
                 };
+            },
+            match: (value) => {
+                if (_.isUndefined(value)) {
+                    return { result: true };
+                }
+
+                let validations = {
+                    statusCodes: (values) => {
+                        let errorMessage = '';
+                        values.forEach((value, index) => {
+                            if (!/[0-9]{3}/.test(value) && !/[0-9]{3}-[0-9]{3}/.test(value)) {
+                                errorMessage += `match.statusCodes[${index}] must be a valid HTTP status code or a range of them.${os.EOL}`;
+                            }
+                        });
+                        return {
+                            result: errorMessage === '',
+                            message: errorMessage
+                        };
+                    }
+                };
+                return { validations: validations };
             }
             // TODO: valid minServers
             // TODO: match
@@ -798,10 +869,89 @@ let applicationGatewayValidations = {
         }
 
         let sslPolicyValidations = {
-            disabledSslProtocols: (value) => {
-                if (_.isUndefined(value) || (_.isArray(value) && value.length === 0)) {
-                    return { result: true };
+            policyType: (value) => {
+                return {
+                    result: isValidSslPolicyType(value),
+                    message: `Valid values for policyType are ${validSslPolicyTypes.join(',')}`
+                };
+            },
+            policyName: (value, parent) => {
+                if (_.isUndefined(value)) {
+                    return {
+                        result: parent.policyType !== 'Predefined',
+                        message: 'policyName must be specified when policyType is Predefined'
+                    };
                 }
+                if (parent.policyType === 'Custom') {
+                    return {
+                        result: false,
+                        message: 'policyName cannot be specified when policyType is Custom'
+                    };
+                }
+                return {
+                    result: isValidSslPolicyName(value),
+                    message: `Valid values for policyType are ${validSslPolicyNames.join(',')}`
+                };
+            },
+            cipherSuites: (value, parent) => {
+                if (_.isUndefined(value)) {
+                    return {
+                        result: parent.policyType !== 'Custom',
+                        message: 'cipherSuites must be specified when policyType is Custom'
+                    };
+                }
+                if (parent.policyType === 'Predefined') {
+                    return {
+                        result: false,
+                        message: 'cipherSuites cannot be specified when policyType is Predefined'
+                    };
+                }
+
+                let errorMessage = '';
+                value.forEach((suite, index) => {
+                    if (!isValidSslCipherSuite(suite)) {
+                        errorMessage += `Valid values for sslPolicy.cipherSuites[${index}] are ${validApplicationGatewaySslCipherSuites.join(',')}.${os.EOL}`;
+                    }
+                });
+
+                return {
+                    result: errorMessage === '',
+                    message: errorMessage
+                };
+            },
+            minProtocolVersion:  (value, parent) => {
+                if (_.isUndefined(value)) {
+                    return {
+                        result: parent.policyType !== 'Custom',
+                        message: 'minProtocolVersion must be specified when policyType is Custom'
+                    };
+                }
+                if (parent.policyType === 'Predefined') {
+                    return {
+                        result: false,
+                        message: 'minProtocolVersion cannot be specified when policyType is Predefined'
+                    };
+                }
+
+                return {
+                    result: isValidSslProtocol(value),
+                    message: `Valid values for policyType are ${validSslProtocols.join(',')}`
+                };
+            },
+            disabledSslProtocols: (value, parent) => {
+                if (_.isUndefined(value)) {
+                    return {
+                        result: parent.policyType !== 'Custom',
+                        message: 'disabledSslProtocols must be specified when policyType is Custom'
+                    };
+                }
+                if (parent.policyType === 'Predefined') {
+                    return {
+                        result: false,
+                        message: 'disabledSslProtocols cannot be specified when policyType is Predefined'
+                    };
+                }
+
                 let errorMessage = '';
                 value.forEach((sslProtocol, index) => {
                     if (!isValidSslProtocol(sslProtocol)) {
