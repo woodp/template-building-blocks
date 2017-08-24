@@ -58,8 +58,7 @@ const APPLICATIONGATEWAY_SETTINGS_DEFAULTS = {
         ruleSetType: 'OWASP',
         ruleSetVersion: '3.0',
         disabledRuleGroups: []
-    },
-    sslPolicy: {}
+    }
 };
 
 function merge({ settings, buildingBlockSettings, defaultSettings }) {
@@ -136,6 +135,7 @@ let validSslPolicyTypes = ['Predefined', 'Custom'];
 let validApplicationGatewayRequestRoutingRuleTypes = ['Basic', 'PathBasedRouting'];
 let validCookieBasedAffinityValues = ['Enabled', 'Disabled'];
 let validRuleSetTypes = ['OWASP'];
+let validSslPolicyNames = ['AppGwSslPolicy20150501', 'AppGwSslPolicy20170401', 'AppGwSslPolicy20170401S'];
 
 let isNilOrInRange = (value, from, to) => {
     return {
@@ -195,6 +195,11 @@ let isValidCookieBasedAffinityValue = (cookieBasedAffinityValue) => {
 let isValidRuleSetType = (ruleSetType) => {
     return v.utilities.isStringInArray(ruleSetType, validRuleSetTypes);
 };
+
+let isValidSslPolicyName = (policyName) => {
+    return v.utilities.isStringInArray(policyName, validSslPolicyNames);
+};
+
 
 let frontendIPConfigurationValidations = {
     name: v.validationUtilities.isNotNullOrWhitespace,
@@ -358,13 +363,28 @@ let applicationGatewayValidations = {
             }
         };
     },
-    sslCertificates: () => {
-        return { result: true };
-        // TODO: if provided, than in correct schema
+    sslCertificates: (value) => {
+        if (_.isUndefined(value)) {
+            return { result: true };
+        }
+
+        let validations = {
+            name: v.validationUtilities.isNotNullOrWhitespace,
+            data: v.validationUtilities.isNotNullOrWhitespace,
+            password: v.validationUtilities.isNotNullOrWhitespace,
+        };
+        return { validations: validations };
     },
-    authenticationCertificates: () => {
-        return { result: true };
-        // TODO: if provided, than in correct schema
+    authenticationCertificates: (value) => {
+        if (_.isUndefined(value)) {
+            return { result: true };
+        }
+
+        let validations = {
+            name: v.validationUtilities.isNotNullOrWhitespace,
+            data: v.validationUtilities.isNotNullOrWhitespace
+        };
+        return { validations: validations };
     },
     frontendIPConfigurations: (value) => {
         let publicConfigs = _.filter(value, c => { return c.applicationGatewayType === 'Public'; });
@@ -832,10 +852,89 @@ let applicationGatewayValidations = {
         }
 
         let sslPolicyValidations = {
-            disabledSslProtocols: (value) => {
-                if (_.isUndefined(value) || (_.isArray(value) && value.length === 0)) {
-                    return { result: true };
+            policyType: (value) => {
+                return {
+                    result: isValidSslPolicyType(value),
+                    message: `Valid values for policyType are ${validSslPolicyTypes.join(',')}`
+                };
+            },
+            policyName: (value, parent) => {
+                if (_.isUndefined(value)) {
+                    return {
+                        result: parent.policyType !== 'Predefined',
+                        message: 'policyName must be specified when policyType is Predefined'
+                    };
                 }
+                if (parent.policyType === 'Custom') {
+                    return {
+                        result: false,
+                        message: 'policyName cannot be specified when policyType is Custom'
+                    };
+                }
+                return {
+                    result: isValidSslPolicyName(value),
+                    message: `Valid values for policyType are ${validSslPolicyNames.join(',')}`
+                };
+            },
+            cipherSuites: (value, parent) => {
+                if (_.isUndefined(value)) {
+                    return {
+                        result: parent.policyType !== 'Custom',
+                        message: 'cipherSuites must be specified when policyType is Custom'
+                    };
+                }
+                if (parent.policyType === 'Predefined') {
+                    return {
+                        result: false,
+                        message: 'cipherSuites cannot be specified when policyType is Predefined'
+                    };
+                }
+
+                let errorMessage = '';
+                value.forEach((suite, index) => {
+                    if (!isValidSslCipherSuite(suite)) {
+                        errorMessage += `Valid values for sslPolicy.cipherSuites[${index}] are ${validApplicationGatewaySslCipherSuites.join(',')}.${os.EOL}`;
+                    }
+                });
+
+                return {
+                    result: errorMessage === '',
+                    message: errorMessage
+                };
+            },
+            minProtocolVersion:  (value, parent) => {
+                if (_.isUndefined(value)) {
+                    return {
+                        result: parent.policyType !== 'Custom',
+                        message: 'minProtocolVersion must be specified when policyType is Custom'
+                    };
+                }
+                if (parent.policyType === 'Predefined') {
+                    return {
+                        result: false,
+                        message: 'minProtocolVersion cannot be specified when policyType is Predefined'
+                    };
+                }
+
+                return {
+                    result: isValidSslProtocol(value),
+                    message: `Valid values for policyType are ${validSslProtocols.join(',')}`
+                };
+            },
+            disabledSslProtocols: (value, parent) => {
+                if (_.isUndefined(value)) {
+                    return {
+                        result: parent.policyType !== 'Custom',
+                        message: 'disabledSslProtocols must be specified when policyType is Custom'
+                    };
+                }
+                if (parent.policyType === 'Predefined') {
+                    return {
+                        result: false,
+                        message: 'disabledSslProtocols cannot be specified when policyType is Predefined'
+                    };
+                }
+
                 let errorMessage = '';
                 value.forEach((sslProtocol, index) => {
                     if (!isValidSslProtocol(sslProtocol)) {

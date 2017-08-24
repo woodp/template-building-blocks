@@ -39,6 +39,7 @@ describe('applicationGatewaySettings:', () => {
                 sku: {
                     name: 'Standard_Small',
                     tier: 'Standard',
+                    size: 'Small',
                     capacity: 2
                 }
             };
@@ -69,6 +70,7 @@ describe('applicationGatewaySettings:', () => {
             sku: {
                 name: 'Standard_Small',
                 tier: 'Standard',
+                size: 'Small',
                 capacity: 2
             },
             frontendIPConfigurations: [
@@ -144,23 +146,14 @@ describe('applicationGatewaySettings:', () => {
             settings = _.cloneDeep(testSettings);
         });
 
-        it('sku name validation', () => {
-            settings.sku.name = 'invalid';
-            let result = v.validate({
-                settings: settings.sku,
-                validations: skuValidations
-            });
-            expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.name');
-        });
         it('sku tier validation', () => {
             settings.sku.tier = 'invalid';
             let result = v.validate({
                 settings: settings.sku,
                 validations: skuValidations
             });
-            expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.tier');
+            expect(result.length).toEqual(2);
+            expect(result[1].name).toEqual('.tier');
         });
 
         it('gatewayIPConfigurations subnet must be provided', () => {
@@ -757,7 +750,7 @@ describe('applicationGatewaySettings:', () => {
             expect(result.length).toEqual(1);
             expect(result[0].name).toEqual('.requestRoutingRules[0].httpListenerName');
         });
-        it('requestRoutingRules a valid backendAddressPoolName must be specified', () => {
+        it('requestRoutingRules a valid backendAddressPoolName must be specified when type is Basic', () => {
             settings.requestRoutingRules = [
                 {
                     name: 'rule1',
@@ -771,7 +764,7 @@ describe('applicationGatewaySettings:', () => {
             expect(result.length).toEqual(1);
             expect(result[0].name).toEqual('.requestRoutingRules[0].backendAddressPoolName');
         });
-        it('requestRoutingRules a valid backendHttpSettingName must be specified', () => {
+        it('requestRoutingRules a valid backendHttpSettingName must be specified when type is Basic', () => {
             settings.requestRoutingRules = [
                 {
                     name: 'rule1',
@@ -804,9 +797,7 @@ describe('applicationGatewaySettings:', () => {
                 {
                     name: 'rule1',
                     ruleType: 'PathBasedRouting',
-                    httpListenerName: 'appGatewayHttpListener',
-                    backendAddressPoolName: 'appGatewayBackendPool',
-                    backendHttpSettingName: 'appGatewayBackendHttpSettings'
+                    httpListenerName: 'appGatewayHttpListener'
                 }
             ];
             let result = mergeAndValidate(settings, buildingBlockSettings);
@@ -820,8 +811,6 @@ describe('applicationGatewaySettings:', () => {
                     name: 'rule1',
                     ruleType: 'PathBasedRouting',
                     httpListenerName: 'appGatewayHttpListener',
-                    backendAddressPoolName: 'appGatewayBackendPool',
-                    backendHttpSettingName: 'appGatewayBackendHttpSettings',
                     urlPathMapName: 'foo'
                 }
             ];
@@ -836,8 +825,6 @@ describe('applicationGatewaySettings:', () => {
                     name: 'rule1',
                     ruleType: 'PathBasedRouting',
                     httpListenerName: 'appGatewayHttpListener',
-                    backendAddressPoolName: 'appGatewayBackendPool',
-                    backendHttpSettingName: 'appGatewayBackendHttpSettings',
                     urlPathMapName: 'foo'
                 }
             ];
@@ -1110,32 +1097,140 @@ describe('applicationGatewaySettings:', () => {
             expect(result[0].name).toEqual('.webApplicationFirewallConfiguration[0].disabledRuleGroups');
         });
 
-        it('valid sslPolicy', () => {
+        it('valid Predefined sslPolicy', () => {
             settings.sslPolicy = {
-                disabledSslProtocols: [ 'TLSv1_0', 'TLSv1_1' ]
+                policyType: 'Predefined',
+                policyName: 'AppGwSslPolicy20150501'
             };
             let result = mergeAndValidate(settings, buildingBlockSettings);
             expect(result.length).toEqual(0);
         });
-        it('sslPolicy disabledSslProtocols can be undefined', () => {
-            settings.sslPolicy = {};
+        it('valid Custom sslPolicy', () => {
+            settings.sslPolicy = {
+                policyType: 'Custom',
+                disabledSslProtocols: [ 'TLSv1_0', 'TLSv1_1' ],
+                cipherSuites: ['TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384', 'TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256', 'TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA'],
+                minProtocolVersion: 'TLSv1_1'
+            };
             let result = mergeAndValidate(settings, buildingBlockSettings);
             expect(result.length).toEqual(0);
+        });
+        it('sslPolicy type ,ust be Predefined or Custom', () => {
+            settings.sslPolicy = {
+                policyType: 'invalid',
+                disabledSslProtocols: [ 'TLSv1_0', 'TLSv1_1' ],
+                cipherSuites: ['TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384', 'TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256', 'TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA'],
+                minProtocolVersion: 'TLSv1_1'
+            };
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length > 0).toEqual(true);
+            expect(result[0].name).toEqual('.sslPolicy.policyType');
         });
         it('sslPolicy disabledSslProtocols can be empty', () => {
             settings.sslPolicy = {
-                disabledSslProtocols: []
+                policyType: 'Custom',
+                disabledSslProtocols: [],
+                cipherSuites: ['TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384', 'TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256', 'TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA'],
+                minProtocolVersion: 'TLSv1_1'
             };
             let result = mergeAndValidate(settings, buildingBlockSettings);
             expect(result.length).toEqual(0);
         });
-        it('sslPolicy disabledSslProtocols must be one of TLSv1_0, TLSv1_1 or TLSv1_2', () => {
+        it('sslPolicy disabledSslProtocols must be any of TLSv1_0, TLSv1_1 or TLSv1_2', () => {
             settings.sslPolicy = {
-                disabledSslProtocols: [ 'invalid', 'TLSv1_1' ]
+                policyType: 'Custom',
+                disabledSslProtocols: [ 'invalid', 'TLSv1_1' ],
+                cipherSuites: ['TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384', 'TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256', 'TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA'],
+                minProtocolVersion: 'TLSv1_1'
             };
             let result = mergeAndValidate(settings, buildingBlockSettings);
             expect(result.length).toEqual(1);
             expect(result[0].name).toEqual('.sslPolicy.disabledSslProtocols');
+        });
+        it('sslPolicy cipherSuites must be valid', () => {
+            settings.sslPolicy = {
+                policyType: 'Custom',
+                disabledSslProtocols: [ 'TLSv1_1' ],
+                cipherSuites: ['invalid', 'TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256', 'TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA'],
+                minProtocolVersion: 'TLSv1_1'
+            };
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(1);
+            expect(result[0].name).toEqual('.sslPolicy.cipherSuites');
+        });
+        it('sslPolicy minProtocolVersion must be any of TLSv1_0, TLSv1_1 or TLSv1_2', () => {
+            settings.sslPolicy = {
+                policyType: 'Custom',
+                disabledSslProtocols: [ 'TLSv1_1' ],
+                cipherSuites: ['TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256', 'TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA'],
+                minProtocolVersion: 'invalid'
+            };
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(1);
+            expect(result[0].name).toEqual('.sslPolicy.minProtocolVersion');
+        });
+        it('sslPolicy cipherSuites cannot be undefined when type is custom', () => {
+            settings.sslPolicy = {
+                policyType: 'Custom',
+                disabledSslProtocols: [ 'TLSv1_1' ],
+                minProtocolVersion: 'TLSv1_1'
+            };
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(1);
+            expect(result[0].name).toEqual('.sslPolicy.cipherSuites');
+        });
+        it('sslPolicy minProtocolVersion cannot be undefined when type is custom', () => {
+            settings.sslPolicy = {
+                policyType: 'Custom',
+                disabledSslProtocols: [ 'TLSv1_1' ],
+                cipherSuites: ['TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256', 'TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA']
+            };
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(1);
+            expect(result[0].name).toEqual('.sslPolicy.minProtocolVersion');
+        });
+        it('sslPolicy policyName cannot be specified when type is Custom', () => {
+            settings.sslPolicy = {
+                policyType: 'Custom',
+                policyName: 'AppGwSslPolicy20150501',
+                disabledSslProtocols: [ 'TLSv1_1' ],
+                cipherSuites: ['TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256', 'TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA'],
+                minProtocolVersion: 'TLSv1_1'
+            };
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(1);
+            expect(result[0].name).toEqual('.sslPolicy.policyName');
+        });
+        it('sslPolicy policyName cannot be undefined when type is Predefined', () => {
+            settings.sslPolicy = {
+                policyType: 'Predefined'
+            };
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(1);
+            expect(result[0].name).toEqual('.sslPolicy.policyName');
+        });
+        it('sslPolicy policyName must be valid', () => {
+            settings.sslPolicy = {
+                policyType: 'Predefined',
+                policyName: 'invalid'
+            };
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(1);
+            expect(result[0].name).toEqual('.sslPolicy.policyName');
+        });
+        it('sslPolicy cipherSuites, disabledSslProtocols and minProtocolVersion cannot be specified when type is Predefined', () => {
+            settings.sslPolicy = {
+                policyType: 'Predefined',
+                policyName: 'AppGwSslPolicy20150501',
+                disabledSslProtocols: [ 'TLSv1_1' ],
+                cipherSuites: ['TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256', 'TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA'],
+                minProtocolVersion: 'TLSv1_1'
+            };
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(3);
+            expect(result[0].name).toEqual('.sslPolicy.cipherSuites');
+            expect(result[1].name).toEqual('.sslPolicy.minProtocolVersion');
+            expect(result[2].name).toEqual('.sslPolicy.disabledSslProtocols');
         });
 
         it('backendAddressPools valid backendAddresses', () => {
@@ -1162,6 +1257,82 @@ describe('applicationGatewaySettings:', () => {
             expect(result.length).toEqual(2);
             expect(result[0].name).toEqual('.backendAddressPools[0].backendAddresses[0].fqdn');
             expect(result[1].name).toEqual('.backendAddressPools[0].backendAddresses[0].ipAddress');
+        });
+
+        it('sslCertificates name must be provided', () => {
+            settings.sslCertificates = [
+                {
+                    data: 'asadasdsad',
+                    password: 'dfsf34tghdgSDFdsf*'
+                }
+            ];
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(1);
+            expect(result[0].name).toEqual('.sslCertificates[0].name');
+        });
+        it('sslCertificates data must be provided', () => {
+            settings.sslCertificates = [
+                {
+                    name: 'asadasdsad',
+                    password: 'dfsf34tghdgSDFdsf*'
+                }
+            ];
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(1);
+            expect(result[0].name).toEqual('.sslCertificates[0].data');
+        });
+        it('sslCertificates password must be provided', () => {
+            settings.sslCertificates = [
+                {
+                    name: 'asadasdsad',
+                    data: 'dfsf34tghdgSDFdsf*'
+                }
+            ];
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(1);
+            expect(result[0].name).toEqual('.sslCertificates[0].password');
+        });
+        it('valid sslCertificates', () => {
+            settings.sslCertificates = [
+                {
+                    name: 'asadasdsad',
+                    data: 'dfsf34tghdgSDFdsf*',
+                    password: 'asdasdsa43534534SDSFDSD*'
+                }
+            ];
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(0);
+        });
+
+        it('authenticationCertificates name must be provided', () => {
+            settings.authenticationCertificates = [
+                {
+                    data: 'asadasdsad'
+                }
+            ];
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(1);
+            expect(result[0].name).toEqual('.authenticationCertificates[0].name');
+        });
+        it('authenticationCertificates data must be provided', () => {
+            settings.authenticationCertificates = [
+                {
+                    name: 'asadasdsad'
+                }
+            ];
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(1);
+            expect(result[0].name).toEqual('.authenticationCertificates[0].data');
+        });
+        it('valid authenticationCertificates', () => {
+            settings.authenticationCertificates = [
+                {
+                    name: 'asadasdsad',
+                    data: 'adsadsadasdas23434jhbtihi34'
+                }
+            ];
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(0);
         });
 
     });
