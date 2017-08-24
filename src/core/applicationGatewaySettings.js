@@ -37,11 +37,7 @@ const APPLICATIONGATEWAY_SETTINGS_DEFAULTS = {
         }
     ],
     urlPathMaps: [],
-    requestRoutingRules: [
-        {
-            ruleType: 'Basic' //TODO: this is set by default, should be here or not ?
-        }
-    ],
+    requestRoutingRules: [],
     probes: [
         {
             interval: 30,
@@ -721,6 +717,27 @@ let applicationGatewayValidations = {
                     result: _.isUndefined(value) || value.indexOf('/') === 0,
                     message: 'Path must start with "/"'
                 };
+            },
+            match: (value) => {
+                if (_.isUndefined(value)) {
+                    return { result: true };
+                }
+
+                let validations = {
+                    statusCodes: (values) => {
+                        let errorMessage = '';
+                        values.forEach((value, index) => {
+                            if (!/[0-9]{3}/.test(value) && !/[0-9]{3}-[0-9]{3}/.test(value)) {
+                                errorMessage += `match.statusCodes[${index}] must be a valid HTTP status code or a range of them.${os.EOL}`;
+                            }
+                        });
+                        return {
+                            result: errorMessage === '',
+                            message: errorMessage
+                        };
+                    }
+                };
+                return { validations: validations };
             }
             // TODO: valid minServers
             // TODO: match

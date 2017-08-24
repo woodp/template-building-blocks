@@ -37,7 +37,6 @@ describe('applicationGatewaySettings:', () => {
             let skuValidations = applicationGatewaySettings.__get__('skuValidations');
             let testSettings = {
                 sku: {
-                    name: 'Standard_Small',
                     tier: 'Standard',
                     size: 'Small',
                     capacity: 2
@@ -68,7 +67,6 @@ describe('applicationGatewaySettings:', () => {
 
         let testSettings = {
             sku: {
-                name: 'Standard_Small',
                 tier: 'Standard',
                 size: 'Small',
                 capacity: 2
@@ -845,6 +843,9 @@ describe('applicationGatewaySettings:', () => {
                     timeout: 30,
                     unhealthyThreshold: 3,
                     pickHostNameFromBackendHttpSettings: false,
+                    match: {
+                        statusCodes: ['200', '200-339']
+                    }
                 }
             ];
             let result = mergeAndValidate(settings, buildingBlockSettings);
@@ -961,6 +962,25 @@ describe('applicationGatewaySettings:', () => {
             let result = mergeAndValidate(settings, buildingBlockSettings);
             expect(result.length).toEqual(1);
             expect(result[0].name).toEqual('.probes[0].unhealthyThreshold');
+        });
+        it('probes match statusCodes must be a valid status code or range', () => {
+            settings.probes = [
+                {
+                    name: 'p1',
+                    protocol: 'Http',
+                    host: 'contoso.com',
+                    path: '/',
+                    interval: 5,
+                    timeout: 30,
+                    unhealthyThreshold: 1,
+                    match: {
+                        statusCodes: ['invalid', '200']
+                    }
+                }
+            ];
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(1);
+            expect(result[0].name).toEqual('.probes[0].match.statusCodes');
         });
 
         it('valid webApplicationFirewallConfiguration', () => {
