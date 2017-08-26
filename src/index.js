@@ -404,7 +404,8 @@ let generateDefaultBuildingBlockSettings = ({options, parameters}) => {
 
 try {
     commander
-        .version('0.0.1')
+        .name('azbb')
+        .version('1.0.0')
         .option('-g, --resource-group <resource-group>', 'the name of the resource group')
         .option('-p, --parameters-file <parameters-file>', 'the path to a parameters file')
         .option('-o, --output-file <output-file>', 'the output file name')
@@ -418,6 +419,10 @@ try {
         .option('-f, --output-format <output-format>', `Output format.  Allowed values: ${validOutputFormats.join(', ')}`)
         .option('-b, --building-blocks <building-blocks>', 'additional building blocks to add to the pipeline')
         .parse(process.argv);
+
+    if (process.argv.length < 3) {
+        commander.help();
+    }
 
     let options = validateCommandLine({
         commander: commander
