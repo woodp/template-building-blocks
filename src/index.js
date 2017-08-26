@@ -403,21 +403,38 @@ let generateDefaultBuildingBlockSettings = ({options, parameters}) => {
 };
 
 try {
+    let description = [
+        '           _     _     ',
+        '            | |   | |    ',
+        '    __ _ ___| |__ | |__  ',
+        '   / _` |_  / \'_ \\| \'_ \\ ',
+        '  | (_| |/ /| |_) | |_) |',
+        '   \\__,_/___|_.__/|_.__/ ',
+        '',
+        '  A tool for deploying Azure infrastructure based on proven practices.'
+    ];
+
     commander
         .name('azbb')
-        .version('1.0.0')
-        .option('-g, --resource-group <resource-group>', 'the name of the resource group')
-        .option('-p, --parameters-file <parameters-file>', 'the path to a parameters file')
-        .option('-o, --output-file <output-file>', 'the output file name')
-        .option('-s, --subscription-id <subscription-id>', 'the subscription identifier', validateSubscriptionId)
-        .option('-l, --location <location>', 'location in which to create the resource group, if it does not exist')
-        .option('-d, --defaults-directory <defaults-directory>', 'directory containing customized building block default values')
-        .option('--deploy', 'deploy building block using az')
-        .option('-t, --template-base-uri <template-base-uri>', 'base uri of building block templates')
-        .option('-k, --sas-token <sas-token>', 'sas token to pass to the template-base-uri')
-        .option('-c, --cloud, <cloud>', 'registered az cloud to use')
-        .option('-f, --output-format <output-format>', `Output format.  Allowed values: ${validOutputFormats.join(', ')}`)
+        .description(description.join('\n'))
+        .version('2.0.0')
+        .option('-s, --subscription-id <subscription-id>', 'Azure subscription id', validateSubscriptionId)
+        .option('-l, --location <location>', 'Azure region in which to create the resource group')
+        .option('-g, --resource-group <resource-group>', 'name of the resource group')
+        .option('-p, --parameters-file <parameters-file>', 'path to a parameters file')
+        .option('--deploy', 'deploy resources, if --deploy is not used, azbb just creates the output files')
+        .option('-c, --cloud, <cloud>', 'registered Azure cloud to use (use az cloud list to see all cloud names)')
+        .option('-o, --output-file <output-file>', 'output file name prefix')
+        .option('-f, --output-format <output-format>', `output format: ${validOutputFormats.join(', ')}`)
+        .option('-d, --defaults-directory <defaults-directory>', 'directory containing customized default values')
+        .option('-t, --template-base-uri <template-base-uri>', 'base uri for building block templates')
+        .option('-k, --sas-token <sas-token>', 'sas token to pass to access template-base-uri')
         .option('-b, --building-blocks <building-blocks>', 'additional building blocks to add to the pipeline')
+        .on('--help', () => {
+            console.log();
+            console.log('  Visit https://aka.ms/azbbv2 for more information.');
+            console.log();
+        })
         .parse(process.argv);
 
     if (process.argv.length < 3) {
