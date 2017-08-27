@@ -982,6 +982,40 @@ describe('applicationGatewaySettings:', () => {
             expect(result.length).toEqual(1);
             expect(result[0].name).toEqual('.probes[0].match.statusCodes');
         });
+        it('probes minServers cannot be NaN', () => {
+            settings.probes = [
+                {
+                    name: 'p1',
+                    protocol: 'Http',
+                    host: 'contoso.com',
+                    path: '/',
+                    interval: 5,
+                    timeout: 30,
+                    unhealthyThreshold: 1,
+                    minServers: 1/0
+                }
+            ];
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(1);
+            expect(result[0].name).toEqual('.probes[0].minServers');
+        });
+        it('probes minServers must be equal or greater than 0', () => {
+            settings.probes = [
+                {
+                    name: 'p1',
+                    protocol: 'Http',
+                    host: 'contoso.com',
+                    path: '/',
+                    interval: 5,
+                    timeout: 30,
+                    unhealthyThreshold: 1,
+                    minServers: -1
+                }
+            ];
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(1);
+            expect(result[0].name).toEqual('.probes[0].minServers');
+        });
 
         it('valid webApplicationFirewallConfiguration', () => {
             settings.webApplicationFirewallConfiguration = [
@@ -1135,7 +1169,7 @@ describe('applicationGatewaySettings:', () => {
             let result = mergeAndValidate(settings, buildingBlockSettings);
             expect(result.length).toEqual(0);
         });
-        it('sslPolicy type ,ust be Predefined or Custom', () => {
+        it('sslPolicy type must be Predefined or Custom', () => {
             settings.sslPolicy = {
                 policyType: 'invalid',
                 disabledSslProtocols: [ 'TLSv1_0', 'TLSv1_1' ],
@@ -1160,6 +1194,17 @@ describe('applicationGatewaySettings:', () => {
             settings.sslPolicy = {
                 policyType: 'Custom',
                 disabledSslProtocols: [ 'invalid', 'TLSv1_1' ],
+                cipherSuites: ['TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384', 'TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256', 'TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA'],
+                minProtocolVersion: 'TLSv1_1'
+            };
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(1);
+            expect(result[0].name).toEqual('.sslPolicy.disabledSslProtocols');
+        });
+        it('sslPolicy disabledSslProtocols cannot specify all 3 protocols', () => {
+            settings.sslPolicy = {
+                policyType: 'Custom',
+                disabledSslProtocols: [ 'TLSv1_0', 'TLSv1_1', 'TLSv1_2' ],
                 cipherSuites: ['TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384', 'TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256', 'TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA'],
                 minProtocolVersion: 'TLSv1_1'
             };
@@ -1265,8 +1310,28 @@ describe('applicationGatewaySettings:', () => {
                 }
             ];
             let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(2);
+            expect(result[0].name).toEqual('.backendAddressPools[0].backendAddresses[0].fqdn');
+        });
+        it('backendAddressPools backendAddresses fqdn cannot be empty', () => {
+            settings.backendAddressPools[0].backendAddresses = [
+                {
+                    fqdn: ' '
+                }
+            ];
+            let result = mergeAndValidate(settings, buildingBlockSettings);
             expect(result.length).toEqual(1);
             expect(result[0].name).toEqual('.backendAddressPools[0].backendAddresses[0].fqdn');
+        });
+        it('backendAddressPools backendAddresses ipAddress cannot be empty', () => {
+            settings.backendAddressPools[0].backendAddresses = [
+                {
+                    ipAddress: ' '
+                }
+            ];
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(1);
+            expect(result[0].name).toEqual('.backendAddressPools[0].backendAddresses[0].ipAddress');
         });
         it('backendAddressPools backendAddresses must specify fqdn or ipAddress', () => {
             settings.backendAddressPools[0].backendAddresses = [
