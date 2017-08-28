@@ -18,7 +18,7 @@ Install the Azure Building Blocks using npm:
 npm install @mspnp/azbb
 ```
 
-Then, [author an Azure Building Blocks parameter file](https://github.com/mspnp/template-building-blocks/wiki/create-a-template-building-blocks-parameter-file) and run the `azbb` command line tool.
+Then, [author an Azure Building Blocks parameter file](https://github.com/mspnp/template-building-blocks/wiki/create-a-template-building-blocks-parameter-file) and [run the `azbb` command line tool](https://github.com/mspnp/template-building-blocks/wiki/command-line-reference).
 
 # Documentation
 
