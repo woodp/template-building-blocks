@@ -15,7 +15,7 @@ The Azure Building Blocks project is a command line tool and set of Azure Resour
 Install the Azure Building Blocks using npm:
 
 ```
-npm install @mspnp/azbb
+npm install @mspnp/azure-building-blocks
 ```
 
 Then, [author an Azure Building Blocks parameter file](https://github.com/mspnp/template-building-blocks/wiki/create-a-template-building-blocks-parameter-file) and [run the `azbb` command line tool](https://github.com/mspnp/template-building-blocks/wiki/command-line-reference).
