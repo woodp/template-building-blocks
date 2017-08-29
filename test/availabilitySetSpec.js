@@ -14,7 +14,7 @@ describe('availabilitySetSettings:', () => {
             let settings = {};
 
             let mergedValue = availabilitySetSettings.merge({settings});
-            expect(mergedValue.platformFaultDomainCount).toEqual(3);
+            expect(mergedValue.platformFaultDomainCount).toEqual(2);
             expect(mergedValue.platformUpdateDomainCount).toEqual(5);
         });
         it('validate defaults do not override settings.', () => {
