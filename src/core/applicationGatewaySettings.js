@@ -322,24 +322,33 @@ let backendAddressesValidations = (value) => {
 
     let validations = {
         fqdn: (value, parent) => {
-            if ((!_.isUndefined(value) && _.isUndefined(parent.ipAddress)) ||
-                (_.isUndefined(value) && !_.isUndefined(parent.ipAddress))) {
-                return { result: true };
-            }
-            return {
-                result: false,
-                message: 'Either ipAddress or fqdn must be specified'
-            };
-        },
-        ipAddress: (value, parent) => {
-            if (_.isUndefined(value)) {
+            if ((!_.isUndefined(value) && !_.isUndefined(parent.ipAddress)) ||
+                (_.isUndefined(value) && _.isUndefined(parent.ipAddress))) {
                 return {
-                    result: !_.isUndefined(parent.fqdn),
+                    result: false,
                     message: 'Either ipAddress or fqdn must be specified'
                 };
             }
+            if (_.isUndefined(value)) {
+                return { result: true };
+            }
+            return { validations: v.validationUtilities.isNotNullOrWhitespace };
+        },
+        ipAddress: (value, parent) => {
+            if ((!_.isUndefined(value) && !_.isUndefined(parent.fqdn)) ||
+                (_.isUndefined(value) && _.isUndefined(parent.fqdn))) {
+                return {
+                    result: false,
+                    message: 'Either ipAddress or fqdn must be specified'
+                };
+            }
+            if (_.isUndefined(value)) {
+                return { result: true };
+            }
             return { validations: v.validationUtilities.isValidIpAddress };
         }
+        // TODO: Mixing IP/FQDN and virtual machine types is not allowed.
+        // can have nic but not both
     };
     return { validations: validations };
 };
@@ -412,7 +421,6 @@ let applicationGatewayValidations = {
         return {
             validations: backendAddressPoolsValidations
         };
-        // TODO: Mixing IP/FQDN and virtual machine types is not allowed.
     },
     backendHttpSettingsCollection: () => {
         return { validations: backendHttpSettingsCollectionValidations };
@@ -738,9 +746,16 @@ let applicationGatewayValidations = {
                     }
                 };
                 return { validations: validations };
+            },
+            minServers: (value) => {
+                if (_.isUndefined(value)) {
+                    return { result: true };
+                }
+                return {
+                    result: _.isFinite(value) && _.toSafeInteger(value) >= 0,
+                    message: 'minServers must be an integer equal or greater than 0'
+                };
             }
-            // TODO: valid minServers
-            // TODO: match
         };
         return { validations: probesValidation };
     },
@@ -958,8 +973,9 @@ let applicationGatewayValidations = {
                         errorMessage += `Valid values for sslPolicy.disabledSslProtocols[${index}] are ${validSslProtocols.join(',')}.${os.EOL}`;
                     }
                 });
-
-                //TODO: Does it make sense to have the 3 disabled?
+                if (errorMessage === '' && value.length === validSslProtocols.length) {
+                    errorMessage = 'Cannot disable all possible SSL protocols';
+                }
                 return {
                     result: errorMessage === '',
                     message: errorMessage
