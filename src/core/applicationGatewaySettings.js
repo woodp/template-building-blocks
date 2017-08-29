@@ -709,7 +709,7 @@ let applicationGatewayValidations = {
         };
     },
     probes: (value) => {
-        if (_.isUndefined(value)) {
+        if (_.isUndefined(value) || _.isUndefined(value.statusCodes)) {
             return { result: true };
         }
 
