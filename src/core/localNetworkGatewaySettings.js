@@ -35,7 +35,28 @@ let bgpSettingsValidations = {
 
 let localNetworkGatewayValidations = {
     name: v.validationUtilities.isNotNullOrWhitespace,
-    addressPrefixes: v.validationUtilities.isValidCidr,
+    addressPrefixes: (value) => {
+        if (_.isNil(value)) {
+            return {
+                result: false,
+                message: 'Value cannot be undefined or null'
+            };
+        } else if (!_.isArray(value)) {
+            return {
+                result: false,
+                message: 'Value must be an array'
+            };
+        } else if (value.length === 0) {
+            return {
+                result: false,
+                message: 'At least one address prefix must be provided'
+            };
+        } else {
+            return {
+                validations: v.validationUtilities.isValidCidr
+            };
+        }
+    },
     ipAddress: v.validationUtilities.isValidIpAddress,
     bgpSettings: (value) => {
         return _.isNil(value) ? {

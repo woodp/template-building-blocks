@@ -709,7 +709,7 @@ let applicationGatewayValidations = {
         };
     },
     probes: (value) => {
-        if (_.isUndefined(value) || _.isUndefined(value.statusCodes)) {
+        if (_.isUndefined(value)) {
             return { result: true };
         }
 
@@ -727,7 +727,7 @@ let applicationGatewayValidations = {
                 };
             },
             match: (value) => {
-                if (_.isUndefined(value)) {
+                if (_.isUndefined(value) || _.isUndefined(value.statusCodes)) {
                     return { result: true };
                 }
 
@@ -951,34 +951,6 @@ let applicationGatewayValidations = {
                 return {
                     result: isValidSslProtocol(value),
                     message: `Valid values for policyType are ${validSslProtocols.join(',')}`
-                };
-            },
-            disabledSslProtocols: (value, parent) => {
-                if (_.isUndefined(value)) {
-                    return {
-                        result: parent.policyType !== 'Custom',
-                        message: 'disabledSslProtocols must be specified when policyType is Custom'
-                    };
-                }
-                if (parent.policyType === 'Predefined') {
-                    return {
-                        result: false,
-                        message: 'disabledSslProtocols cannot be specified when policyType is Predefined'
-                    };
-                }
-
-                let errorMessage = '';
-                value.forEach((sslProtocol, index) => {
-                    if (!isValidSslProtocol(sslProtocol)) {
-                        errorMessage += `Valid values for sslPolicy.disabledSslProtocols[${index}] are ${validSslProtocols.join(',')}.${os.EOL}`;
-                    }
-                });
-                if (errorMessage === '' && value.length === validSslProtocols.length) {
-                    errorMessage = 'Cannot disable all possible SSL protocols';
-                }
-                return {
-                    result: errorMessage === '',
-                    message: errorMessage
                 };
             }
         };

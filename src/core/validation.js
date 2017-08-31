@@ -234,48 +234,52 @@ let utilities = {
     }
 };
 
+let validationUtilityArrayWrapper = (value, validation, message) => {
+    if (_.isArray(value)) {
+        return {
+            validations: (value) => {
+                return {
+                    result: validation(value),
+                    message: message
+                };
+            }
+        };
+    } else {
+        return {
+            result: validation(value),
+            message: message
+        };
+    }
+};
+
 let validationUtilities = {
     isBoolean: (value) => {
-        return {
-            result: _.isBoolean(value),
-            message: 'Value must be Boolean'
-        };
+        return validationUtilityArrayWrapper(value, _.isBoolean, 'Value must be a Boolean');
     },
     isGuid: (value) => {
-        return {
-            result: utilities.isGuid(value),
-            message: 'Value is not a valid GUID'
-        };
+        return validationUtilityArrayWrapper(value, utilities.isGuid, 'Value is not a valid GUID');
     },
     isValidIpAddress: (value) => {
-        return {
-            result: utilities.networking.isValidIpAddress(value),
-            message: 'Value is not a valid IP Address'
-        };
+        return validationUtilityArrayWrapper(value, utilities.networking.isValidIpAddress, 'Value is not a valid IP Address');
     },
     isValidCidr: (value) => {
-        return {
-            result: utilities.networking.isValidCidr(value),
-            message: 'Value is not a valid CIDR'
-        };
+        return validationUtilityArrayWrapper(value, utilities.networking.isValidCidr, 'Value is not a valid CIDR');
     },
     isValidPortRange: (value) => {
-        return {
-            result: utilities.networking.isValidPortRange(value),
-            message: 'Value must be a single integer, a range of integers between 1-65535 in the form low-high, or * for any port'
-        };
+        return validationUtilityArrayWrapper(
+            value,
+            utilities.networking.isValidPortRange,
+            'Value must be a single integer, a range of integers between 1-65535 in the form low-high, or * for any port'
+        );
     },
     isNotNullOrWhitespace: (value) => {
-        return {
-            result: !utilities.isNullOrWhitespace(value),
-            message: 'Value cannot be undefined, null, empty, or only whitespace'
-        };
-    },
-    isValidJsonObject: (value) => {
-        return {
-            result: _.isPlainObject(value),
-            message: 'Value must be Json object'
-        };
+        return validationUtilityArrayWrapper(
+            value,
+            (value) => {
+                return !utilities.isNullOrWhitespace(value);
+            },
+            'Value cannot be undefined, null, empty, or only whitespace'
+        );
     }
 };
 

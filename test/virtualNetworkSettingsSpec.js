@@ -348,7 +348,21 @@ describe('virtualNetworkSettings', () => {
                 });
 
                 expect(errors.length).toEqual(1);
-                expect(errors[0].name).toEqual('.addressPrefixes');
+                expect(errors[0].name).toEqual('.addressPrefixes[0]');
+            });
+
+            it('addressPrefixes can be more than one cidr', () => {
+                settings.addressPrefixes = [
+                    '10.0.0.1/16',
+                    '10.1.0.0/16'
+                ];
+
+                let errors = validation.validate({
+                    settings: settings,
+                    validations: virtualNetworkValidations
+                });
+
+                expect(errors.length).toEqual(0);
             });
 
             it('subnets undefined', () => {

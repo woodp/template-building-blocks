@@ -1,14 +1,28 @@
 let _ = require('lodash');
 let v = require('./validation');
 
+let isValidJsonObject = (value) => {
+    if (_.isNil(value)) {
+        return {
+            result: false,
+            message: 'Value cannot be null or undefined'
+        };
+    } else {
+        return {
+            result: _.isPlainObject(value),
+            message: 'Value must be a valid JSON object'
+        };
+    }
+};
+
 let extensionValidations = {
     name: v.validationUtilities.isNotNullOrWhitespace,
     publisher: v.validationUtilities.isNotNullOrWhitespace,
     type: v.validationUtilities.isNotNullOrWhitespace,
     typeHandlerVersion: v.validationUtilities.isNotNullOrWhitespace,
     autoUpgradeMinorVersion: v.validationUtilities.isBoolean,
-    settings: v.validationUtilities.isValidJsonObject,
-    protectedSettings: v.validationUtilities.isValidJsonObject
+    settings: isValidJsonObject,
+    protectedSettings: isValidJsonObject
 };
 
 let vmExtensionValidations = {
