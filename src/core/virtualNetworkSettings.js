@@ -47,7 +47,18 @@ let virtualNetworkSettingsPeeringValidations = {
 
 let virtualNetworkSettingsValidations = {
     name: v.validationUtilities.isNotNullOrWhitespace,
-    addressPrefixes: v.validationUtilities.isValidCidr,
+    addressPrefixes: (value) => {
+        if (_.isNil(value) || !_.isArray(value) || (value.length === 0)) {
+            return {
+                result: false,
+                message: 'Value must be an array of at least one address prefix'
+            };
+        } else {
+            return {
+                validations: v.validationUtilities.isValidCidr
+            };
+        }
+    },
     subnets: (value) => {
         if (_.isNil(value)) {
             return {

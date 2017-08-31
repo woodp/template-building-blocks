@@ -194,7 +194,7 @@ describe('localNetworkGatewaySettings', () => {
             });
 
             expect(errors.length).toEqual(1);
-            expect(errors[0].name).toEqual('.addressPrefixes');
+            expect(errors[0].name).toEqual('.addressPrefixes[0]');
         });
 
         it('Valid', () => {
