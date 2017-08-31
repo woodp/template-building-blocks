@@ -13,10 +13,7 @@
                                 "Dynamic"
                             ]
                         }
-                    },
-                    "required": [
-                        "privateIPAllocationMethod"
-                    ]
+                    }
                 },
                 {
                     "properties": {
@@ -31,7 +28,6 @@
                         }
                     },
                     "required": [
-                        "privateIPAllocationMethod",
                         "startingIPAddress"
                     ]
                 }
