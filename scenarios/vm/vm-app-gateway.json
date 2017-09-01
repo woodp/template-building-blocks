@@ -9,15 +9,15 @@
                     "settings": {
                         "vmCount": 1,
                         "osType": "windows",
-                        "namePrefix": "jb1",
+                        "namePrefix": "jb",
                         "adminPassword": "testPassw0rd!23",
                         "nics": [
                             {
-                                "subnetName": "subnet1"
+                                "subnetName": "firewall"
                             }
                         ],
                         "virtualNetwork": {
-                            "name": "msft-simple-vnet"
+                            "name": "msft-multiple-address-subnet-vnet"
                         },
                         "applicationGatewaySettings": {
                             "sku": {
@@ -28,7 +28,7 @@
                             "gatewayIPConfigurations": [
                                 {
                                     "name": "appGatewayIpConfig",
-                                    "subnetName": "subnet1"
+                                    "subnetName": "ad"
                                 }
                             ],
                             "sslCertificates": [],
@@ -42,7 +42,7 @@
                                     "name": "testfec",
                                     "applicationGatewayType": "Internal",
                                     "internalApplicationGatewaySettings": {
-                                        "subnetName": "subnet1"
+                                        "subnetName": "ad"
                                     }
                                 }
                             ],
