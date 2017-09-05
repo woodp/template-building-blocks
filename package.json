@@ -29,7 +29,7 @@
   "dependencies": {
     "commander": "^2.9.0",
     "lodash": "^4.17.4",
-    "murmurhash-native": "^3.2.0"
+    "murmurhash3js": "^3.0.1"
   },
   "devDependencies": {
     "eslint": "^3.19.0",
