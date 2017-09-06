@@ -13,10 +13,10 @@
               "routingWeight": 10,
               "sharedKey": "_Hg[^^ECgLGGPF^RXTQfDDWQ][YAAB",
               "virtualNetworkGateway1": {
-                  "name": "msft-simple-vnet"
+                  "name": "msft-vpn-vnet-gateway"
               },
               "virtualNetworkGateway2": {
-                  "name": "msft-dns-vnet"
+                  "name": "msft-express-route-vnet-gateway"
               }
             }
           ]

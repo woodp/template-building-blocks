@@ -13,7 +13,7 @@
               "routingWeight": 10,
               "sharedKey": "_Hg[^^ECgLGGPF^RXTQfDDWQ][YAAB",
               "virtualNetworkGateway": {
-                  "name": "msft-simple-vnet"
+                  "name": "msft-vpn-vnet-gateway"
               },
               "localNetworkGateway": {
                   "name": "msft-lgw",

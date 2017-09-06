@@ -12,7 +12,7 @@
               "connectionType": "ExpressRoute",
               "routingWeight": 10,
               "virtualNetworkGateway": {
-                  "name": "msft-simple-vnet"
+                  "name": "msft-express-route-vnet-gateway"
               },
               "expressRouteCircuit": {
                   "name": "msft-exp-rt"
