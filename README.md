@@ -6,6 +6,9 @@
 | (_| |/ /| |_) | |_) |
  \__,_/___|_.__/|_.__/ 
 ```
+
+![Build status](https://travis-ci.org/mspnp/template-building-blocks.svg?branch=master)
+
 # Azure Building Blocks: Simplifying Resource Deployment
 
 The Azure Building Blocks project is a command line tool and set of Azure Resource Manager templates designed to simplify deployment of Azure resources. Users author a set of simplified parameters to specify settings for Azure resources, and the command line tool merges these parameters with best practice defaults to produce a set of final parameter files that can be deployed with the Azure Resource Manager templates.
