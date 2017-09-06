@@ -1331,7 +1331,7 @@ function process({ settings, buildingBlockSettings, defaultSettings }) {
             result.virtualMachines,
             result.applicationGateways
         );
-    
+
         return {
             resourceGroups: resourceGroups,
             parameters: result

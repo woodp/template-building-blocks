@@ -349,7 +349,7 @@ describe('publicIpAddressSettings', () => {
         });
     });
 
-    if (global.testConfiguration.runTransform) {
+    if (jasmine.testConfiguration.runTransform) {
         describe('transform', () => {
             let publicIpAddress = {
                 name: 'my-pip',

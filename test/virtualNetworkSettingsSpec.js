@@ -973,7 +973,7 @@ describe('virtualNetworkSettings', () => {
         });
     });
 
-    if (global.testConfiguration.runTransform) {
+    if (jasmine.testConfiguration.runTransform) {
         describe('process', () => {
             let virtualNetworkSettingsWithPeering = [
                 {

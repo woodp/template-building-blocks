@@ -892,7 +892,7 @@ describe('loadBalancerSettings', () => {
         });
     });
 
-    if (global.testConfiguration.runTransform) {
+    if (jasmine.testConfiguration.runTransform) {
         describe('Transform', () => {
             let settings = {
                 frontendIPConfigurations: [

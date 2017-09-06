@@ -32,18 +32,26 @@
     "murmurhash3js": "^3.0.1"
   },
   "devDependencies": {
+    "cross-env": "^5.0.5",
     "eslint": "^3.19.0",
     "eslint-config-google": "^0.7.1",
-    "gulp": "^3.9.1",
-    "gulp-eslint": "^3.0.1",
-    "gulp-istanbul": "^1.1.1",
-    "gulp-jasmine": "^2.4.2",
+    "jasmine": "^2.8.0",
+    "nyc": "^11.1.0",
     "rewire": "^2.5.2"
   },
   "main": "./src/index.js",
   "preferGlobal": true,
   "scripts": {
-    "test": "gulp run-tests-with-coverage"
+    "debug": "cross-env RUN_TRANSFORM=true node --nolazy --debug-brk=5858 node_modules/jasmine/bin/jasmine.js --config=jasmine.json",
+    "test": "npm run unit-tests",
+    "unit-tests": "cross-env RUN_TRANSFORM=true npm run jasmine",
+    "unit-tests-no-transform": "cross-env RUN_TRANSFORM=false npm run jasmine",
+    "precoverage": "npm run eslint",
+    "coverage": "nyc npm run unit-tests",
+    "precoverage-no-transform": "npm run eslint",
+    "coverage-no-transform": "nyc npm run unit-tests-no-transform",
+    "eslint": "eslint --config .eslintrc.json src/**/*.js test/**/*.js",
+    "jasmine": "jasmine --config=jasmine.json"
   },
   "repository": {
     "type": "git",
