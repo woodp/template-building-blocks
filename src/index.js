@@ -417,7 +417,7 @@ try {
     commander
         .name('azbb')
         .description(description.join('\n'))
-        .version('2.0.0')
+        .version('2.0.2')
         .option('-s, --subscription-id <subscription-id>', 'Azure subscription id', validateSubscriptionId)
         .option('-l, --location <location>', 'Azure region in which to create the resource group')
         .option('-g, --resource-group <resource-group>', 'name of the resource group')

@@ -2,7 +2,7 @@
 
 let _ = require('lodash');
 let v = require('./validation');
-let murmurHash = require('murmurhash-native').murmurHash64;
+let murmurHash = require('murmurhash3js').x64;
 
 const STORAGE_SETTINGS_DEFAULTS = {
     nameSuffix: 'st',
@@ -190,11 +190,14 @@ function transform(settings, parent) {
 
 function convertToBase32(carryOverValue, carryOverBits, buffer) {
     if (buffer.length === 0) return '';
+    if (carryOverBits === 0 && buffer.length > 1) {
+        return convertToBase32(parseInt(buffer[0], 16), 4, buffer.slice(1));
+    }
 
     let charSet = 'abcdefghijklmnopqrstuvwxyz234567';
     let base32String = '';
-    let valueToProcess = carryOverValue * 256 + buffer[0];
-    let bitsCount = carryOverBits + 8;
+    let valueToProcess = carryOverValue * 16 + parseInt(buffer[0], 16);
+    let bitsCount = carryOverBits + 4;
 
     do {
         let value = valueToProcess;
@@ -212,9 +215,10 @@ function convertToBase32(carryOverValue, carryOverBits, buffer) {
 }
 
 function getUniqueString(input) {
-    let buffer = murmurHash(JSON.stringify(input), 'buffer');
+    let buffer = murmurHash.hash128(JSON.stringify(input));
 
-    return convertToBase32(0, 0, buffer);
+    let base32 = _.truncate(convertToBase32(0, 0, buffer), {length: 13, omission:''});
+    return base32;
 }
 
 function createStamps(settings) {
