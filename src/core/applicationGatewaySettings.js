@@ -266,10 +266,6 @@ let frontendPortsValidations = {
 };
 
 let protocolValidation = (protocol) => {
-    if (_.isUndefined(protocol)) {
-        return { result: true };
-    }
-
     return {
         result: isValidProtocol(protocol),
         message: `Valid values are ${validProtocols.join(',')}`
@@ -702,7 +698,18 @@ let applicationGatewayValidations = {
                 };
                 let matched = _.filter(baseSettings.urlPathMaps, (o) => { return (o.name === value); });
                 return matched.length === 0 ? result : { result: true };
-            }
+            },
+            redirectConfigurationName: (value) => {
+                if (_.isUndefined(value)) {
+                    return { result: true };
+                }
+                let result = {
+                    result: false,
+                    message: `Invalid redirectConfigurationName ${value} in requestRoutingRules`
+                };
+                let matched = _.filter(baseSettings.redirectConfigurations, (o) => { return (o.name === value); });
+                return (baseSettings.redirectConfigurations.length > 0 && matched.length === 0) ? result : { result: true };
+            },
         };
         return {
             validations: requestRoutingRulesValidations
