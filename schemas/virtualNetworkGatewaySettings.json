@@ -38,16 +38,6 @@
                 "name"
             ]
         },
-        "sku": {
-            "type": "string",
-            "enum": [
-                "Basic",
-                "VpnGw1",
-                "VpnGw2",
-                "VpnGw3"
-            ],
-            "default": "VpnGw1"
-        },
         "vpnType": {
             "type": "string",
             "enum": [
@@ -77,11 +67,22 @@
                 "isPublic": {
                     "type": "boolean",
                     "default": false
+                },
+                "sku": {
+                    "type": "string",
+                    "enum": [
+                        "Basic",
+                        "VpnGw1",
+                        "VpnGw2",
+                        "VpnGw3"
+                    ],
+                    "default": "VpnGw1"
                 }
             },
             "required": [
                 "gatewayType",
-                "isPublic"
+                "isPublic",
+                "sku"
             ]
         },
         "expressRouteGatewayType": {
@@ -97,11 +98,21 @@
                     "enum": [
                         true
                     ]
+                },
+                "sku": {
+                    "type": "string",
+                    "enum": [
+                        "Standard",
+                        "HighPerformance",
+                        "UltraPerformance"
+                    ],
+                    "default": "Standard"
                 }
             },
             "required": [
                 "gatewayType",
-                "isPublic"
+                "isPublic",
+                "sku"
             ]
         }
     }

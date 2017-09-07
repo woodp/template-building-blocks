@@ -14,7 +14,8 @@ const VIRTUALNETWORKGATEWAY_SETTINGS_DEFAULTS = {
 
 let validGatewayTypes = ['Vpn', 'ExpressRoute'];
 let validVpnTypes = ['PolicyBased', 'RouteBased'];
-let validSkus = ['Basic', 'VpnGw1', 'VpnGw2', 'VpnGw3'];
+let validVpnSkus = ['Basic', 'VpnGw1', 'VpnGw2', 'VpnGw3'];
+let validExpressRouteSkus = ['Standard', 'HighPerformance','UltraPerformance'];
 
 let isValidGatewayType = (gatewayType) => {
     return v.utilities.isStringInArray(gatewayType, validGatewayTypes);
@@ -24,8 +25,12 @@ let isValidVpnType = (vpnType) => {
     return v.utilities.isStringInArray(vpnType, validVpnTypes);
 };
 
-let isValidSku = (sku) => {
-    return v.utilities.isStringInArray(sku, validSkus);
+let isValidVpnSku = (sku) => {
+    return v.utilities.isStringInArray(sku, validVpnSkus);
+};
+
+let isValidExpressRouteSku = (sku) => {
+    return v.utilities.isStringInArray(sku, validExpressRouteSkus);
 };
 
 let bgpSettingsValidations = {
@@ -72,10 +77,16 @@ let virtualNetworkGatewaySettingsValidations = {
         };
     },
     enableBgp: v.validationUtilities.isBoolean,
-    sku: (value) => {
+    sku: (value, parent) => {
+        if (parent.gatewayType === 'Vpn') {
+            return {
+                result: isValidVpnSku(value),
+                message: `Valid values for Vpn type are ${validVpnSkus.join(',')}`
+            };
+        }
         return {
-            result: isValidSku(value),
-            message: `Valid values are ${validSkus.join(',')}`
+            result: isValidExpressRouteSku(value),
+            message: `Valid values for ExpressRoute type are ${validExpressRouteSkus.join(',')}`
         };
     },
     bgpSettings: (value) => {

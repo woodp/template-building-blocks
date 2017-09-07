@@ -84,52 +84,97 @@ describe('virtualNetworkGatewaySettings', () => {
         });
     });
 
-    describe('isValidSku', () => {
-        let isValidSku = virtualNetworkGatewaySettings.__get__('isValidSku');
+    describe('isValidVpnSku', () => {
+        let isValidVpnSku = virtualNetworkGatewaySettings.__get__('isValidVpnSku');
 
         it('undefined', () => {
-            expect(isValidSku()).toEqual(false);
+            expect(isValidVpnSku()).toEqual(false);
         });
 
         it('null', () => {
-            expect(isValidSku(null)).toEqual(false);
+            expect(isValidVpnSku(null)).toEqual(false);
         });
 
         it('empty', () => {
-            expect(isValidSku('')).toEqual(false);
+            expect(isValidVpnSku('')).toEqual(false);
         });
 
         it('whitespace', () => {
-            expect(isValidSku(' ')).toEqual(false);
+            expect(isValidVpnSku(' ')).toEqual(false);
         });
 
         it('invalid spacing', () => {
-            expect(isValidSku(' Basic ')).toEqual(false);
+            expect(isValidVpnSku(' Basic ')).toEqual(false);
         });
 
         it('invalid casing', () => {
-            expect(isValidSku('basic')).toEqual(false);
+            expect(isValidVpnSku('basic')).toEqual(false);
         });
 
         it('invalid value', () => {
-            expect(isValidSku('NOT_VALID')).toEqual(false);
+            expect(isValidVpnSku('NOT_VALID')).toEqual(false);
         });
 
         it('Basic', () => {
-            expect(isValidSku('Basic')).toEqual(true);
+            expect(isValidVpnSku('Basic')).toEqual(true);
         });
 
         it('VpnGw1', () => {
-            expect(isValidSku('VpnGw1')).toEqual(true);
+            expect(isValidVpnSku('VpnGw1')).toEqual(true);
         });
 
         it('VpnGw2', () => {
-            expect(isValidSku('VpnGw2')).toEqual(true);
+            expect(isValidVpnSku('VpnGw2')).toEqual(true);
         });
 
         it('VpnGw3', () => {
-            expect(isValidSku('VpnGw3')).toEqual(true);
+            expect(isValidVpnSku('VpnGw3')).toEqual(true);
         });
+    });
+
+    describe('isValidExpressRouteSku', () => {
+        let isValidExpressRouteSku = virtualNetworkGatewaySettings.__get__('isValidExpressRouteSku');
+
+        it('undefined', () => {
+            expect(isValidExpressRouteSku()).toEqual(false);
+        });
+
+        it('null', () => {
+            expect(isValidExpressRouteSku(null)).toEqual(false);
+        });
+
+        it('empty', () => {
+            expect(isValidExpressRouteSku('')).toEqual(false);
+        });
+
+        it('whitespace', () => {
+            expect(isValidExpressRouteSku(' ')).toEqual(false);
+        });
+
+        it('invalid spacing', () => {
+            expect(isValidExpressRouteSku(' Standard ')).toEqual(false);
+        });
+
+        it('invalid casing', () => {
+            expect(isValidExpressRouteSku('standard')).toEqual(false);
+        });
+
+        it('invalid value', () => {
+            expect(isValidExpressRouteSku('NOT_VALID')).toEqual(false);
+        });
+
+        it('Standard', () => {
+            expect(isValidExpressRouteSku('Standard')).toEqual(true);
+        });
+
+        it('HighPerformance', () => {
+            expect(isValidExpressRouteSku('HighPerformance')).toEqual(true);
+        });
+
+        it('UltraPerformance', () => {
+            expect(isValidExpressRouteSku('UltraPerformance')).toEqual(true);
+        });
+
     });
 
     describe('validations', () => {
@@ -408,7 +453,7 @@ describe('virtualNetworkGatewaySettings', () => {
                     validations: vngValidations
                 });
 
-                expect(errors.length).toEqual(1);
+                expect(errors.length).toEqual(2);
                 expect(errors[0].name).toEqual('.gatewayType');
             });
 
@@ -420,19 +465,7 @@ describe('virtualNetworkGatewaySettings', () => {
                     validations: vngValidations
                 });
 
-                expect(errors.length).toEqual(1);
-                expect(errors[0].name).toEqual('.gatewayType');
-            });
-
-            it('gatewayType undefined', () => {
-                delete settings.gatewayType;
-
-                let errors = validation.validate({
-                    settings: settings,
-                    validations: vngValidations
-                });
-
-                expect(errors.length).toEqual(1);
+                expect(errors.length).toEqual(2);
                 expect(errors[0].name).toEqual('.gatewayType');
             });
 
@@ -547,6 +580,7 @@ describe('virtualNetworkGatewaySettings', () => {
 
             it('isPublic true with gatewayType ExpressRoute', () => {
                 settings.gatewayType = 'ExpressRoute';
+                settings.sku = 'Standard';
                 // Merge will set this
                 settings.publicIpAddress = {
                     name: `${settings.name}-pip`,
@@ -567,6 +601,7 @@ describe('virtualNetworkGatewaySettings', () => {
             it('isPublic false with gatewayType ExpressRoute', () => {
                 settings.isPublic = false;
                 settings.gatewayType = 'ExpressRoute';
+                settings.sku = 'Standard';
 
                 let errors = validation.validate({
                     settings: settings,
@@ -837,6 +872,7 @@ describe('virtualNetworkGatewaySettings', () => {
                 vpnSettings[0].name = 'my-vpn-gw';
                 vpnSettings[1].gatewayType = 'ExpressRoute';
                 vpnSettings[1].name = 'my-er-gw';
+                vpnSettings[1].sku = 'Standard';
 
                 let result = virtualNetworkGatewaySettings.process({
                     settings: vpnSettings,
