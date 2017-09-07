@@ -17,6 +17,81 @@ describe('applicationGatewaySettings:', () => {
         merged.frontendIPConfigurations[0].publicIpAddress.location = 'westus';
     };
 
+    let testSettings = {
+        sku: {
+            tier: 'Standard',
+            size: 'Small',
+            capacity: 2
+        },
+        frontendIPConfigurations: [
+            {
+                name: 'appGatewayFrontendIP',
+                applicationGatewayType: 'Public'
+            }
+        ],
+        httpListeners: [
+            {
+                name: 'appGatewayHttpListener',
+                frontendIPConfigurationName: 'appGatewayFrontendIP',
+                frontendPortName: 'appGatewayFrontendPort',
+                protocol: 'Http',
+                requireServerNameIndication: false
+            }
+        ],
+        backendHttpSettingsCollection: [
+            {
+                name: 'appGatewayBackendHttpSettings',
+                port: 80,
+                protocol: 'Https',
+                cookieBasedAffinity: 'Disabled',
+                pickHostNameFromBackendAddress: false,
+                probeEnabled: true,
+                requestTimeout: 30,
+                probeName: 'p1'
+            }
+        ],
+        backendAddressPools: [
+            {
+                name: 'appGatewayBackendPool',
+                backendAddresses: [
+                    {
+                        fqdn: 'www.contoso.com'
+                    }
+                ]
+            }
+        ],
+        urlPathMaps: [
+            {
+                name: 'pb-rule1',
+                defaultBackendAddressPoolName: 'appGatewayBackendPool',
+                defaultBackendHttpSettingName: 'appGatewayBackendHttpSettings',
+                pathRules: [
+                    {
+                        name: 'p2',
+                        paths: ['/path'],
+                        backendAddressPoolName: 'appGatewayBackendPool',
+                        backendHttpSettingName: 'appGatewayBackendHttpSettings'
+                    }
+                ]
+            }
+        ],
+        requestRoutingRules: [
+            {
+                name: 'rule1',
+                ruleType: 'Basic',
+                httpListenerName: 'appGatewayHttpListener',
+                backendAddressPoolName: 'appGatewayBackendPool',
+                backendHttpSettingName: 'appGatewayBackendHttpSettings'
+            }
+        ],
+        frontendPorts: [
+            {
+                name: 'appGatewayFrontendPort',
+                port: 80
+            }
+        ]
+    };
+
     describe('valid validations:', () => {
         it('validate valid defaults are applied.', () => {
             let merged = applicationGatewaySettings.merge({
@@ -64,81 +139,6 @@ describe('applicationGatewaySettings:', () => {
                 validations: applicationGatewaySettings.validations
             });
         };
-
-        let testSettings = {
-            sku: {
-                tier: 'Standard',
-                size: 'Small',
-                capacity: 2
-            },
-            frontendIPConfigurations: [
-                {
-                    name: 'appGatewayFrontendIP',
-                    applicationGatewayType: 'Public'
-                }
-            ],
-            httpListeners: [
-                {
-                    name: 'appGatewayHttpListener',
-                    frontendIPConfigurationName: 'appGatewayFrontendIP',
-                    frontendPortName: 'appGatewayFrontendPort',
-                    protocol: 'Http',
-                    requireServerNameIndication: false
-                }
-            ],
-            backendHttpSettingsCollection: [
-                {
-                    name: 'appGatewayBackendHttpSettings',
-                    port: 80,
-                    protocol: 'Https',
-                    cookieBasedAffinity: 'Disabled',
-                    pickHostNameFromBackendAddress: false,
-                    probeEnabled: true,
-                    requestTimeout: 30,
-                    probeName: 'p1'
-                }
-            ],
-            backendAddressPools: [
-                {
-                    name: 'appGatewayBackendPool',
-                    backendAddresses: [
-                        {
-                            fqdn: 'www.contoso.com'
-                        }
-                    ]
-                }
-            ],
-            urlPathMaps: [
-                {
-                    name: 'pb-rule1',
-                    defaultBackendAddressPoolName: 'appGatewayBackendPool',
-                    defaultBackendHttpSettingName: 'appGatewayBackendHttpSettings',
-                    pathRules: [
-                        {
-                            name: 'p2',
-                            paths: ['/path'],
-                            backendAddressPoolName: 'appGatewayBackendPool',
-                            backendHttpSettingName: 'appGatewayBackendHttpSettings'
-                        }
-                    ]
-                }
-            ],
-            requestRoutingRules: [
-                {
-                    name: 'rule1',
-                    ruleType: 'Basic',
-                    httpListenerName: 'appGatewayHttpListener',
-                    backendAddressPoolName: 'appGatewayBackendPool',
-                    backendHttpSettingName: 'appGatewayBackendHttpSettings'
-                }
-            ],
-            frontendPorts: [
-                {
-                    name: 'appGatewayFrontendPort',
-                    port: 80
-                }
-            ]
-        };
         let settings;
         beforeEach(() => {
             settings = _.cloneDeep(testSettings);
@@ -152,6 +152,21 @@ describe('applicationGatewaySettings:', () => {
             });
             expect(result.length).toEqual(2);
             expect(result[1].name).toEqual('.tier');
+        });
+
+        it('sku WAF valid size', () => {
+            settings.sku.tier = 'WAF';
+            settings.sku.size = 'Medium';
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(0);
+        });
+
+        it('sku WAF invalid size', () => {
+            settings.sku.tier = 'WAF';
+            settings.sku.size = 'invalid';
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(1);
+            expect(result[0].name).toEqual('.sku.size');
         });
 
         it('gatewayIPConfigurations subnet must be provided', () => {
@@ -721,6 +736,26 @@ describe('applicationGatewaySettings:', () => {
             let result = mergeAndValidate(settings, buildingBlockSettings);
             expect(result.length).toEqual(0);
         });
+        it('valid redirect requestRoutingRules', () => {
+            settings.redirectConfigurations = [
+                {
+                    name: 'appGatewayRedirect',
+                    redirectType: 'Permanent',
+                    targetUrl: 'contoso.com',
+                    includeQueryString: true
+                }
+            ];
+            settings.requestRoutingRules = [
+                {
+                    name: 'rule1',
+                    ruleType: 'Basic',
+                    redirectConfigurationName: 'appGatewayRedirect',
+                    httpListenerName: 'appGatewayHttpListener'
+                }
+            ];
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(0);
+        });
         it('requestRoutingRules name must be specified', () => {
             settings.requestRoutingRules = [
                 {
@@ -831,6 +866,99 @@ describe('applicationGatewaySettings:', () => {
             expect(result.length).toEqual(2);
             expect(result[0].name).toEqual('.requestRoutingRules[0].ruleType');
         });
+        it('requestRoutingRules when ruleType is PathBasedRouting backendAddressPoolName cannot be specified', () => {
+            settings.requestRoutingRules = [
+                {
+                    name: 'rule1',
+                    ruleType: 'PathBasedRouting',
+                    httpListenerName: 'appGatewayHttpListener',
+                    urlPathMapName: 'pb-rule1',
+                    backendAddressPoolName: 'appGatewayBackendPool'
+                }
+            ];
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(1);
+            expect(result[0].name).toEqual('.requestRoutingRules[0].backendAddressPoolName');
+        });
+        it('requestRoutingRules when ruleType is PathBasedRouting backendHttpSettingName cannot be specified', () => {
+            settings.requestRoutingRules = [
+                {
+                    name: 'rule1',
+                    ruleType: 'PathBasedRouting',
+                    httpListenerName: 'appGatewayHttpListener',
+                    urlPathMapName: 'pb-rule1',
+                    backendHttpSettingName: 'appGatewayBackendHttpSettings'
+                }
+            ];
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(1);
+            expect(result[0].name).toEqual('.requestRoutingRules[0].backendHttpSettingName');
+        });
+        it('requestRoutingRules invalid redirectConfigurationName', () => {
+            settings.redirectConfigurations = [
+                {
+                    name: 'appGatewayRedirect',
+                    redirectType: 'Permanent',
+                    targetUrl: 'contoso.com',
+                    includeQueryString: true
+                }
+            ];
+            settings.requestRoutingRules = [
+                {
+                    name: 'rule1',
+                    ruleType: 'Basic',
+                    redirectConfigurationName: 'invalid',
+                    httpListenerName: 'appGatewayHttpListener'
+                }
+            ];
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(1);
+            expect(result[0].name).toEqual('.requestRoutingRules[0].redirectConfigurationName');
+        });
+        it('requestRoutingRules backendAddressPoolName and redirectConfigurationName cannot be both specified', () => {
+            settings.redirectConfigurations = [
+                {
+                    name: 'appGatewayRedirect',
+                    redirectType: 'Permanent',
+                    targetUrl: 'contoso.com',
+                    includeQueryString: true
+                }
+            ];
+            settings.requestRoutingRules = [
+                {
+                    name: 'rule1',
+                    ruleType: 'Basic',
+                    redirectConfigurationName: 'appGatewayRedirect',
+                    httpListenerName: 'appGatewayHttpListener',
+                    backendAddressPoolName: 'appGatewayBackendPool'
+                }
+            ];
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(1);
+            expect(result[0].name).toEqual('.requestRoutingRules[0].backendAddressPoolName');
+        });
+        it('requestRoutingRules backendHttpSettingName and redirectConfigurationName cannot be both specified', () => {
+            settings.redirectConfigurations = [
+                {
+                    name: 'appGatewayRedirect',
+                    redirectType: 'Permanent',
+                    targetUrl: 'contoso.com',
+                    includeQueryString: true
+                }
+            ];
+            settings.requestRoutingRules = [
+                {
+                    name: 'rule1',
+                    ruleType: 'Basic',
+                    redirectConfigurationName: 'appGatewayRedirect',
+                    httpListenerName: 'appGatewayHttpListener',
+                    backendHttpSettingName: 'appGatewayBackendHttpSettings'
+                }
+            ];
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(1);
+            expect(result[0].name).toEqual('.requestRoutingRules[0].backendHttpSettingName');
+        });
 
         it('valid probes', () => {
             settings.probes = [
@@ -851,7 +979,7 @@ describe('applicationGatewaySettings:', () => {
             let result = mergeAndValidate(settings, buildingBlockSettings);
             expect(result.length).toEqual(0);
         });
-        it('valid probes', () => {
+        it('valid probes without match', () => {
             settings.probes = [
                 {
                     name: 'p1',
@@ -1379,11 +1507,296 @@ describe('applicationGatewaySettings:', () => {
             expect(result.length).toEqual(0);
         });
 
+        it('valid redirectConfigurations with targetUrl', () => {
+            settings.redirectConfigurations = [
+                {
+                    name: 'appGatewayRedirect',
+                    redirectType: 'Permanent',
+                    targetUrl: 'contoso.com',
+                    includeQueryString: true
+                }
+            ];
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(0);
+        });
+        it('valid redirectConfigurations with targetListenerName', () => {
+            settings.redirectConfigurations = [
+                {
+                    name: 'appGatewayRedirect',
+                    redirectType: 'Permanent',
+                    targetListenerName: 'foo',
+                    includePath: true,
+                    includeQueryString: false
+                }
+            ];
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(0);
+        });
+        it('redirectConfigurations targetUrl and targetListenerName cannot be both specified', () => {
+            settings.redirectConfigurations = [
+                {
+                    name: 'appGatewayRedirect',
+                    redirectType: 'Permanent',
+                    targetUrl: 'contoso.com',
+                    targetListenerName: 'foo',
+                    includeQueryString: true
+                }
+            ];
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(2);
+            expect(result[0].name).toEqual('.redirectConfigurations[0].targetUrl');
+        });
+        it('redirectConfigurations targetUrl or targetListenerName must be specified', () => {
+            settings.redirectConfigurations = [
+                {
+                    name: 'appGatewayRedirect',
+                    redirectType: 'Permanent',
+                    includeQueryString: true
+                }
+            ];
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(2);
+            expect(result[0].name).toEqual('.redirectConfigurations[0].targetUrl');
+        });
+        it('redirectConfigurations includePath cannot be specified with targetUrl', () => {
+            settings.redirectConfigurations = [
+                {
+                    name: 'appGatewayRedirect',
+                    redirectType: 'Permanent',
+                    targetUrl: 'contoso.com',
+                    includePath: false,
+                    includeQueryString: true
+                }
+            ];
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(2);
+            expect(result[1].name).toEqual('.redirectConfigurations[0].includePath');
+        });
+        it('redirectConfigurations invalid redirect type', () => {
+            settings.redirectConfigurations = [
+                {
+                    name: 'appGatewayRedirect',
+                    redirectType: 'invalid',
+                    targetUrl: 'contoso.com',
+                    includePath: false,
+                    includeQueryString: true
+                }
+            ];
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(3);
+            expect(result[0].name).toEqual('.redirectConfigurations[0].redirectType');
+        });
+        it('redirectConfigurations name must be specified', () => {
+            settings.redirectConfigurations = [
+                {
+                    redirectType: 'Temporary',
+                    targetUrl: 'contoso.com',
+                    includePath: false,
+                    includeQueryString: true
+                }
+            ];
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(3);
+            expect(result[0].name).toEqual('.redirectConfigurations[0].name');
+        });
+        it('urlPathMaps invalid defaultRedirectConfigurationName', () => {
+            settings.redirectConfigurations = [
+                {
+                    name: 'appGatewayRedirect',
+                    redirectType: 'Permanent',
+                    targetUrl: 'contoso.com',
+                    includeQueryString: true
+                }
+            ];
+            settings.urlPathMaps = [
+                {
+                    name: 'pb-rule1',
+                    defaultRedirectConfigurationName: 'invalid',
+                    pathRules: [
+                        {
+                            name: 'p2',
+                            paths: [
+                                '/bar'
+                            ],
+                            redirectConfigurationName: 'appGatewayRedirect'
+                        }
+                    ]
+                }
+            ];
+
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(1);
+            expect(result[0].name).toEqual('.urlPathMaps[0].defaultRedirectConfigurationName');
+        });
+        it('urlPathMaps defaultRedirectConfigurationName and defaultBackendAddressPoolName cannot be both specified', () => {
+            settings.urlPathMaps = [
+                {
+                    name: 'pb-rule1',
+                    defaultBackendAddressPoolName: 'appGatewayBackendPool',
+                    defaultRedirectConfigurationName: 'appGatewayRedirect',
+                    pathRules: [
+                        {
+                            name: 'p2',
+                            paths: [
+                                '/bar'
+                            ],
+                            redirectConfigurationName: 'appGatewayRedirect'
+                        }
+                    ]
+                }
+            ];
+
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(2);
+            expect(result[1].name).toEqual('.urlPathMaps[0].defaultRedirectConfigurationName');
+        });
+        it('urlPathMaps defaultRedirectConfigurationName and defaultBackendHttpSettingName cannot be both specified', () => {
+            settings.urlPathMaps = [
+                {
+                    name: 'pb-rule1',
+                    defaultBackendHttpSettingName: 'appGatewayBackendHttpSettings',
+                    defaultRedirectConfigurationName: 'appGatewayRedirect',
+                    pathRules: [
+                        {
+                            name: 'p2',
+                            paths: [
+                                '/bar'
+                            ],
+                            redirectConfigurationName: 'appGatewayRedirect'
+                        }
+                    ]
+                }
+            ];
+
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(2);
+            expect(result[1].name).toEqual('.urlPathMaps[0].defaultRedirectConfigurationName');
+        });
+        it('urlPathMaps invalid redirectConfigurationName', () => {
+            settings.redirectConfigurations = [
+                {
+                    name: 'appGatewayRedirect',
+                    redirectType: 'Permanent',
+                    targetUrl: 'contoso.com',
+                    includeQueryString: true
+                }
+            ];
+            settings.urlPathMaps = [
+                {
+                    name: 'pb-rule1',
+                    defaultRedirectConfigurationName: 'appGatewayRedirect',
+                    pathRules: [
+                        {
+                            name: 'p2',
+                            paths: [
+                                '/bar'
+                            ],
+                            redirectConfigurationName: 'invalid'
+                        }
+                    ]
+                }
+            ];
+
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(1);
+            expect(result[0].name).toEqual('.urlPathMaps[0].pathRules[0].redirectConfigurationName');
+        });
+        it('urlPathMaps redirectConfigurationName and backendAddressPoolName cannot be both specified', () => {
+            settings.urlPathMaps = [
+                {
+                    name: 'pb-rule1',
+                    defaultRedirectConfigurationName: 'appGatewayRedirect',
+                    pathRules: [
+                        {
+                            name: 'p2',
+                            paths: [
+                                '/bar'
+                            ],
+                            redirectConfigurationName: 'appGatewayRedirect',
+                            backendAddressPoolName: 'appGatewayBackendPool'
+                        }
+                    ]
+                }
+            ];
+
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(2);
+            expect(result[1].name).toEqual('.urlPathMaps[0].pathRules[0].redirectConfigurationName');
+        });
+        it('urlPathMaps defaultRedirectConfigurationName and backendHttpSettingName cannot be both specified', () => {
+            settings.urlPathMaps = [
+                {
+                    name: 'pb-rule1',
+                    defaultRedirectConfigurationName: 'appGatewayRedirect',
+                    pathRules: [
+                        {
+                            name: 'p2',
+                            paths: [
+                                '/bar'
+                            ],
+                            redirectConfigurationName: 'appGatewayRedirect',
+                            backendHttpSettingName: 'appGatewayBackendHttpSettings'
+                        }
+                    ]
+                }
+            ];
+
+            let result = mergeAndValidate(settings, buildingBlockSettings);
+            expect(result.length).toEqual(2);
+            expect(result[1].name).toEqual('.urlPathMaps[0].pathRules[0].redirectConfigurationName');
+        });
+
     });
 
     if (global.testConfiguration.runTransform) {
         describe('process:', () => {
 
+            let settings = _.cloneDeep(testSettings);
+            settings.subscriptionId = '00000000-0000-1000-8000-000000000000';
+            settings.resourceGroupName = 'test-vnet-rg';
+            settings.location = 'westus';
+            settings.sslCertificates = [
+                {
+                    name: 'ssltest',
+                    data: 'sadasdsdasdsdc34r43r34nt34nr4jkrn4k3jrn34kjrn',
+                    password: 'sadasd32d23d'
+                }
+            ];
+            settings.authenticationCertificates = [
+                {
+                    name: 'authtest',
+                    data: 'sadasdsdasdsdc34r43r34nt34nr4jkrn4k3jrn34kjrn'
+                }
+            ];
+            settings.sslPolicy = {
+                policyType: 'Predefined',
+                policyName: 'AppGwSslPolicy20150501'
+            };
+            settings.redirectConfigurations = [
+                {
+                    name: 'appGatewayRedirect',
+                    redirectType: 'Permanent',
+                    targetUrl: 'contoso.com',
+                    includeQueryString: true
+                }
+            ];
+            settings.requestRoutingRules = [
+                {
+                    name: 'rule1',
+                    ruleType: 'Basic',
+                    redirectConfigurationName: 'appGatewayRedirect',
+                    httpListenerName: 'appGatewayHttpListener'
+                }
+            ];
+            it('valid process', () => {
+                let merged = applicationGatewaySettings.merge({
+                    settings: settings,
+                    buildingBlockSettings: buildingBlockSettings
+                });
+                fixBlockSettingsAfterMerge(merged);
+                let result = applicationGatewaySettings.transform(merged);
+                expect(result !== null).toEqual(true);
+            });
         });
     }
 });
