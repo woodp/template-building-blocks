@@ -2,19 +2,35 @@
 const childProcess = require('child_process');
 const os = require('os');
 const v = require('./core/validation');
+const _ = require('lodash');
 
-let spawnAz = ({args = [], spawnOptions = {
-    stdio: 'pipe',
-    shell: true
-}, azOptions = {
-    debug: false
-}}) => {
-    if (azOptions.debug === true) {
+let spawnAz = ({args, spawnOptions, azOptions}) => {
+    if (!_.isArray(args) || args.length === 0) {
+        throw new Error('args must be an array with a length greater than 0');
+    }
+
+    spawnOptions = spawnOptions || {
+        stdio: 'pipe',
+        shell: true
+    };
+
+    azOptions = azOptions || {
+        debug: false
+    };
+
+    if (azOptions.debug) {
         args.push('--debug');
     }
     let child = childProcess.spawnSync('az', args, spawnOptions);
     if (child.status !== 0) {
-        throw new Error(`error executing az${os.EOL}  status: ${child.status}${os.EOL}  arguments: ${args.join(' ')}`);
+        let error = `error executing az${os.EOL}`;
+        // If our stdio is 'pipe', we should pull the error message out and show it.
+        if (spawnOptions.stdio === 'pipe') {
+            error += `  message: ${child.stderr.toString().trim()}${os.EOL}`;
+        }
+
+        error += `  status: ${child.status}${os.EOL}  arguments: ${args.join(' ')}`;
+        throw new Error(error);
     }
 
     return child;
