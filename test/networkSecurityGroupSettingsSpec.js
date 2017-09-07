@@ -1111,7 +1111,7 @@ describe('networkSecurityGroupSettings', () => {
         });
     });
 
-    if (global.testConfiguration.runTransform) {
+    if (jasmine.testConfiguration.runTransform) {
         describe('process', () => {
             let networkSecurityGroup = [
                 {

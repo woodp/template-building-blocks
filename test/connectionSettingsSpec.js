@@ -939,7 +939,7 @@ describe('connectionSettings', () => {
         });
     });
 
-    if (global.testConfiguration.runTransform) {
+    if (jasmine.testConfiguration.runTransform) {
         describe('transform', () => {
             let fullConnectionSettings = {
                 name: 'my-connection',

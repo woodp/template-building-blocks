@@ -1640,7 +1640,7 @@ describe('virtualMachineSettings:', () => {
             });
         });
     });
-    if (global.testConfiguration.runTransform) {
+    if (jasmine.testConfiguration.runTransform) {
         describe('transform:', () => {
             it('validates that number of stamps created are based on vmcount property', () => {
 

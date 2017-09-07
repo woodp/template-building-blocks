@@ -853,7 +853,7 @@ describe('storageSettings:', () => {
         });
     });
 
-    if (global.testConfiguration.runTransform) {
+    if (jasmine.testConfiguration.runTransform) {
         describe('storage accounts transform:', () => {
             let settings = {
                 storageAccounts: {

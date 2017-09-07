@@ -196,7 +196,7 @@ describe('extensionSettings:', () => {
         });
     });
 
-    if (global.testConfiguration.runTransform) {
+    if (jasmine.testConfiguration.runTransform) {
         describe('process:', () => {
             let settings = [
                 {
