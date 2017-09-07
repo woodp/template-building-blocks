@@ -8,27 +8,24 @@
                     "type": "NetworkSecurityGroup",
                     "settings": [
                         {
-                            "name": "msft-simple-nsg",
+                            "name": "msft-admin-nsg",
                             "securityRules": [
                                 {
-                                    "name": "HTTP"
-                                },
-                                {
-                                    "name": "HTTPS"
-                                },
-                                {
                                     "name": "RDP"
+                                },
+                                {
+                                    "name": "SSH"
                                 }
                             ],
                             "virtualNetworks": [
                                 {
-                                    "name": "msft-simple-vnet",
+                                    "name": "msft-hub-vnet",
                                     "subnets": [
-                                        "subnet1"
+                                        "mgmt"
                                     ]
                                 }
                             ]
-                        }                        
+                        }
                     ]
                 }
             ]

@@ -8,7 +8,7 @@
                     "type": "VirtualMachine",
                     "settings": {
                         "vmCount": 2,
-                        "namePrefix": "web",
+                        "namePrefix": "web2",
                         "size": "Standard_DS1_v2",
                         "adminUsername": "testadminuser",
                         "adminPassword": "test$!Passw0rd111",
@@ -20,7 +20,7 @@
                                 "isPublic": false,
                                 "subnetName": "subnet1",
                                 "backendPoolNames": [
-                                    "web-lb-bep1"
+                                    "BackendPool1"
                                 ]
                             }
                         ],
@@ -28,50 +28,42 @@
                         "availabilitySet": {
                             "name": "msft-complete-web-as"
                         },
-                        "extensions": [
-                            {
-                                "name": "iis-config-ext",
-                                "publisher": "Microsoft.Powershell",
-                                "type": "DSC",
-                                "typeHandlerVersion": "2.1",
-                                "autoUpgradeMinorVersion": true,
-                                "settings": {
-                                    "ModulesUrl": "https://raw.githubusercontent.com/mspnp/reference-architectures/master/virtual-machines/multi-vm/extensions/windows/iisaspnet.ps1.zip",
-                                    "configurationFunction": "iisaspnet.ps1\\iisaspnet"
-                                },
-                                "protectedSettings": {}
-                            }
-                        ],
                         "loadBalancerSettings": {
                             "frontendIPConfigurations": [
                                 {
-                                    "name": "web-lb-fe-config1",
-                                    "loadBalancerType":"Public"
+                                    "name": "LoadBalancerFrontEnd",
+                                    "loadBalancerType":"Internal",
+                                    "internalLoadBalancerSettings": {
+                                        "privateIPAddress": "10.0.2.6",
+                                        "subnetName": "subnet1"    
+                                    }
                                 }
                             ],
                             "loadBalancingRules": [
                                 {
-                                    "name": "lbr1",
+                                    "name": "LBRule",
                                     "frontendPort": 80,
                                     "backendPort": 80,
                                     "protocol": "Tcp",
-                                    "backendPoolName": "web-lb-bep1",
-                                    "frontendIPConfigurationName": "web-lb-fe-config1",
+                                    "backendPoolName": "BackendPool1",
+                                    "frontendIPConfigurationName": "LoadBalancerFrontEnd",
+                                    "idleTimeoutInMinutes": 15,
                                     "enableFloatingIP": false,
-                                    "probeName": "lbp1"
+                                    "probeName": "lbprobe"
                                 }
                             ],
                             "probes": [
                                 {
-                                    "name": "lbp1",
+                                    "name": "lbprobe",
+                                    "protocol": "Tcp",
                                     "port": 80,
-                                    "protocol": "Http",
-                                    "requestPath": "/"
+                                    "intervalInSeconds": 15,
+                                    "numberOfProbes": 2
                                 }
                             ],
                             "backendPools": [
                                 {
-                                    "name": "web-lb-bep1",
+                                    "name": "BackendPool1",
                                     "nicIndex": 0
                                 }
                             ]

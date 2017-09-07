@@ -9,15 +9,15 @@
                     "settings": {
                         "vmCount": 1,
                         "osType": "windows",
-                        "namePrefix": "jb1",
+                        "namePrefix": "jb",
                         "adminPassword": "testPassw0rd!23",
                         "nics": [
                             {
-                                "subnetName": "subnet1"
+                                "subnetName": "firewall"
                             }
                         ],
                         "virtualNetwork": {
-                            "name": "msft-simple-vnet"
+                            "name": "msft-multiple-address-subnet-vnet"
                         },
                         "applicationGatewaySettings": {
                             "sku": {
@@ -28,11 +28,22 @@
                             "gatewayIPConfigurations": [
                                 {
                                     "name": "appGatewayIpConfig",
-                                    "subnetName": "subnet1"
+                                    "subnetName": "ad"
                                 }
                             ],
-                            "sslCertificates": [],
-                            "authenticationCertificates": [],
+                            "sslCertificates": [
+                                {
+                                    "name": "ssltest",
+                                    "data": "MIIDADCCAeigAwIBAgIQGX+BiMW6nZ1ExDxESqwXwTANBgkqhkiG9w0BAQUFADATMREwDwYDVQQDDAhKb2huIERvZTAeFw0xNzA5MDYxNDIzNDhaFw0xODA5MDYxNDQzNDhaMBMxETAPBgNVBAMMCEpvaG4gRG9lMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA05o8hLO1qACpCmFH3FVYVigVakcBip2MRJSVqHSYVJ81Mi11giIsrCiaf0X2sCKWLjQjmjH/o7+PLC4xTRhMR/jeLgc3GAOJgrzdNk7QVAuD+7g8/zc9li6+2wAG7KtNtm3PEyK5EHU/Eq+1D5VBmtBP7FBHYGJZqBZOZ7dGiKnTj4fSazRIM2iIdlnAn5WOFyn1PE6d0QU6PdohwzHDh4W5PMIe7aXfZgjHcq0gNR1WPln91Z2MEnhst3sOJntwPKEUXU8f0Mww0oe9OWH7jTnY11ZS01rFbAAkCAadWu1KMJULnAqDJJ6UU4r4S+wCruC1YrdBHZ0pnm51lIoXMQIDAQABo1AwTjAOBgNVHQ8BAf8EBAMCBaAwHQYDVR0lBBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMBMB0GA1UdDgQWBBSq3ScF1m75MqUh5hlHx6Gt/EhQ+zANBgkqhkiG9w0BAQUFAAOCAQEAFkUQYHRF7I69xWMEJdXyC0gsgNc5gU1V74VK7ljsqa/u3xWZaCHO0kuXwkpqvM4ywJ+kRY1EFngb0ORyCSQeyBJUxKqd7EIoSzCv/PO0tK05aXZNCmnClDXPl2Sj+U2CnXCzWNMMcPep17WuNzqmLZpKtjRgh7FId4x4FGyow6Wou9fWVcQV5+Qx+8OvtuWob5O18ocTr6McpNwu6Ze3UNKn5i7HEIJBFtjbyK61DyqURrWiONn9HDcZbpWaD1WClm+75VbJBvOXHEAwrtU2gHyF61RQ4tQyqqOepGuet2qK8atqxF3YpV/GwgqdZoSvH5JEJ3Iztx0y0Dz/dN/XMw==",
+                                    "password": "12345"
+                                }
+                            ],
+                            "authenticationCertificates": [
+                                {
+                                    "name": "authtest",
+                                    "data": "MIIC+DCCAeCgAwIBAgIQW/9u7rO8WpFCyvOlIp64gjANBgkqhkiG9w0BAQUFADAPMQ0wCwYDVQQDDAR0ZXN0MB4XDTE3MDkwNjE0Mjc1N1oXDTE4MDkwNjE0NDc1N1owDzENMAsGA1UEAwwEdGVzdDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBANUpP4PUiFaDydy0pXo5ZkHCJHFO9InhLyL8Xes5efMdrq6EJ5G/LzDgWlm6XPD6Qk1mhwkQD/rjcr6gcNyrtdM0XLpFm2Kfjxgk4PvV28bIdsU+X7npgT4E8KfqAAGdaUc99HUvBf+2GdnekwvIckOBobYfNdIq6souDK8TvJcfimimHje3aLgI/3+n4u8uK9mJMaCgTlQwEZn3p1/si/9YgRmfns1ftT+P3Sdbze3QNomyz5sRXsBsco/EodmwUpy9FtblE1uG1e8PcOMZoTncuMBgfV2y6t2SlLkSjM9j1wmfiN0Ddx712mYuIQesMrbv53MFcZ0mXiTRXtMwvzkCAwEAAaNQME4wDgYDVR0PAQH/BAQDAgWgMB0GA1UdJQQWMBQGCCsGAQUFBwMCBggrBgEFBQcDATAdBgNVHQ4EFgQUIquZHpmWq+0hQ26P2OXU+Aaj5okwDQYJKoZIhvcNAQEFBQADggEBAFCsJlbqZT92skNG9VLZ6bcjQxGAyGjtHr/L6WU+I+dSjUB2QehgMwkZ7tx9kLoPXgkH/nexZ+DgJNA38GlFy1lpfymqMITT63YaiAd912lqU1uEi4EwfSm0V6SibplGMO1ddDFb4siyV9WHQ6VVjyTuySthiWrXauqggDU5wt0MeyeNvvmkIOxAdVQOPGdX/8PPKBF5LCONvlludOs1wMASp2WkA97QKyxnawSqKtMkl7/5gOdFzD37h5i3UOoMWXa8cGmAzyogToqCF+i2hXQui3HAYJjk/uB/Ux3ciDAY04D+rcs9i8Qkv5BRVEAU/dm310g0Dl1IRfVL73nmfTo="
+                                }
+                            ],
                             "frontendIPConfigurations": [
                                 {
                                     "name": "appGatewayFrontendIP",
@@ -42,7 +53,7 @@
                                     "name": "testfec",
                                     "applicationGatewayType": "Internal",
                                     "internalApplicationGatewaySettings": {
-                                        "subnetName": "subnet1"
+                                        "subnetName": "ad"
                                     }
                                 }
                             ],
