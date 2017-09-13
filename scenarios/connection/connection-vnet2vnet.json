@@ -16,7 +16,7 @@
                   "name": "msft-vpn-vnet-gateway"
               },
               "virtualNetworkGateway2": {
-                  "name": "msft-express-route-vnet-gateway"
+                  "name": "msft-vpn-gpw"
               }
             }
           ]
