@@ -125,11 +125,15 @@ let deployTemplate = ({deploymentName, resourceGroupName, templateUri, parameter
 
 let getRegisteredClouds = ({azOptions} = {}) => {
     let child = spawnAz({
-        args: ['cloud', 'list'],
+        args: ['cloud', 'list', '--output', 'json'],
         azOptions: azOptions
     });
 
-    return JSON.parse(child.stdout.toString());
+    try {
+        return JSON.parse(child.stdout.toString());
+    } catch (e) {
+        throw new Error(`error retrieving cloud list${os.EOL}message: ${e.message}`);
+    }
 };
 
 exports.createResourceGroupIfNotExists = createResourceGroupIfNotExists;
