@@ -8,14 +8,14 @@
           "type": "VirtualNetwork",
           "settings": [
             {
-              "name": "msft-simple-vnet",
+              "name": "msft-hub-vnet",
               "addressPrefixes": [
                 "10.0.0.0/16"
               ],
               "subnets": [
                 {
-                  "name": "subnet1",
-                  "addressPrefix": "10.0.0.0/16"
+                  "name": "firewall",
+                  "addressPrefix": "10.0.1.0/24"
                 }
               ]
             }

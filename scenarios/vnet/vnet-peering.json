@@ -8,7 +8,7 @@
                     "type": "VirtualNetwork",
                     "settings": [
                         {
-                            "name": "msft-peer-vnet1",
+                            "name": "msft-hub-vnet",
                             "addressPrefixes": [
                                 "10.0.0.0/16"
                             ],
@@ -21,7 +21,7 @@
                             "virtualNetworkPeerings": [
                                 {
                                     "remoteVirtualNetwork": {
-                                        "name": "msft-peer-vnet2"
+                                        "name": "msft-spoke1-vnet"
                                     },
                                     "allowForwardedTraffic": true,
                                     "allowGatewayTransit": true,
@@ -34,7 +34,7 @@
                             }
                         },
                         {
-                            "name": "msft-peer-vnet2",
+                            "name": "msft-spoke1-vnet",
                             "addressPrefixes": [
                                 "10.1.0.0/16"
                             ],
@@ -47,7 +47,7 @@
                             "virtualNetworkPeerings": [
                                 {
                                     "remoteVirtualNetwork": {
-                                        "name": "msft-peer-vnet1"
+                                        "name": "msft-hub-vnet"
                                     },
                                     "allowForwardedTraffic": true,
                                     "allowGatewayTransit": false,
