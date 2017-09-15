@@ -1,0 +1,38 @@
+{
+    "$schema": "https://raw.githubusercontent.com/mspnp/template-building-blocks/master/schemas/buildingBlocks.json",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "buildingBlocks": {
+            "value": [
+                {
+                    "type": "VirtualMachine",
+                    "settings": {
+                        "vmCount": 2,
+                        "namePrefix": "l-ci-",
+                        "size": "Standard_DS1_v2",
+                        "adminUsername": "testadminuser",
+                        "adminPassword": "test$!Passw0rd111",
+                        "virtualNetwork": {
+                            "name": "vnet-rg1-centralus"
+                        },
+                        "nics": [
+                            {
+                                "isPublic": false,
+                                "privateIPAllocationMethod": "Static",
+                                "startingIPAddress": "10.1.1.44",
+                                "subnetName": "web"
+                            }
+                        ],
+                        "imageReference": {
+                            "id": "/subscriptions/a012a8b0-522a-4f59-81b6-aa0361eb9387/resourceGroups/tbb2-rg1/providers/Microsoft.Compute/images/ubuntu-apache-img"
+                        },
+                        "osType": "linux",
+                        "osDisk": {
+                            "createOption": "fromImage"
+                        }
+                    }
+                }
+            ]
+        }
+    }
+}
