@@ -703,6 +703,70 @@ describe('virtualMachineSettings:', () => {
             settings = _.cloneDeep(testSettings);
         });
 
+        it('loadBalancerSettings not added if not specified in parameters or userDefaults', () => {
+            delete userDefaults.loadBalancerSettings;
+            delete settings.loadBalancerSettings;
+            let results = merge({
+                settings: settings,
+                buildingBlockSettings: buildingBlockSettings,
+                defaultSettings: userDefaults
+            });
+            expect(results.loadBalancerSettings).toBeUndefined();
+        });
+
+        it('loadBalancerSettings added if not specified in parameters but specified in userDefaults', () => {
+            delete settings.loadBalancerSettings;
+            let results = merge({
+                settings: settings,
+                buildingBlockSettings: buildingBlockSettings,
+                defaultSettings: userDefaults
+            });
+            expect(results.loadBalancerSettings).toBeDefined();
+        });
+
+        it('applicationGatewaySettings not added if not specified in parameters or userDefaults', () => {
+            delete userDefaults.applicationGatewaySettings;
+            delete settings.applicationGatewaySettings;
+            let results = merge({
+                settings: settings,
+                buildingBlockSettings: buildingBlockSettings,
+                defaultSettings: userDefaults
+            });
+            expect(results.applicationGatewaySettings).toBeUndefined();
+        });
+
+        it('applicationGatewaySettings added if not specified in parameters but specified in userDefaults', () => {
+            userDefaults.applicationGatewaySettings = {};
+            delete settings.applicationGatewaySettings;
+            let results = merge({
+                settings: settings,
+                buildingBlockSettings: buildingBlockSettings,
+                defaultSettings: userDefaults
+            });
+            expect(results.applicationGatewaySettings).toBeDefined();
+        });
+
+        it('scaleSetSettings not added if not specified in parameters or userDefaults', () => {
+            delete userDefaults.scaleSetSettings;
+            delete settings.scaleSetSettings;
+            let results = merge({
+                settings: settings,
+                buildingBlockSettings: buildingBlockSettings,
+                defaultSettings: userDefaults
+            });
+            expect(results.scaleSetSettings).toBeUndefined();
+        });
+
+        it('scaleSetSettings added if not specified in parameters but specified in userDefaults', () => {
+            delete settings.scaleSetSettings;
+            let results = merge({
+                settings: settings,
+                buildingBlockSettings: buildingBlockSettings,
+                defaultSettings: userDefaults
+            });
+            expect(results.scaleSetSettings).toBeDefined();
+        });
+
         it('overrides vmCount', () => {
             userDefaults.vmCount = 5;
             let settings = _.cloneDeep(testSettings);
