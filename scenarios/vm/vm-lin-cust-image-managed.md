@@ -5,10 +5,10 @@ Steps:
 
 2. [Connect](https://docs.microsoft.com/en-us/azure/virtual-machines/linux/tutorial-manage-vm#connect-to-vm) and install the software that you want available on your image.
 
-3. To create an image, you need remove personal account information which makes it safer to deploy multiple times. Use the waagent command with the -deprovision+user parameter on your source Linux VM, to delete machine specific files and data. Then create an image VM resource by running *az image create* in Azure CLI.
+3. To create an image, you need remove personal account information which makes it safer to deploy multiple times. Use the waagent command with the -deprovision+user parameter on your source Linux VM, that will delete machine specific files and data. Then create an image VM resource by running *az image create* in Azure CLI.
 See [deprovisioning and creating an image](https://docs.microsoft.com/en-us/azure/virtual-machines/linux/capture-image).
 
-Note: be sure to install or the desired software on your VM prior to this step. Once you deprovision you won't be able to login with admin rights to the VM anymore.
+Note: be sure to install the desired software on your VM prior to this step. Once you deprovision you won't be able to login with admin rights to the VM anymore.
 
 4. Create VMs using template building blocks version 2
     - Create a *VirtualMachine* parameters file setting all the necessary values
