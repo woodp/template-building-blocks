@@ -26,8 +26,6 @@ function merge({ settings, buildingBlockSettings, defaultSettings }) {
     // Get the defaults for the OSType selected
     let defaults = _.cloneDeep((_.toLower(settings.osType) === 'windows') ? vmDefaults.defaultWindowsSettings : vmDefaults.defaultLinuxSettings);
 
-    defaults = (defaultSettings) ? [defaults, defaultSettings] : defaults;
-
     // if load balancer is required, loadBalancerSettings property needs to be specified in parameter
     if (_.isNil(settings.loadBalancerSettings)) {
         // If parameter doesnt have a loadBalancerSettings property, then remove it from defaults as well
@@ -54,6 +52,8 @@ function merge({ settings, buildingBlockSettings, defaultSettings }) {
         (_.isNil(defaultSettings) || _.isNil(defaultSettings.scaleSetSettings) || v.utilities.isNullOrWhitespace(defaultSettings.scaleSetSettings.name))) {
         settings.scaleSetSettings.name = `${settings.namePrefix}-ss`;
     }
+
+    defaults = (defaultSettings) ? [defaults, defaultSettings] : defaults;
 
     let merged = v.merge(settings, defaults, (objValue, srcValue, key) => {
         if (key === 'storageAccounts') {
