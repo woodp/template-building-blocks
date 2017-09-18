@@ -19,9 +19,6 @@
                             "type": "boolean",
                             "default": false
                         },
-                        "sku": {
-                            "$ref": "#/definitions/sku"
-                        },
                         "bgpSettings": {
                             "$ref": "types.json#/definitions/bgpSettings"
                         },
