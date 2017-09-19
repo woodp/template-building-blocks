@@ -24,7 +24,7 @@
                             }
                         ],
                         "imageReference": {
-                            "id": "/subscriptions/a012a8b0-522a-4f59-81b6-aa0361eb9387/resourceGroups/tbb2-rg1/providers/Microsoft.Compute/images/ubuntu-apache-img"
+                            "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/resource-group-name/providers/Microsoft.Compute/images/image-name"
                         },
                         "osType": "linux",
                         "osDisk": {
