@@ -1,22 +1,25 @@
 # Create A Linux Custom Image Managed Disk
 
+Important: This shows you how to create a VM with an **unmanaged** disk. Please note that using a **manged** disk has benefits and is the recommended approach.
+
 Steps:
 
-1. Create the Linux VM using the [portal](https://docs.microsoft.com/azure/virtual-machines/linux/quick-create-portal) or [Azure CLI](https://docs.microsoft.com/azure/virtual-machines/linux/quick-create-cli) or [PowerShell](https://docs.microsoft.com/azure/virtual-machines/linux/quick-create-powershell).
+1. Create the Linux VM using the [portal] you can follow this [tutorial](https://docs.microsoft.com/azure/virtual-machines/windows/quick-create-portal) but in step 3 (Settings) choose **not** to use **Use managed disks** on the "Storage" section.
+
+![Use unmanaged disk](images/unmanaged-disk.png)
 
 2. [Connect](https://docs.microsoft.com/azure/virtual-machines/linux/tutorial-manage-vm#connect-to-vm) to the machine via SSH and install the software that you want available on your image.
 
-3. To create an image, you need to remove personal account information which makes it safer to deploy multiple times. Use the waagent command with the -deprovision+user parameter on your source Linux VM, that will delete machine specific files and data. Then create an image VM resource by running *az image create* in Azure CLI.
-See [deprovisioning and creating an image](https://docs.microsoft.com/azure/virtual-machines/linux/capture-image).
+3. You need to remove personal account information which makes it safer to deploy multiple times. Use the waagent command with the -deprovision+user parameter on your source Linux VM, that will delete machine specific files and data. See [Deprovision the VM](https://docs.microsoft.com/azure/virtual-machines/linux/capture-image#step-1-deprovision-the-vm)
 
     Note: be sure to install the desired software on your VM prior to this step. Once you deprovision you won't be able to login with admin rights to the VM anymore.
 
 4. Create VMs using template building blocks version 2
     - Create a *VirtualMachine* parameters file setting all the necessary values. Check the wiki on how to [Create a Template Building Blocks Parameter File](https://github.com/mspnp/template-building-blocks/wiki/create-a-template-building-blocks-parameter-file) and the [Virtual Machines](https://github.com/mspnp/template-building-blocks/wiki/Virtual-Machines) reference.
-    - In *osDisk* set "createOption" to "fromImage".
-    - In *imageReference* set "id" to the full resource id of the image. This can be copied from the portal on the image overview page.
-
-    This sample creates 2 VMs from a custom image:
+    - In *storageAccounts* set "managed" to false and in the "accounts" array specify the storage account name where the OS disk is located.
+    - In *osDisk* set "createOption" to "fromImage" and specify the full *VHD URI* to the VM OS disk on the "images" array. This URI can be copied from the portal, entering the *disks* tab of your VM and then clicking on the OS disk.
+    
+    This sample creates 2 VMs from a VHD:
 
 ```JSON
 {
@@ -40,16 +43,22 @@ See [deprovisioning and creating an image](https://docs.microsoft.com/azure/virt
                             {
                                 "isPublic": false,
                                 "privateIPAllocationMethod": "Static",
-                                "startingIPAddress": "10.1.1.44",
+                                "startingIPAddress": "10.1.1.84",
                                 "subnetName": "subnet-name"
                             }
                         ],
-                        "imageReference": {
-                            "id": "/subscriptions/00000000-0000-000-0000-000000000000/resourceGroups/resource-group-name/providers/Microsoft.Compute/images/linux-img-name"
-                        },
+                        "storageAccounts": {
+                            "managed": false,
+                            "accounts": [
+                                "storage-account-name"
+                            ]
+                        },                        
                         "osType": "linux",
                         "osDisk": {
-                            "createOption": "fromImage"
+                            "createOption": "fromImage",
+                            "images": [
+                                "https://storage-account-name.blob.core.windows.net/vhds/vhd-name.vhd"
+                            ]
                         }
                     }
                 }
@@ -64,6 +73,3 @@ See [deprovisioning and creating an image](https://docs.microsoft.com/azure/virt
 - [Create a Template Building Blocks Parameter File](https://github.com/mspnp/template-building-blocks/wiki/create-a-template-building-blocks-parameter-file)
 - [Virtual Machines](https://github.com/mspnp/template-building-blocks/wiki/Virtual-Machines) reference
 - [Command Line Reference](https://github.com/mspnp/template-building-blocks/wiki/command-line-reference)
-- [Create a Linux VM video](https://azure.microsoft.com/resources/videos/create-a-linux-virtual-machine/)
-- [How to create an image of a virtual machine or VHD](https://docs.microsoft.com/azure/virtual-machines/linux/capture-image)
-- [Capture a Linux virtual machine running on Azure](https://docs.microsoft.com/azure/virtual-machines/linux/capture-image-nodejs)

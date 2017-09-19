@@ -1,15 +1,15 @@
-# Create A Linux Custom Image Managed Disk
+# Create A Windows Custom Image Managed Disk
 
 Steps:
 
-1. Create the Linux VM using the [portal](https://docs.microsoft.com/azure/virtual-machines/linux/quick-create-portal) or [Azure CLI](https://docs.microsoft.com/azure/virtual-machines/linux/quick-create-cli) or [PowerShell](https://docs.microsoft.com/azure/virtual-machines/linux/quick-create-powershell).
+1. Create the Windows VM using the [Azure Portal](https://docs.microsoft.com/azure/virtual-machines/windows/quick-create-portal) or [PowerShell](https://docs.microsoft.com/azure/virtual-machines/windows/quick-create-powershell) or [Azure CLI](https://docs.microsoft.com/azure/virtual-machines/windows/quick-create-cli).
 
-2. [Connect](https://docs.microsoft.com/azure/virtual-machines/linux/tutorial-manage-vm#connect-to-vm) to the machine via SSH and install the software that you want available on your image.
+2. [Connect](https://docs.microsoft.com/azure/virtual-machines/windows/quick-create-portal#connect-to-virtual-machine) to the VM using RDP and install the software that you want available on your image.
 
-3. To create an image, you need to remove personal account information which makes it safer to deploy multiple times. Use the waagent command with the -deprovision+user parameter on your source Linux VM, that will delete machine specific files and data. Then create an image VM resource by running *az image create* in Azure CLI.
-See [deprovisioning and creating an image](https://docs.microsoft.com/azure/virtual-machines/linux/capture-image).
+3. Generalize the VM using sysprep. That will remove all your personal account information, among other things, and prepare the machine to be used as an image. Then create an image using the [Azure Portal](https://docs.microsoft.com/azure/virtual-machines/windows/capture-image-resource#create-a-managed-image-in-the-portal) or using [PowerShell](https://docs.microsoft.com/azure/virtual-machines/windows/capture-image-resource#create-a-managed-image-of-a-vm-using-powershell).
+For more info see [generalizing and creating a windows image](https://docs.microsoft.com/azure/virtual-machines/windows/capture-image-resource).
 
-    Note: be sure to install the desired software on your VM prior to this step. Once you deprovision you won't be able to login with admin rights to the VM anymore.
+    Note: be sure to install the desired software on your VM prior to this step. Once you generalize the VM you won't be able to login with admin rights to the VM anymore.
 
 4. Create VMs using template building blocks version 2
     - Create a *VirtualMachine* parameters file setting all the necessary values. Check the wiki on how to [Create a Template Building Blocks Parameter File](https://github.com/mspnp/template-building-blocks/wiki/create-a-template-building-blocks-parameter-file) and the [Virtual Machines](https://github.com/mspnp/template-building-blocks/wiki/Virtual-Machines) reference.
@@ -40,14 +40,14 @@ See [deprovisioning and creating an image](https://docs.microsoft.com/azure/virt
                             {
                                 "isPublic": false,
                                 "privateIPAllocationMethod": "Static",
-                                "startingIPAddress": "10.1.1.44",
+                                "startingIPAddress": "10.1.1.14",
                                 "subnetName": "subnet-name"
                             }
                         ],
                         "imageReference": {
-                            "id": "/subscriptions/00000000-0000-000-0000-000000000000/resourceGroups/resource-group-name/providers/Microsoft.Compute/images/linux-img-name"
+                            "id": "/subscriptions/00000000-0000-0000-0000-00000000/resourceGroups/resource-group-name/providers/Microsoft.Compute/images/image-name"
                         },
-                        "osType": "linux",
+                        "osType": "windows",
                         "osDisk": {
                             "createOption": "fromImage"
                         }
@@ -64,6 +64,3 @@ See [deprovisioning and creating an image](https://docs.microsoft.com/azure/virt
 - [Create a Template Building Blocks Parameter File](https://github.com/mspnp/template-building-blocks/wiki/create-a-template-building-blocks-parameter-file)
 - [Virtual Machines](https://github.com/mspnp/template-building-blocks/wiki/Virtual-Machines) reference
 - [Command Line Reference](https://github.com/mspnp/template-building-blocks/wiki/command-line-reference)
-- [Create a Linux VM video](https://azure.microsoft.com/resources/videos/create-a-linux-virtual-machine/)
-- [How to create an image of a virtual machine or VHD](https://docs.microsoft.com/azure/virtual-machines/linux/capture-image)
-- [Capture a Linux virtual machine running on Azure](https://docs.microsoft.com/azure/virtual-machines/linux/capture-image-nodejs)
