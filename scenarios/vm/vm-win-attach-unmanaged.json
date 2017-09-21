@@ -7,7 +7,7 @@
                 {
                     "type": "VirtualMachine",
                     "settings": {
-                        "vmCount": 1,
+                        "vmCount": 2,
                         "namePrefix": "w-u-att",
                         "size": "Standard_DS1_v2",
                         "adminUsername": "testadminuser",
@@ -33,7 +33,19 @@
                         "osDisk": {
                             "createOption": "attach",
                             "images": [
-                                "http://storage-account-name.blob.core.windows.net/vhds/vhd-name-os.vhd"
+                                "http://storage-account-name.blob.core.windows.net/vhds/disk1-os.vhd",
+                                "http://storage-account-name.blob.core.windows.net/vhds/disk2-os.vhd"
+                            ]
+                        },
+                        "dataDisks": {
+                            "disks": [
+                                {
+                                    "createOption": "attach",
+                                    "images": [
+                                        ["http://storage-account-name.blob.core.windows.net/vhds/disk1-data.vhd"],
+                                        ["http://storage-account-name.blob.core.windows.net/vhds/disk2-data.vhd"]
+                                    ]
+                                }
                             ]
                         }
                     }
