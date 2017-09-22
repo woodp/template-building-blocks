@@ -7,7 +7,7 @@
                 {
                     "type": "VirtualMachine",
                     "settings": {
-                        "vmCount": 1,
+                        "vmCount": 2,
                         "namePrefix": "w-att",
                         "size": "Standard_DS1_v2",
                         "adminUsername": "testadminuser",
@@ -17,9 +17,9 @@
                         },
                         "nics": [
                             {
-                                "isPublic": false,
+                                "isPublic": true,
                                 "privateIPAllocationMethod": "Static",
-                                "startingIPAddress": "10.1.1.154",
+                                "startingIPAddress": "10.1.1.157",
                                 "subnetName": "web"
                             }
                         ],
@@ -27,7 +27,19 @@
                         "osDisk": {
                             "createOption": "attach",
                             "images": [
-                                "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/resource-group-name/providers/Microsoft.Compute/disks/disk-name-os"
+                                "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/resource-group-name/providers/Microsoft.Compute/disks/os-disk1-name",
+                                "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/resource-group-name/providers/Microsoft.Compute/disks/os-disk2-name"
+                            ]
+                        },
+                        "dataDisks": {
+                            "disks": [
+                                {
+                                    "createOption": "attach",
+                                    "images": [
+                                        ["/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/resource-group-name/providers/Microsoft.Compute/disks/data-disk1-name"],
+                                        ["/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/resource-group-name/providers/Microsoft.Compute/disks/data-disk2-name"]
+                                    ]
+                                }
                             ]
                         }
                     }
