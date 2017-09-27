@@ -18,7 +18,7 @@ or using the portal.
     }
 ```
 
-- Replace your subscription ID, resource group name and key valut name.
+- Replace your subscription ID, resource group name and the key valut name accordingly. Also, it is assuming the name of the secret is "sshKey", if you used a different name also update the value of "secretName".
 
 ## More info 
 - [Get started with Azure Key Vault](https://docs.microsoft.com/en-us/azure/key-vault/key-vault-get-started)
