@@ -15,7 +15,8 @@
     "variables": {
         "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('virtualMachines'))))]",
         "updatedSource": "[json(replace(concat(string(parameters('virtualMachines'))), '$SECRET$', parameters('secret')))]",
-        "extensionsTemplate": "[concat(uri(deployment().properties.templateLink.uri, '../../../buildingBlocks/virtualMachineExtensions/virtualMachineExtensions.json'), parameters('deploymentContext').sasToken)]"
+        "extensionsTemplate": "[concat(uri(deployment().properties.templateLink.uri, '../../../buildingBlocks/virtualMachineExtensions/virtualMachineExtensions.json'), parameters('deploymentContext').sasToken)]",
+        "encryptionTemplate": "[concat(uri(deployment().properties.templateLink.uri, 'virtualMachineEncryption.json'), parameters('deploymentContext').sasToken)]"
     },
     "resources": [
         {
@@ -66,6 +67,33 @@
                                     },
                                     "extensions": {
                                         "value": "[variables('updatedSource')[copyIndex()].extensions]"
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "type": "Microsoft.Resources/deployments",
+                            "apiVersion": "2017-05-10",
+                            "name": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-', variables('updatedSource')[copyIndex()].name, '-encrypt-', variables('templateUniqueString'))]",
+                            "resourceGroup": "[variables('updatedSource')[copyIndex()].resourceGroupName]",
+                            "condition": "[variables('updatedSource')[copyIndex()].encryptionSettings.enabled]",
+                            "dependsOn": [
+                                "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-', variables('updatedSource')[copyIndex()].name, '-deployExt-', variables('templateUniqueString'))]"
+                            ],
+                            "properties": {
+                                "mode": "Incremental",
+                                "templateLink": {
+                                    "uri": "[variables('encryptionTemplate')]"
+                                },
+                                "parameters": {
+                                    "deploymentContext": {
+                                        "value": {
+                                            "parentTemplateUniqueString": "[concat(variables('templateUniqueString'), '-encrypt')]",
+                                            "sasToken": "[parameters('deploymentContext').sasToken]"
+                                        }
+                                    },
+                                    "source": {
+                                        "value": "[variables('updatedSource')[copyIndex()]]"
                                     }
                                 }
                             }

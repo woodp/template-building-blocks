@@ -101,7 +101,7 @@ function merge({ settings, buildingBlockSettings, defaultSettings }) {
     // Add resourceGroupName and SubscriptionId to resources
     let updatedSettings = resources.setupResources(merged, buildingBlockSettings, (parentKey) => {
         return ((parentKey === null) || (v.utilities.isStringInArray(parentKey,
-            ['virtualNetwork', 'availabilitySet', 'nics', 'diagnosticStorageAccounts', 'storageAccounts', 'applicationGatewaySettings', 'loadBalancerSettings', 'encryptionSettings', 'scaleSetSettings', 'publicIpAddress'])));
+            ['virtualNetwork', 'availabilitySet', 'nics', 'diagnosticStorageAccounts', 'storageAccounts', 'applicationGatewaySettings', 'loadBalancerSettings', 'scaleSetSettings', 'publicIpAddress'])));
     });
 
     let normalized = NormalizeProperties(updatedSettings);
@@ -490,14 +490,14 @@ let virtualMachineValidations = {
                     result: ((_.isFinite(value)) && value > 0),
                     message: 'Value must be greater than 0'
                 };
-            },
-            encryptionSettings: (value) => {
-                return _.isNil(value) ? {
-                    result: true
-                } : {
-                    validations: encryptionSettingsValidations
-                };
-            }
+            }//,
+            // encryptionSettings: (value) => {
+            //     return _.isNil(value) ? {
+            //         result: true
+            //     } : {
+            //         validations: encryptionSettingsValidations
+            //     };
+            // }
         };
 
         return {
@@ -1019,23 +1019,23 @@ let processorProperties = {
             instance.diskSizeGB = value.diskSizeGB;
         }
 
-        if (value.encryptionSettings) {
-            instance.encryptionSettings = {
-                diskEncryptionKey: {
-                    secretUrl: value.encryptionSettings.diskEncryptionKey.secretUrl,
-                    sourceVault: {
-                        id: resources.resourceId(value.encryptionSettings.subscriptionId, value.encryptionSettings.resourceGroupName, 'Microsoft.KeyVault/vaults', value.encryptionSettings.diskEncryptionKey.sourceVaultName)
-                    }
-                },
-                keyEncryptionKey: {
-                    keyUrl: value.encryptionSettings.keyEncryptionKey.keyUrl,
-                    sourceVault: {
-                        id: resources.resourceId(value.encryptionSettings.subscriptionId, value.encryptionSettings.resourceGroupName, 'Microsoft.KeyVault/vaults', value.encryptionSettings.keyEncryptionKey.sourceVaultName)
-                    }
-                },
-                enabled: true
-            };
-        }
+        // if (value.encryptionSettings) {
+        //     instance.encryptionSettings = {
+        //         diskEncryptionKey: {
+        //             secretUrl: value.encryptionSettings.diskEncryptionKey.secretUrl,
+        //             sourceVault: {
+        //                 id: resources.resourceId(value.encryptionSettings.subscriptionId, value.encryptionSettings.resourceGroupName, 'Microsoft.KeyVault/vaults', value.encryptionSettings.diskEncryptionKey.sourceVaultName)
+        //             }
+        //         },
+        //         keyEncryptionKey: {
+        //             keyUrl: value.encryptionSettings.keyEncryptionKey.keyUrl,
+        //             sourceVault: {
+        //                 id: resources.resourceId(value.encryptionSettings.subscriptionId, value.encryptionSettings.resourceGroupName, 'Microsoft.KeyVault/vaults', value.encryptionSettings.keyEncryptionKey.sourceVaultName)
+        //             }
+        //         },
+        //         enabled: true
+        //     };
+        // }
 
         if (value.createOption === 'attach') {
             if (parent.storageAccounts.managed) {
@@ -1340,6 +1340,47 @@ function transform(settings, buildingBlockSettings) {
         }];
         let transformedExtensions = vmExtensions.transform(extensionParam).extensions;
 
+        // We are going to enable encryption here by adding the disk encryption extension to the end of the extensions.
+        // We will build off of the unprocessed vmSettings and put the extension in the building block extension format
+        // and reuse our code. ;)
+        let encryptionSettings = {
+            enabled: false
+        };
+
+        if (vmStamp.osDisk.encryptionSettings) {
+            let diskEncryptionExtension = [{
+                vms: [vmStamp.name],
+                extensions: [{
+                    name: 'AzureDiskEncryption',
+                    publisher: 'Microsoft.Azure.Security',
+                    type: 'AzureDiskEncryption',
+                    typeHandlerVersion: '1.1',
+                    autoUpgradeMinorVersion: true,
+                    forceUpdateTag: '1.0',
+                    settings: {
+                        AADClientID: vmStamp.osDisk.encryptionSettings.aadClientId,
+                        KeyVaultURL: vmStamp.osDisk.encryptionSettings.bekKeyVaultUrl,
+                        KeyEncryptionKeyURL: vmStamp.osDisk.encryptionSettings.keyEncryptionKeyUrl,
+                        KeyEncryptionAlgorithm: 'RSA-OAEP',
+                        VolumeType: vmStamp.osDisk.encryptionSettings.volumeType,
+                        EncryptionOperation: 'EnableEncryption'
+                    },
+                    protectedSettings: {
+                        AADClientSecret: vmStamp.osDisk.encryptionSettings.aadClientSecret
+                    }
+                }]
+            }];
+
+            transformedExtensions = transformedExtensions.concat(vmExtensions.transform(diskEncryptionExtension).extensions);
+            encryptionSettings = {
+                enabled: true,
+                bekKeyVault: vmStamp.osDisk.encryptionSettings.bekKeyVault,
+                bekKeyVaultUrl: vmStamp.osDisk.encryptionSettings.bekKeyVaultUrl,
+                kekKeyVault: vmStamp.osDisk.encryptionSettings.kekKeyVault,
+                kekUrl: vmStamp.osDisk.encryptionSettings.keyEncryptionKeyUrl
+            };
+        }
+
         result.virtualMachines.push({
             properties: vmProperties,
             name: vmStamp.name,
@@ -1347,7 +1388,8 @@ function transform(settings, buildingBlockSettings) {
             resourceGroupName: vmStamp.resourceGroupName,
             subscriptionId: vmStamp.subscriptionId,
             location: vmStamp.location,
-            tags: vmStamp.tags
+            tags: vmStamp.tags,
+            encryptionSettings: encryptionSettings
         });
 
         return result;

@@ -20,7 +20,8 @@
         "protectedSettingsObject": {
             "protectedSettings": "[json(parameters('extensionProtectedSettings'))]"
         },
-        "updatedExtensionProperties": "[union(parameters('extension').extensionSettings, variables('protectedSettingsObject'))]"
+        "withProtectedSettings": "[union(parameters('extension').extensionSettings, variables('protectedSettingsObject'))]",
+        "updatedExtensionProperties": "[if(empty(json(parameters('extensionProtectedSettings'))), parameters('extension').extensionSettings, variables('withProtectedSettings'))]"
     },
     "resources": [
         {
