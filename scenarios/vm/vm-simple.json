@@ -13,11 +13,12 @@
                         "adminPassword": "testPassw0rd!23",
                         "nics": [
                             {
-                                "subnetName": "subnet1"
+                                "subnetName": "mgmt",
+                                "isPublic": true
                             }
                         ],
                         "virtualNetwork": {
-                            "name": "msft-simple-vnet"
+                            "name": "msft-hub-vnet"
                         }
                     }
                 }
