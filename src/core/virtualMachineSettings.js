@@ -13,6 +13,8 @@ let vmExtensions = require('./virtualMachineExtensionsSettings');
 let scaleSetSettings = require('./virtualMachineScaleSetSettings');
 const os = require('os');
 
+const AUTHENTICATION_PLACEHOLDER = '$AUTHENTICATION$';
+
 function merge({ settings, buildingBlockSettings, defaultSettings }) {
     if (v.utilities.isNullOrWhitespace(settings.osType)) {
         settings.osType = 'linux';
@@ -25,6 +27,12 @@ function merge({ settings, buildingBlockSettings, defaultSettings }) {
 
     // Get the defaults for the OSType selected
     let defaults = _.cloneDeep((_.toLower(settings.osType) === 'windows') ? vmDefaults.defaultWindowsSettings : vmDefaults.defaultLinuxSettings);
+
+    // if disk encryption is required, osDisk.encryptionSettings property needs to be specified in parameter
+    if (_.isNil(settings.osDisk) || _.isNil(settings.osDisk.encryptionSettings)) {
+        // If parameter doesnt have an osDisk.encryptionSettings property, then remove it from defaults as well
+        delete defaults.osDisk.encryptionSettings;
+    }
 
     // if load balancer is required, loadBalancerSettings property needs to be specified in parameter
     if (_.isNil(settings.loadBalancerSettings)) {
@@ -101,7 +109,8 @@ function merge({ settings, buildingBlockSettings, defaultSettings }) {
     // Add resourceGroupName and SubscriptionId to resources
     let updatedSettings = resources.setupResources(merged, buildingBlockSettings, (parentKey) => {
         return ((parentKey === null) || (v.utilities.isStringInArray(parentKey,
-            ['virtualNetwork', 'availabilitySet', 'nics', 'diagnosticStorageAccounts', 'storageAccounts', 'applicationGatewaySettings', 'loadBalancerSettings', 'scaleSetSettings', 'publicIpAddress'])));
+            ['virtualNetwork', 'availabilitySet', 'nics', 'diagnosticStorageAccounts', 'storageAccounts', 'applicationGatewaySettings',
+            'loadBalancerSettings', 'scaleSetSettings', 'publicIpAddress', 'keyVault', 'diskEncryptionKeyVault', 'keyEncryptionKeyVault'])));
     });
 
     let normalized = NormalizeProperties(updatedSettings);
@@ -205,6 +214,7 @@ let validOSTypes = ['linux', 'windows'];
 let validCachingType = ['None', 'ReadOnly', 'ReadWrite'];
 let validOsDiskCreateOptions = ['fromImage', 'attach'];
 let validDataDiskCreateOptions = ['fromImage', 'empty', 'attach'];
+let validEncryptionVolumeType = ['OS', 'Data', 'All'];
 
 let isValidOSType = (osType) => {
     return v.utilities.isStringInArray(osType, validOSTypes);
@@ -222,9 +232,8 @@ let isValidDataDiskCreateOptions = (option) => {
     return v.utilities.isStringInArray(option, validDataDiskCreateOptions);
 };
 
-let validProtocols = ['Tcp', 'Udp'];
-let isValidProtocol = (protocol) => {
-    return v.utilities.isStringInArray(protocol, validProtocols);
+let isValidEncryptionVolumeType = (option) => {
+    return v.utilities.isStringInArray(option, validEncryptionVolumeType);
 };
 
 function validate(settings) {
@@ -424,6 +433,7 @@ let virtualMachineValidations = {
         let imageReference = parent.imageReference;
         let vmCount = parent.vmCount;
         let isScaleSet = !_.isNil(parent.scaleSetSettings);
+        let osType = parent.osType;
         let osDiskValidations = {
             caching: (value) => {
                 return {
@@ -490,14 +500,181 @@ let virtualMachineValidations = {
                     result: ((_.isFinite(value)) && value > 0),
                     message: 'Value must be greater than 0'
                 };
-            }//,
-            // encryptionSettings: (value) => {
-            //     return _.isNil(value) ? {
-            //         result: true
-            //     } : {
-            //         validations: encryptionSettingsValidations
-            //     };
-            // }
+            },
+            encryptionSettings: (value, parent) => {
+                if (_.isNil(value)) {
+                    return {
+                        result: true
+                    };
+                }
+                // This can work in one of two ways.  One is pre-encrypted disk and the second, is Azure encrypting the disks with the extension
+                // We'll use diskEncryptionKey as our discriminator to decide how we are working
+                if (value.diskEncryptionKey) {
+                    // This is a set of pre-encrypted disks, so we need to set the settings when we create the disk.  The required information
+                    // MUST already be in KeyVault.  Each of these must be an array since this only works in an attach scenario.
+                    if (parent.createOption !== 'attach') {
+                        return {
+                            result: false,
+                            message: 'Pre-encrypted disks are only supported with createOption === \'attach\''
+                        };
+                    }
+                    return {
+                        validations: {
+                            diskEncryptionKey: {
+                                secretUrls: (value) => {
+                                    if (_.isNil(value) || !_.isArray(value) || value.length !== vmCount) {
+                                        return {
+                                            result: false,
+                                            message: 'secretUrls must be an array with a length === vmCount pointing to a KeyVault secret for each virtual machine'
+                                        };
+                                    } else {
+                                        return {
+                                            validations: v.validationUtilities.isNotNullOrWhitespace
+                                        };
+                                    }
+                                },
+                                keyVault: v.resourceReferenceValidations
+                            },
+                            keyEncryptionKey: (value) => {
+                                // This can be null, if we are not using a key encryption key
+                                if (_.isNil(value)) {
+                                    return {
+                                        result: true
+                                    };
+                                } else {
+                                    return {
+                                        validations: {
+                                            keyUrls: (value) => {
+                                                if (_.isNil(value) || !_.isArray(value) || value.length !== vmCount || value.length !== 1) {
+                                                    return {
+                                                        result: false,
+                                                        message: 'keyUrls must be an array with a length === vmCount or length === 1 (to use the same key) pointing to a KeyVault key to use for each diskEncryptionKey'
+                                                    };
+                                                } else {
+                                                    return {
+                                                        validations: v.validationUtilities.isNotNullOrWhitespace
+                                                    };
+                                                }
+                                            },
+                                            keyVault: v.resourceReferenceValidations
+                                        }
+                                    };
+                                }
+                            }
+                        }
+                    };
+                } else {
+                    // We are going to encrypt with the extension
+                    // Let's check the cross-field values first.  Since protectedSettings may not be there or is a keyVault reference, let's be safe
+                    let aadClientSecret = _.get(value, 'protectedSettings.aadClientSecret');
+                    let hasKeyVaultReference = _.get(value, 'protectedSettings.reference');
+                    return {
+                        validations: {
+                            aadClientId: v.validationUtilities.isNotNullOrWhitespace,
+                            aadClientCertThumbprint: (value, parent) => {
+                                // If a key vault reference exists, we can't really validate this since aadClientSecret could be in the
+                                // KeyVault referenced by protectedSettings.  If the aadClientSecret is not in the KeyVault, the deployment will
+                                // fail if this is not specified.
+                                if (hasKeyVaultReference) {
+                                    return {
+                                        result: true
+                                    };
+                                }
+                                if ((!v.utilities.isNullOrWhitespace(value)) && (!v.utilities.isNullOrWhitespace(aadClientSecret))) {
+                                    return {
+                                        result: false,
+                                        message: 'Either aadClientCertThumbprint or aadClientSecret must be specified, but not both'
+                                    };
+                                } else if (!v.utilities.isNullOrWhitespace(aadClientSecret)) {
+                                    return {
+                                        result: true
+                                    };
+                                } else {
+                                    return {
+                                        validations: v.validationUtilities.isNotNullOrWhitespace
+                                    };
+                                }
+                            },
+                            diskEncryptionKeyVault: (value) => {
+                                if (_.isNil(value)) {
+                                    return {
+                                        result: false,
+                                        message: 'Value cannot be undefined or null'
+                                    };
+                                }
+
+                                return {
+                                    validations: resources.resourceReferenceValidations
+                                };
+                            },
+                            diskEncryptionKeyVaultUrl: v.validationUtilities.isNotNullOrWhitespace,
+                            keyEncryptionKeyVault: (value, parent) => {
+                                if (v.utilities.isNullOrWhitespace(parent.keyEncryptionKeyUrl)) {
+                                    return {
+                                        result: _.isNil(value),
+                                        message: 'Value cannot be specified without a keyEncryptionKeyUrl'
+                                    };
+                                }
+
+                                return {
+                                    validations: resources.resourceReferenceValidations
+                                };
+                            },
+                            keyEncryptionKeyUrl: (value, parent) => {
+                                if (_.isNil(parent.keyEncryptionKeyVault)) {
+                                    return {
+                                        result: v.utilities.isNullOrWhitespace(value),
+                                        message: 'Value cannot be specified without a keyEncryptionKeyVault'
+                                    };
+                                } else {
+                                    return {
+                                        validations: v.validationUtilities.isNotNullOrWhitespace
+                                    };
+                                }
+                            },
+                            volumeType: (value) => {
+                                return {
+                                    result: isValidEncryptionVolumeType(value),
+                                    message: `Valid values are ${validEncryptionVolumeType.join(', ')}`
+                                };
+                            },
+                            protectedSettings: (value, parent) => {
+                                // First, let's see if we are a keyvault reference
+                                if (!_.isNil(value) && (value.reference)) {
+                                    return v.keyVaultSecretValidations;
+                                }
+                                // If our osType is linux, this CANNOT be null or undefined, because passphrase must be there.
+                                // If our osType is windows, this may or may not be there, based on the value of aadClientCertThumbprint
+                                if ((osType === 'windows') && (!v.utilities.isNullOrWhitespace(parent.aadClientCertThumbprint)) &&
+                                    (_.isNil(value))) {
+                                    return {
+                                        result: true
+                                    };
+                                }
+                                return {
+                                    validations: {
+                                        // If aadClientCertThumbprint is invalid, we validate this.
+                                        // Otherwise, that means aadClientCertThumbprint was specified and we should error if aadClientSecret is present
+                                        aadClientSecret: v.utilities.isNullOrWhitespace(parent.aadClientCertThumbprint) ? v.validationUtilities.isNotNullOrWhitespace :
+                                            (value) => {
+                                                return {
+                                                    result: _.isUndefined(value),
+                                                    message: 'Either aadClientCertThumbprint or aadClientSecret must be specified, but not both'
+                                                };
+                                            },
+                                        passphrase: osType === 'windows' ? (value) => {
+                                            return {
+                                                result: _.isUndefined(value),
+                                                message: `Value cannot be specified for osType === '${osType}'`
+                                            };
+                                        } : v.validationUtilities.isNotNullOrWhitespace
+                                    }
+                                };
+                            }
+                        }
+                    };
+                }
+            }
         };
 
         return {
@@ -963,6 +1140,78 @@ let virtualMachineValidations = {
         return {
             validations: vmExtensions.validations
         };
+    },
+    secrets: (value, parent) => {
+        if (_.isNil(value)) {
+            return {
+                result: true
+            };
+        }
+
+        if (!_.isArray(value)) {
+            return {
+                result: false,
+                message: 'Value must be an array'
+            };
+        }
+
+        if (value.length === 0) {
+            return {
+                result: true
+            };
+        }
+
+        let vm = parent;
+        return {
+            validations: {
+                keyVault: (value) => {
+                    if (_.isNil(value)) {
+                        return {
+                            result: false,
+                            message: 'Value cannot be null or undefined'
+                        };
+                    }
+
+                    return {
+                        validations: {
+                            name: v.validationUtilities.isNotNullOrWhitespace
+                        }
+                    };
+                },
+                certificates: (value) => {
+                    if (!_.isArray(value) || value.length === 0) {
+                        return {
+                            result: false,
+                            message: 'Value must be a non-empty array'
+                        };
+                    }
+
+
+                    return {
+                        validations: {
+                            certificateUrl: v.validationUtilities.isNotNullOrWhitespace,
+                            certificateStore: (value) => {
+                                if (vm.osType === 'windows' && v.utilities.isNullOrWhitespace(value)) {
+                                    return {
+                                        result: false,
+                                        message: `Value must be provided for osType === '${vm.osType}'`
+                                    };
+                                } else if (vm.osType === 'linux' && !v.utilities.isNullOrWhitespace(value)) {
+                                    return {
+                                        result: false,
+                                        message: `Value must not be provided for osType === '${vm.osType}'`
+                                    };
+                                }
+
+                                return {
+                                    result: true
+                                };
+                            }
+                        }
+                    };
+                }
+            }
+        };
     }
 };
 
@@ -1019,23 +1268,39 @@ let processorProperties = {
             instance.diskSizeGB = value.diskSizeGB;
         }
 
-        // if (value.encryptionSettings) {
-        //     instance.encryptionSettings = {
-        //         diskEncryptionKey: {
-        //             secretUrl: value.encryptionSettings.diskEncryptionKey.secretUrl,
-        //             sourceVault: {
-        //                 id: resources.resourceId(value.encryptionSettings.subscriptionId, value.encryptionSettings.resourceGroupName, 'Microsoft.KeyVault/vaults', value.encryptionSettings.diskEncryptionKey.sourceVaultName)
-        //             }
-        //         },
-        //         keyEncryptionKey: {
-        //             keyUrl: value.encryptionSettings.keyEncryptionKey.keyUrl,
-        //             sourceVault: {
-        //                 id: resources.resourceId(value.encryptionSettings.subscriptionId, value.encryptionSettings.resourceGroupName, 'Microsoft.KeyVault/vaults', value.encryptionSettings.keyEncryptionKey.sourceVaultName)
-        //             }
-        //         },
-        //         enabled: true
-        //     };
-        // }
+        // The disk is pre-encrypted, so just set the fields.  If the disk is not pre-encrypted, this will be handled by an extension later.
+        if ((value.encryptionSettings) && (value.encryptionSettings.diskEncryptionKey)) {
+            instance.encryptionSettings = {
+                enabled: true,
+                diskEncryptionKey: {
+                    sourceVault: {
+                        id: resources.resourceId(
+                            value.encryptionSettings.diskEncryptionKey.keyVault.subscriptionId,
+                            value.encryptionSettings.diskEncryptionKey.keyVault.resourceGroupName,
+                            'Microsoft.KeyVault/vaults',
+                            value.encryptionSettings.diskEncryptionKey.keyVault.name
+                        )
+                    },
+                    secretUrl: value.encryptionSettings.diskEncryptionKey.secretUrls[index]
+                }
+            };
+
+            if (value.encryptionSettings.keyEncryptionKey) {
+                instance.encryptionSettings.keyEncryptionKey = {
+                    sourceVault: {
+                        id: resources.resourceId(
+                            value.encryptionSettings.keyEncryptionKey.keyVault.subscriptionId,
+                            value.encryptionSettings.keyEncryptionKey.keyVault.resourceGroupName,
+                            'Microsoft.KeyVault/vaults',
+                            value.encryptionSettings.keyEncryptionKey.keyVault.name
+                        )
+                    },
+                    keyUrl: value.encryptionSettings.keyEncryptionKey.keyUrls.length === 1 ?
+                        value.encryptionSettings.keyEncryptionKey.keyUrls[0] :
+                        value.encryptionSettings.keyEncryptionKey.keyUrls[index]
+                };
+            }
+        }
 
         if (value.createOption === 'attach') {
             if (parent.storageAccounts.managed) {
@@ -1235,7 +1500,7 @@ let processorProperties = {
         if (parent.osType === 'windows') {
             return {
                 osProfile: {
-                    adminPassword: '$SECRET$',
+                    adminPassword: AUTHENTICATION_PLACEHOLDER,
                     windowsConfiguration: {
                         provisionVmAgent: true
                     }
@@ -1244,7 +1509,7 @@ let processorProperties = {
         } else {
             return {
                 osProfile: {
-                    adminPassword: '$SECRET$',
+                    adminPassword: AUTHENTICATION_PLACEHOLDER,
                     linuxConfiguration: null
                 }
             };
@@ -1260,7 +1525,7 @@ let processorProperties = {
                         publicKeys: [
                             {
                                 path: `/home/${parent.adminUsername}/.ssh/authorized_keys`,
-                                keyData: '$SECRET$'
+                                keyData: AUTHENTICATION_PLACEHOLDER
                             }
                         ]
                     }
@@ -1272,6 +1537,32 @@ let processorProperties = {
         return {
             osProfile: {
                 adminUsername: value
+            }
+        };
+    },
+    secrets: (value) => {
+        let secrets = _.map(value, (value) => {
+            return {
+                sourceVault: {
+                    id: resources.resourceId(value.keyVault.subscriptionId, value.keyVault.resourceGroupName, 'Microsoft.KeyVault/vaults', value.keyVault.name)
+                },
+                vaultCertificates: _.map(value.certificates, (value) => {
+                    let certificate = {
+                        certificateUrl: value.certificateUrl
+                    };
+
+                    if (value.certificateStore) {
+                        certificate.certificateStore = value.certificateStore;
+                    }
+
+                    return certificate;
+                })
+            };
+        });
+
+        return {
+            osProfile: {
+                secrets: secrets
             }
         };
     }
@@ -1344,40 +1635,92 @@ function transform(settings, buildingBlockSettings) {
         // We will build off of the unprocessed vmSettings and put the extension in the building block extension format
         // and reuse our code. ;)
         let encryptionSettings = {
-            enabled: false
+            useExtension: false
         };
 
-        if (vmStamp.osDisk.encryptionSettings) {
+        if ((vmStamp.osDisk.encryptionSettings) && (_.isNil(vmStamp.osDisk.encryptionSettings.diskEncryptionKey))) {
             let diskEncryptionExtension = [{
                 vms: [vmStamp.name],
                 extensions: [{
                     name: 'AzureDiskEncryption',
                     publisher: 'Microsoft.Azure.Security',
-                    type: 'AzureDiskEncryption',
-                    typeHandlerVersion: '1.1',
+                    type: vmStamp.osType === 'windows' ? 'AzureDiskEncryption' : 'AzureDiskEncryptionForLinux',
+                    typeHandlerVersion: vmStamp.osType === 'windows' ? '1.1' : '0.1',
                     autoUpgradeMinorVersion: true,
-                    forceUpdateTag: '1.0',
                     settings: {
                         AADClientID: vmStamp.osDisk.encryptionSettings.aadClientId,
-                        KeyVaultURL: vmStamp.osDisk.encryptionSettings.bekKeyVaultUrl,
+                        KeyVaultURL: vmStamp.osDisk.encryptionSettings.diskEncryptionKeyVaultUrl,
                         KeyEncryptionKeyURL: vmStamp.osDisk.encryptionSettings.keyEncryptionKeyUrl,
                         KeyEncryptionAlgorithm: 'RSA-OAEP',
                         VolumeType: vmStamp.osDisk.encryptionSettings.volumeType,
                         EncryptionOperation: 'EnableEncryption'
                     },
                     protectedSettings: {
-                        AADClientSecret: vmStamp.osDisk.encryptionSettings.aadClientSecret
                     }
                 }]
             }];
 
+            if (vmStamp.osType === 'windows') {
+                diskEncryptionExtension[0].extensions[0].forceUpdateTag = '1.0';
+            } else {
+                diskEncryptionExtension[0].extensions[0].settings.SequenceVersion = '1.0';
+            }
+
+            if (vmStamp.osDisk.encryptionSettings.aadClientCertThumbprint) {
+                diskEncryptionExtension[0].extensions[0].settings.AADClientCertThumbprint = vmStamp.osDisk.encryptionSettings.aadClientCertThumbprint;
+            }
+
+            // if (vmStamp.osDisk.encryptionSettings.aadClientSecret) {
+            //     diskEncryptionExtension[0].extensions[0].protectedSettings.AADClientSecret = vmStamp.osDisk.encryptionSettings.aadClientSecret;
+            // }
+
+            // // If we are linux, we have another "key"
+            // if (vmStamp.osDisk.encryptionSettings.passphrase) {
+            //     diskEncryptionExtension[0].extensions[0].protectedSettings.Passphrase = vmStamp.osDisk.encryptionSettings.passphrase;
+            // }
+            if (vmStamp.osDisk.encryptionSettings.protectedSettings) {
+                // If there are extra things in the keyVault reference, the templates will fail
+                if (vmStamp.osDisk.encryptionSettings.protectedSettings.reference) {
+                    diskEncryptionExtension[0].extensions[0].protectedSettings.reference = {
+                        keyVault: {
+                            id: resources.resourceId(
+                                vmStamp.osDisk.encryptionSettings.protectedSettings.reference.keyVault.subscriptionId,
+                                vmStamp.osDisk.encryptionSettings.protectedSettings.reference.keyVault.resourceGroupName,
+                                'Microsoft.KeyVault/vaults',
+                                vmStamp.osDisk.encryptionSettings.protectedSettings.reference.keyVault.name)
+                        },
+                        secretName: vmStamp.osDisk.encryptionSettings.protectedSettings.reference.secretName
+                    };
+                    // delete diskEncryptionExtension[0].extensions[0].protectedSettings.reference.keyVault.subscriptionId;
+                    // delete diskEncryptionExtension[0].extensions[0].protectedSettings.reference.keyVault.resourceGroupName;
+                    // delete diskEncryptionExtension[0].extensions[0].protectedSettings.reference.keyVault.location;
+
+                } else {
+                    diskEncryptionExtension[0].extensions[0].protectedSettings = vmStamp.osDisk.encryptionSettings.protectedSettings;
+                }
+            }
+
+            if (vmStamp.osDisk.encryptionSettings.diskFormatQuery) {
+                // We need to make sure to format the json correctly for the template engine.  We'll assume an array for now.  Validate this!
+                let json = JSON.stringify(vmStamp.osDisk.encryptionSettings.diskFormatQuery);
+                diskEncryptionExtension[0].extensions[0].settings.DiskFormatQuery = `[${json}`;
+                diskEncryptionExtension[0].extensions[0].settings.EncryptionOperation = 'EnableEncryptionFormat';
+            }
+
+            // We need to put this at the end of all of our extensions since they could install things.
             transformedExtensions = transformedExtensions.concat(vmExtensions.transform(diskEncryptionExtension).extensions);
             encryptionSettings = {
-                enabled: true,
-                bekKeyVault: vmStamp.osDisk.encryptionSettings.bekKeyVault,
-                bekKeyVaultUrl: vmStamp.osDisk.encryptionSettings.bekKeyVaultUrl,
-                kekKeyVault: vmStamp.osDisk.encryptionSettings.kekKeyVault,
-                kekUrl: vmStamp.osDisk.encryptionSettings.keyEncryptionKeyUrl
+                useExtension: true,
+                diskEncryptionKeyVault: resources.resourceId(
+                    vmStamp.osDisk.encryptionSettings.diskEncryptionKeyVault.subscriptionId,
+                    vmStamp.osDisk.encryptionSettings.diskEncryptionKeyVault.resourceGroupName,
+                    'Microsoft.KeyVault/vaults', vmStamp.osDisk.encryptionSettings.diskEncryptionKeyVault.name),
+                //bekKeyVaultUrl: vmStamp.osDisk.encryptionSettings.bekKeyVaultUrl,
+                keyEncryptionKeyVault: resources.resourceId(
+                    vmStamp.osDisk.encryptionSettings.keyEncryptionKeyVault.subscriptionId,
+                    vmStamp.osDisk.encryptionSettings.keyEncryptionKeyVault.resourceGroupName,
+                    'Microsoft.KeyVault/vaults', vmStamp.osDisk.encryptionSettings.keyEncryptionKeyVault.name),
+                keyEncryptionKeyUrl: vmStamp.osDisk.encryptionSettings.keyEncryptionKeyUrl
             };
         }
 
@@ -1412,14 +1755,15 @@ function transform(settings, buildingBlockSettings) {
 
     // Process secrets.  We need to put them into a shape that can be assigned to a secureString parameter.
     if (settings.osType === 'linux' && !_.isNil(settings.sshPublicKey)) {
-        accumulator.secret = settings.sshPublicKey;
+        accumulator.authentication = settings.sshPublicKey;
     } else {
-        accumulator.secret = settings.adminPassword;
+        accumulator.authentication = settings.adminPassword;
     }
 
-    if (_.isUndefined(accumulator.secret.reference)) {
-        accumulator.secret = {
-            value: accumulator.secret
+    // If it is not a KeyVault reference, shape it into a parameter.
+    if (_.isUndefined(accumulator.authentication.reference)) {
+        accumulator.authentication = {
+            value: accumulator.authentication
         };
     }
 
@@ -1505,8 +1849,27 @@ function process({ settings, buildingBlockSettings, defaultSettings }) {
     }, []), _.isEqual);
     // Extract the secrets into their own object and delete them from the virtual machine parameters
     results = _.transform(results, (result, value) => {
-        result.secrets.secrets.push(value.parameters.secret);
-        delete value.parameters.secret;
+        let secrets = {
+            authentication: value.parameters.authentication,
+            extensionsProtectedSettings: []
+        };
+        delete value.parameters.authentication;
+        if (value.parameters.scaleSet.length === 0) {
+            value.parameters.virtualMachines = _.map(value.parameters.virtualMachines, (value) => {
+                let protectedSettings = {};
+                value.extensions = _.map(value.extensions, (value, index) => {
+                    //protectedSettings.push(value.extensionProtectedSettings);
+                    protectedSettings[index.toString()] = value.extensionProtectedSettings;
+                    delete value.extensionProtectedSettings;
+                    return value;
+                });
+                secrets.extensionsProtectedSettings.push(protectedSettings);
+                return value;
+            });
+        } else {
+            // TODO!!!
+        }
+        result.secrets.secrets.push(secrets);
         result.virtualMachineParameters.push(value.parameters);
     }, {
         virtualMachineParameters: [],
@@ -1515,6 +1878,7 @@ function process({ settings, buildingBlockSettings, defaultSettings }) {
         }
     });
 
+    // Extract any protected settings from extensions on the virtual machines
     return {
         resourceGroups: uniqueResourceGroups,
         parameters: {

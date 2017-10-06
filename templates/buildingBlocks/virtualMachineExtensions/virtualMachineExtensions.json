@@ -10,6 +10,9 @@
             "metadata": {
                 "description": "Settings for virtual machine extensions"
             }
+        },
+        "extensionsProtectedSettings": {
+            "type": "secureObject"
         }
     },
     "variables": {
@@ -36,7 +39,7 @@
                     "extension": {
                         "value": "[parameters('extensions')[copyIndex()]]"
                     },
-                    "extensionProtectedSettings": "[parameters('extensions')[copyIndex()].extensionProtectedSettings]"
+                    "extensionProtectedSettings": "[parameters('extensionsProtectedSettings')[string(copyIndex())]]"
                 }
             }
         }

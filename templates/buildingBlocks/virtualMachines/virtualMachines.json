@@ -68,7 +68,9 @@
           "applicationGateways": {
             "value": "[if(contains(parameters('virtualMachines')[copyIndex()], 'applicationGateways'), parameters('virtualMachines')[copyIndex()]['applicationGateways'], json('[]'))]"
           },
-          "secret": "[parameters('secrets').secrets[copyIndex()]]"
+          "secrets": {
+            "value": "[parameters('secrets').secrets[copyIndex()]]"
+          }
         }
       }
     }

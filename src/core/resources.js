@@ -47,37 +47,37 @@ function getObject(collection, parentKey, stack, callback) {
 
 exports.resourceId = function (subscriptionId, resourceGroupName, resourceType, resourceName, subresourceName) {
     if (validation.utilities.isNullOrWhitespace(subscriptionId)) {
-        throw new Error(`subscriptionId: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`);
+        throw new Error(`[resources:resourceId()] subscriptionId: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`);
     }
 
     if (!validation.utilities.isGuid(subscriptionId)) {
-        throw new Error(`subscriptionId: ${validationMessages.StringIsNotAValidGuid}`);
+        throw new Error(`[resources:resourceId()] subscriptionId: ${validationMessages.StringIsNotAValidGuid}`);
     }
 
     if (validation.utilities.isNullOrWhitespace(resourceGroupName)) {
-        throw new Error(`resourceGroupName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`);
+        throw new Error(`[resources:resourceId()] resourceGroupName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`);
     }
 
     if (validation.utilities.isNullOrWhitespace(resourceType)) {
-        throw new Error(`resourceType: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`);
+        throw new Error(`[resources:resourceId()] resourceType: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`);
     }
 
     let resourceTypeParts = _.split(_.trimEnd(resourceType, '/'), '/');
     if ((resourceTypeParts.length < 2) || (resourceTypeParts.length > 3)) {
-        throw new Error(`resourceType: Invalid length ${resourceTypeParts.length}`);
+        throw new Error(`[resources:resourceId()] resourceType: Invalid length ${resourceTypeParts.length}`);
     }
 
     if ((resourceTypeParts.length === 2) && (validation.utilities.isNullOrWhitespace(resourceName))) {
-        throw new Error(`resourceName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`);
+        throw new Error(`[resources:resourceId()] resourceName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`);
     }
 
     // This is not strictly necessary, but could save from some misuse
     if ((resourceTypeParts.length === 2) && (!validation.utilities.isNullOrWhitespace(subresourceName))) {
-        throw new Error(`subresourceName: ${validationMessages.resources.SubresourceNameShouldNotBeSpecifiedForTopLevelResourceType}`);
+        throw new Error(`[resources:resourceId()] subresourceName: ${validationMessages.resources.SubresourceNameShouldNotBeSpecifiedForTopLevelResourceType}`);
     }
 
     if ((resourceTypeParts.length === 3) && (validation.utilities.isNullOrWhitespace(subresourceName))) {
-        throw new Error(`subresourceName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`);
+        throw new Error(`[resources:resourceId()] subresourceName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`);
     }
 
     let resourceId = `/subscriptions/${subscriptionId}/resourceGroups/${resourceGroupName}/providers/${resourceTypeParts[0]}/${resourceTypeParts[1]}/${resourceName}`;

@@ -54,10 +54,10 @@
           "description": "Settings for virtual machines"
         }
       },
-      "secret": {
-        "type": "securestring",
+      "secrets": {
+        "type": "secureObject",
         "metadata": {
-          "description": "secret"
+          "description": "secrets"
         }
       },
       "scaleSet": {
@@ -281,8 +281,9 @@
             "virtualMachines": {
               "value": "[parameters('virtualMachines')]"
             },
-            "secret": {
-              "value": "[parameters('secret')]"
+            "authentication": "[parameters('secrets').authentication]",
+            "secrets": {
+              "value": "[parameters('secrets')]"
             }
           }
         }
@@ -340,8 +341,8 @@
             "scaleSet": {
               "value": "[parameters('scaleSet')]"
             },
-            "secret": {
-              "value": "[parameters('secret')]"
+            "secrets": {
+              "value": "[parameters('secrets')]"
             }
           }
         }

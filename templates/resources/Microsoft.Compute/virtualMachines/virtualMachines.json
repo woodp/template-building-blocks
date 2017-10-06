@@ -8,13 +8,16 @@
         "virtualMachines": {
             "type": "array"
         },
-        "secret": {
+        "authentication": {
             "type": "securestring"
+        },
+        "secrets": {
+            "type": "secureObject"
         }
     },
     "variables": {
         "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('virtualMachines'))))]",
-        "updatedSource": "[json(replace(concat(string(parameters('virtualMachines'))), '$SECRET$', parameters('secret')))]",
+        "updatedSource": "[json(replace(concat(string(parameters('virtualMachines'))), '$AUTHENTICATION$', parameters('authentication')))]",
         "extensionsTemplate": "[concat(uri(deployment().properties.templateLink.uri, '../../../buildingBlocks/virtualMachineExtensions/virtualMachineExtensions.json'), parameters('deploymentContext').sasToken)]",
         "encryptionTemplate": "[concat(uri(deployment().properties.templateLink.uri, 'virtualMachineEncryption.json'), parameters('deploymentContext').sasToken)]"
     },
@@ -67,6 +70,9 @@
                                     },
                                     "extensions": {
                                         "value": "[variables('updatedSource')[copyIndex()].extensions]"
+                                    },
+                                    "extensionsProtectedSettings": {
+                                        "value": "[parameters('secrets').extensionsProtectedSettings[copyIndex()]]"
                                     }
                                 }
                             }
@@ -76,7 +82,7 @@
                             "apiVersion": "2017-05-10",
                             "name": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-', variables('updatedSource')[copyIndex()].name, '-encrypt-', variables('templateUniqueString'))]",
                             "resourceGroup": "[variables('updatedSource')[copyIndex()].resourceGroupName]",
-                            "condition": "[variables('updatedSource')[copyIndex()].encryptionSettings.enabled]",
+                            "condition": "[variables('updatedSource')[copyIndex()].encryptionSettings.useExtension]",
                             "dependsOn": [
                                 "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-', variables('updatedSource')[copyIndex()].name, '-deployExt-', variables('templateUniqueString'))]"
                             ],

@@ -444,6 +444,26 @@ describe('virtualMachineSettings:', () => {
                 expect(mergedValue.imageReference.sku).toEqual('2016-Datacenter');
                 expect(mergedValue.imageReference.version).toEqual('latest');
             });
+            it('validates secrets is merged with defaults', () => {
+                let settings = {
+                    secrets: [
+                        {
+                            keyVault: {
+                                name: 'test-keyvault'
+                            },
+                            certificates: [
+                                {
+                                    certificateUrl: 'certificate-url'
+                                }
+                            ]
+                        }
+                    ],
+                    osType: 'windows'
+                };
+
+                let mergedValue = merge({ settings, buildingBlockSettings });
+                expect(mergedValue.secrets[0].certificates[0].certificateStore).toEqual('My');
+            });
         });
         describe('Linux:', () => {
             it('validates that properties for linux are applied', () => {
@@ -649,6 +669,14 @@ describe('virtualMachineSettings:', () => {
                 expect(mergedValue.imageReference.sku).toEqual('16.04-LTS');
                 expect(mergedValue.imageReference.version).toEqual('latest');
 
+            });
+            it('validates secrets is merged with defaults', () => {
+                let settings = {
+                    osType: 'linux'
+                };
+
+                let mergedValue = merge({ settings, buildingBlockSettings });
+                expect(mergedValue.secrets).toEqual([]);
             });
         });
     });
@@ -1871,6 +1899,420 @@ describe('virtualMachineSettings:', () => {
                 expect(result[0].name).toEqual('.diagnosticStorageAccounts.accounts');
             });
         });
+        describe('secrets:', () => {
+            beforeEach(() => {
+                settings.secrets = [
+                    {
+                        keyVault: {
+                            name: 'test-keyvault'
+                        },
+                        certificates: [
+                            {
+                                certificateUrl: 'https://test-keyvault.vault.azure.net/secrets/testcertificate/00000000000000000000000000000000',
+                                certificateStore: 'My'
+                            }
+                        ]
+                    }
+                ];
+            });
+            it('validates that no errors are thrown if secrets is undefined, null, or not an array', () => {
+                delete settings.secrets;
+                let result = validate(settings);
+                expect(result.length).toEqual(0);
+
+                settings.secrets = null;
+                result = validate(settings);
+                expect(result.length).toEqual(0);
+
+                settings.secrets = {};
+                result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.secrets');
+            });
+            it('validates that no errors are thrown if secrets an empty array', () => {
+                settings.secrets = [];
+                let result = validate(settings);
+                expect(result.length).toEqual(0);
+            });
+            it('validates that errors are thrown if keyVault is undefined or null', () => {
+                delete settings.secrets[0].keyVault;
+                let result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.secrets[0].keyVault');
+
+                settings.secrets[0].keyVault = null;
+                result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.secrets[0].keyVault');
+            });
+            it('validates that errors are thrown if certificates is undefined, null, or not an array', () => {
+                delete settings.secrets[0].certificates;
+                let result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.secrets[0].certificates');
+
+                settings.secrets[0].certificates = null;
+                result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.secrets[0].certificates');
+
+                settings.secrets[0].certificates = {};
+                result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.secrets[0].certificates');
+            });
+            it('validates that errors are thrown if certificates is an empty array', () => {
+                settings.secrets[0].certificates = [];
+                let result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.secrets[0].certificates');
+            });
+            it('validates that errors are thrown if certificateUrl is undefined, null, or empty', () => {
+                delete settings.secrets[0].certificates[0].certificateUrl;
+                let result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.secrets[0].certificates[0].certificateUrl');
+
+                settings.secrets[0].certificates[0].certificateUrl = null;
+                result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.secrets[0].certificates[0].certificateUrl');
+
+                settings.secrets[0].certificates[0].certificateUrl = '';
+                result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.secrets[0].certificates[0].certificateUrl');
+            });
+            describe('windows:', () => {
+                beforeEach(() => {
+                    settings.osType = 'windows';
+                });
+
+                it('validates that errors are thrown if certificateStore is undefined, null, or empty', () => {
+                    delete settings.secrets[0].certificates[0].certificateStore;
+                    let result = validate(settings);
+                    expect(result.length).toEqual(1);
+                    expect(result[0].name).toEqual('.secrets[0].certificates[0].certificateStore');
+
+                    settings.secrets[0].certificates[0].certificateStore = null;
+                    result = validate(settings);
+                    expect(result.length).toEqual(1);
+                    expect(result[0].name).toEqual('.secrets[0].certificates[0].certificateStore');
+
+                    settings.secrets[0].certificates[0].certificateStore = '';
+                    result = validate(settings);
+                    expect(result.length).toEqual(1);
+                    expect(result[0].name).toEqual('.secrets[0].certificates[0].certificateStore');
+                });
+            });
+            describe('linux:', () => {
+                beforeEach(() => {
+                    settings.osType = 'linux';
+                });
+
+                it('validates that errors are thrown if certificateStore is not undefined', () => {
+                    let result = validate(settings);
+                    expect(result.length).toEqual(1);
+                    expect(result[0].name).toEqual('.secrets[0].certificates[0].certificateStore');
+                });
+                it('validates that no errors are thrown if certificateStore is undefined', () => {
+                    delete settings.secrets[0].certificates[0].certificateStore;
+                    let result = validate(settings);
+                    expect(result.length).toEqual(0);
+                });
+            });
+        });
+        describe('encryptionSettings', () => {
+            describe('pre-encrypted settings', () => {
+                beforeEach(() => {
+                    settings.osDisk.encryptionSettings = {
+                        diskEncryptionKey: {
+                            secretUrl: 'https://test-keyvault.vault.azure.net/secrets/secret/00000000000000000000000000000000',
+                            keyVault: {
+                                name: 'test-keyvault',
+                                resourceGroupName: 'test-rg',
+                                subscriptionId: '00000000-0000-1000-A000-000000000000'
+                            }
+                        },
+                        keyEncryptionKey: {
+                            keyUrl: 'https://test-keyvault.vault.azure.net/keys/keyencryptionkey/00000000000000000000000000000000',
+                            keyVault: {
+                                name: 'test-keyvault',
+                                resourceGroupName: 'test-rg',
+                                subscriptionId: '00000000-0000-1000-A000-000000000000'
+                            }
+                        }
+                    };
+                });
+            });
+            describe('encryption extension', () => {
+                beforeEach(() => {
+                    settings.osDisk.encryptionSettings = {
+                        aadClientId: '00000000-0000-1000-A000-000000000000',
+                        aadClientCertThumbprint: '0000000000000000000000000000000000000000',
+                        volumeType: 'All',
+                        diskEncryptionKeyVaultUrl: 'https://test-keyvault.vault.azure.net/',
+                        diskEncryptionKeyVault: {
+                            name: 'test-keyvault',
+                            resourceGroupName: 'test-rg',
+                            subscriptionId: '00000000-0000-1000-A000-000000000000'
+                        },
+                        keyEncryptionKeyVault: {
+                            name: 'test-keyvault',
+                            resourceGroupName: 'test-rg',
+                            subscriptionId: '00000000-0000-1000-A000-000000000000'
+                        },
+                        keyEncryptionKeyUrl: 'https://test-keyvault.vault.azure.net/keys/keyencryptionkey/00000000000000000000000000000000'
+                    };
+                });
+                it('validates that errors are thrown if both aadClientId is undefined, null, or empty', () => {
+                    delete settings.osDisk.encryptionSettings.aadClientId;
+                    let result = validate(settings);
+                    expect(result.length).toEqual(1);
+                    expect(result[0].name).toEqual('.osDisk.encryptionSettings.aadClientId');
+
+                    settings.osDisk.encryptionSettings.aadClientId = null;
+                    result = validate(settings);
+                    expect(result.length).toEqual(1);
+                    expect(result[0].name).toEqual('.osDisk.encryptionSettings.aadClientId');
+
+                    settings.osDisk.encryptionSettings.aadClientId = '';
+                    result = validate(settings);
+                    expect(result.length).toEqual(1);
+                    expect(result[0].name).toEqual('.osDisk.encryptionSettings.aadClientId');
+                });
+                it('validates that errors are thrown if both aadClientSecret and aadClientCertThumbprint are undefined, null, or empty', () => {
+                    delete settings.osDisk.encryptionSettings.aadClientCertThumbprint;
+                    delete settings.osDisk.encryptionSettings.protectedSettings;
+                    let result = validate(settings);
+                    expect(result.length).toEqual(2);
+                    expect((_.filter(result), (value) => { return value.name === '.osDisk.encryptionSettings.aadClientCertThumbprint'; }).length).toEqual(1);
+                    expect((_.filter(result), (value) => { return value.name === '.osDisk.encryptionSettings.protectedSettings'; }).length).toEqual(1);
+
+                    settings.osDisk.encryptionSettings.aadClientCertThumbprint = null;
+                    settings.osDisk.encryptionSettings.protectedSettings = {
+                    };
+                    result = validate(settings);
+                    expect(result.length).toEqual(2);
+                    expect((_.filter(result), (value) => { return value.name === '.osDisk.encryptionSettings.aadClientCertThumbprint'; }).length).toEqual(1);
+                    expect((_.filter(result), (value) => { return value.name === '.osDisk.encryptionSettings.protectedSettings'; }).length).toEqual(1);
+
+                    settings.osDisk.encryptionSettings.aadClientCertThumbprint = null;
+                    settings.osDisk.encryptionSettings.protectedSettings = {
+                        aadClientSecret: null
+                    };
+                    result = validate(settings);
+                    expect(result.length).toEqual(2);
+                    expect((_.filter(result), (value) => { return value.name === '.osDisk.encryptionSettings.aadClientCertThumbprint'; }).length).toEqual(1);
+                    expect((_.filter(result), (value) => { return value.name === '.osDisk.encryptionSettings.protectedSettings'; }).length).toEqual(1);
+
+                    settings.osDisk.encryptionSettings.aadClientCertThumbprint = '';
+                    settings.osDisk.encryptionSettings.protectedSettings = {
+                        aadClientSecret: ''
+                    };
+                    result = validate(settings);
+                    expect(result.length).toEqual(2);
+                    expect((_.filter(result), (value) => { return value.name === '.osDisk.encryptionSettings.aadClientCertThumbprint'; }).length).toEqual(1);
+                    expect((_.filter(result), (value) => { return value.name === '.osDisk.encryptionSettings.protectedSettings'; }).length).toEqual(1);
+                });
+                it('validates that errors are thrown if both aadClientSecret and aadClientCertThumbprint are specified', () => {
+                    settings.osDisk.encryptionSettings.protectedSettings = {
+                        aadClientSecret: 'aadClientSecret'
+                    };
+                    let result = validate(settings);
+                    expect(result.length).toEqual(2);
+                    expect((_.filter(result), (value) => { return value.name === '.osDisk.encryptionSettings.aadClientCertThumbprint'; }).length).toEqual(1);
+                    expect((_.filter(result), (value) => { return value.name === '.osDisk.encryptionSettings.protectedSettings.aadClientSecret'; }).length).toEqual(1);
+                });
+                it('validates that no errors are thrown if both protectedSettings is a KeyVault reference and aadClientCertThumbprint are specified', () => {
+                    settings.osDisk.encryptionSettings.protectedSettings = {
+                        reference: {
+                            keyVault: {
+                                name: 'test-keyvault'
+                            },
+                            secretName: 'secretname'
+                        }
+                    };
+                    let result = validate(settings);
+                    expect(result.length).toEqual(0);
+                });
+                it('validates that errors are thrown for invalid volumeType', () => {
+                    delete settings.osDisk.encryptionSettings.volumeType;
+                    let result = validate(settings);
+                    expect(result.length).toEqual(1);
+                    expect(result[0].name).toEqual('.osDisk.encryptionSettings.volumeType');
+
+                    settings.osDisk.encryptionSettings.volumeType = null;
+                    result = validate(settings);
+                    expect(result.length).toEqual(1);
+                    expect(result[0].name).toEqual('.osDisk.encryptionSettings.volumeType');
+
+                    settings.osDisk.encryptionSettings.volumeType = '';
+                    result = validate(settings);
+                    expect(result.length).toEqual(1);
+                    expect(result[0].name).toEqual('.osDisk.encryptionSettings.volumeType');
+
+                    settings.osDisk.encryptionSettings.volumeType = 'NOT_VALID';
+                    result = validate(settings);
+                    expect(result.length).toEqual(1);
+                    expect(result[0].name).toEqual('.osDisk.encryptionSettings.volumeType');
+                });
+                it('validates that errors are thrown if diskEncryptionKeyVaultUrl is undefined, null, or empty', () => {
+                    delete settings.osDisk.encryptionSettings.diskEncryptionKeyVaultUrl;
+                    let result = validate(settings);
+                    expect(result.length).toEqual(1);
+                    expect(result[0].name).toEqual('.osDisk.encryptionSettings.diskEncryptionKeyVaultUrl');
+
+                    settings.osDisk.encryptionSettings.diskEncryptionKeyVaultUrl = null;
+                    result = validate(settings);
+                    expect(result.length).toEqual(1);
+                    expect(result[0].name).toEqual('.osDisk.encryptionSettings.diskEncryptionKeyVaultUrl');
+
+                    settings.osDisk.encryptionSettings.diskEncryptionKeyVaultUrl = '';
+                    result = validate(settings);
+                    expect(result.length).toEqual(1);
+                    expect(result[0].name).toEqual('.osDisk.encryptionSettings.diskEncryptionKeyVaultUrl');
+                });
+                it('validates that errors are thrown if keyEncryptionKeyUrl is undefined, null, or empty', () => {
+                    delete settings.osDisk.encryptionSettings.keyEncryptionKeyUrl;
+                    let result = validate(settings);
+                    expect(result.length).toEqual(2);
+                    expect((_.filter(result), (value) => { return value.name === '.osDisk.encryptionSettings.keyEncryptionKeyVault'; }).length).toEqual(1);
+                    expect((_.filter(result), (value) => { return value.name === '.osDisk.encryptionSettings.keyEncryptionKeyUrl'; }).length).toEqual(1);
+
+                    settings.osDisk.encryptionSettings.keyEncryptionKeyUrl = null;
+                    result = validate(settings);
+                    expect(result.length).toEqual(2);
+                    expect((_.filter(result), (value) => { return value.name === '.osDisk.encryptionSettings.keyEncryptionKeyVault'; }).length).toEqual(1);
+                    expect((_.filter(result), (value) => { return value.name === '.osDisk.encryptionSettings.keyEncryptionKeyUrl'; }).length).toEqual(1);
+
+                    settings.osDisk.encryptionSettings.keyEncryptionKeyUrl = '';
+                    result = validate(settings);
+                    expect(result.length).toEqual(2);
+                    expect((_.filter(result), (value) => { return value.name === '.osDisk.encryptionSettings.keyEncryptionKeyVault'; }).length).toEqual(1);
+                    expect((_.filter(result), (value) => { return value.name === '.osDisk.encryptionSettings.keyEncryptionKeyUrl'; }).length).toEqual(1);
+                });
+                it('validates that errors are thrown if diskEncryptionKeyVault is undefined or null', () => {
+                    delete settings.osDisk.encryptionSettings.diskEncryptionKeyVault;
+                    let result = validate(settings);
+                    expect(result.length).toEqual(1);
+                    expect(result[0].name).toEqual('.osDisk.encryptionSettings.diskEncryptionKeyVault');
+
+                    settings.osDisk.encryptionSettings.diskEncryptionKeyVault = null;
+                    result = validate(settings);
+                    expect(result.length).toEqual(1);
+                    expect(result[0].name).toEqual('.osDisk.encryptionSettings.diskEncryptionKeyVault');
+                });
+                it('validates that errors are thrown if keyEncryptionKeyVault is undefined or null', () => {
+                    delete settings.osDisk.encryptionSettings.keyEncryptionKeyVault;
+                    let result = validate(settings);
+                    expect(result.length).toEqual(2);
+                    expect((_.filter(result), (value) => { return value.name === '.osDisk.encryptionSettings.keyEncryptionKeyVault'; }).length).toEqual(1);
+                    expect((_.filter(result), (value) => { return value.name === '.osDisk.encryptionSettings.keyEncryptionKeyUrl'; }).length).toEqual(1);
+
+                    settings.osDisk.encryptionSettings.keyEncryptionKeyVault = null;
+                    result = validate(settings);
+                    expect(result.length).toEqual(2);
+                    expect((_.filter(result), (value) => { return value.name === '.osDisk.encryptionSettings.keyEncryptionKeyVault'; }).length).toEqual(1);
+                    expect((_.filter(result), (value) => { return value.name === '.osDisk.encryptionSettings.keyEncryptionKeyUrl'; }).length).toEqual(1);
+                });
+                it('validates that errors are thrown if diskEncryptionKeyVault.name is undefined, null, or only whitespace', () => {
+                    delete settings.osDisk.encryptionSettings.diskEncryptionKeyVault.name;
+                    let result = validate(settings);
+                    expect(result.length).toEqual(1);
+                    expect(result[0].name).toEqual('.osDisk.encryptionSettings.diskEncryptionKeyVault.name');
+
+                    settings.osDisk.encryptionSettings.diskEncryptionKeyVault.name = null;
+                    result = validate(settings);
+                    expect(result.length).toEqual(1);
+                    expect(result[0].name).toEqual('.osDisk.encryptionSettings.diskEncryptionKeyVault.name');
+
+                    settings.osDisk.encryptionSettings.diskEncryptionKeyVault.name = '';
+                    result = validate(settings);
+                    expect(result.length).toEqual(1);
+                    expect(result[0].name).toEqual('.osDisk.encryptionSettings.diskEncryptionKeyVault.name');
+                });
+                it('validates that errors are thrown if keyEncryptionKeyVault.name is undefined, null, or only whitespace', () => {
+                    delete settings.osDisk.encryptionSettings.keyEncryptionKeyVault.name;
+                    let result = validate(settings);
+                    expect(result.length).toEqual(1);
+                    expect(result[0].name).toEqual('.osDisk.encryptionSettings.keyEncryptionKeyVault.name');
+
+                    settings.osDisk.encryptionSettings.keyEncryptionKeyVault.name = null;
+                    result = validate(settings);
+                    expect(result.length).toEqual(1);
+                    expect(result[0].name).toEqual('.osDisk.encryptionSettings.keyEncryptionKeyVault.name');
+
+                    settings.osDisk.encryptionSettings.keyEncryptionKeyVault.name = '';
+                    result = validate(settings);
+                    expect(result.length).toEqual(1);
+                    expect(result[0].name).toEqual('.osDisk.encryptionSettings.keyEncryptionKeyVault.name');
+                });
+                describe('windows:', () => {
+                    beforeEach(() => {
+                        settings.osType = 'windows';
+                        settings.osDisk.encryptionSettings.protectedSettings = {
+                            passphrase: 'passphrase'
+                        };
+                    });
+                    it('validates that no errors are thrown if passphrase is undefined', () => {
+                        delete settings.osDisk.encryptionSettings.protectedSettings.passphrase;
+                        let result = validate(settings);
+                        expect(result.length).toEqual(0);
+                    });
+                    it('validates that errors are thrown if passphrase is specified', () => {
+                        settings.osDisk.encryptionSettings.protectedSettings = {
+                            passphrase: null
+                        };
+                        let result = validate(settings);
+                        expect(result.length).toEqual(1);
+                        expect(result[0].name).toEqual('.osDisk.encryptionSettings.protectedSettings.passphrase');
+
+                        settings.osDisk.encryptionSettings.protectedSettings = {
+                            passphrase: ''
+                        };
+                        result = validate(settings);
+                        expect(result.length).toEqual(1);
+                        expect(result[0].name).toEqual('.osDisk.encryptionSettings.protectedSettings.passphrase');
+
+                        settings.osDisk.encryptionSettings.protectedSettings = {
+                            passphrase: 'passphrase'
+                        };
+                        result = validate(settings);
+                        expect(result.length).toEqual(1);
+                        expect(result[0].name).toEqual('.osDisk.encryptionSettings.protectedSettings.passphrase');
+                    });
+                });
+                describe('linux:', () => {
+                    beforeEach(() => {
+                        settings.osType = 'linux';
+                        settings.osDisk.encryptionSettings.protectedSettings = {
+                            passphrase: 'passphrase'
+                        };
+                    });
+                    it('validates that no errors are thrown if passphrase is specified', () => {
+                        let result = validate(settings);
+                        expect(result.length).toEqual(0);
+                    });
+                    it('validates that errors are thrown if passphrase is undefined, null, or only whitespace', () => {
+                        delete settings.osDisk.encryptionSettings.protectedSettings.passphrase;
+                        let result = validate(settings);
+                        expect(result.length).toEqual(1);
+                        expect(result[0].name).toEqual('.osDisk.encryptionSettings.protectedSettings.passphrase');
+
+                        settings.osDisk.encryptionSettings.protectedSettings.passphrase = null;
+                        result = validate(settings);
+                        expect(result.length).toEqual(1);
+                        expect(result[0].name).toEqual('.osDisk.encryptionSettings.protectedSettings.passphrase');
+
+                        settings.osDisk.encryptionSettings.protectedSettings.passphrase = '';
+                        result = validate(settings);
+                        expect(result.length).toEqual(1);
+                        expect(result[0].name).toEqual('.osDisk.encryptionSettings.protectedSettings.passphrase');
+                    });
+                });
+            });
+        });
         describe('windows:', () => {
             describe('AuthenticationType:', () => {
                 it('validates that no errors are thorwn if password is provided and sshPublicKey is not', () => {
@@ -1902,7 +2344,6 @@ describe('virtualMachineSettings:', () => {
                     expect(result[0].name).toEqual('.sshPublicKey');
                 });
             });
-
         });
         describe('linux:', () => {
             describe('AuthenticationType:', () => {
@@ -3233,9 +3674,9 @@ describe('virtualMachineSettings:', () => {
                     windowsSettings.osType = 'windows';
 
                     let processedParam = virtualMachineSettings.process({ settings: windowsSettings, buildingBlockSettings });
-                    expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.osProfile.adminPassword).toEqual('$SECRET$');
-                    expect(processedParam.parameters.virtualMachines[0].virtualMachines[1].properties.osProfile.adminPassword).toEqual('$SECRET$');
-                    expect(processedParam.parameters.secrets.secrets[0].value).toEqual(windowsSettings.adminPassword);
+                    expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.osProfile.adminPassword).toEqual('$AUTHENTICATION$');
+                    expect(processedParam.parameters.virtualMachines[0].virtualMachines[1].properties.osProfile.adminPassword).toEqual('$AUTHENTICATION$');
+                    expect(processedParam.parameters.secrets.secrets[0].authentication.value).toEqual(windowsSettings.adminPassword);
                 });
                 it('validates that existingWindowsServerlicense is correctly set', () => {
 
@@ -3249,6 +3690,30 @@ describe('virtualMachineSettings:', () => {
                     windowsSettings.existingWindowsServerlicense = false;
                     processedParam = virtualMachineSettings.process({ settings: windowsSettings, buildingBlockSettings });
                     expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.hasOwnProperty('licenseType')).toEqual(false);
+                });
+                it('validates secrets are correctly set', () => {
+                    let windowsSettings = _.cloneDeep(testSettings);
+                    windowsSettings.osType = 'windows';
+                    windowsSettings.secrets = [
+                        {
+                            keyVault: {
+                                name: 'test-keyvault'
+                            },
+                            certificates: [
+                                {
+                                    certificateUrl: 'https://test-keyvault.vault.azure.net/secrets/testcertificate/9223ee75894147d58032693d64d304d6'
+                                }
+                            ]
+                        }
+                    ];
+
+                    let processedParam = virtualMachineSettings.process({ settings: windowsSettings, buildingBlockSettings });
+                    expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.osProfile.secrets[0].sourceVault.id.endsWith(
+                        windowsSettings.secrets[0].keyVault.name)).toEqual(true);
+                    expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.osProfile.secrets[0].vaultCertificates[0].certificateUrl)
+                        .toEqual(windowsSettings.secrets[0].certificates[0].certificateUrl);
+                    expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.osProfile.secrets[0].vaultCertificates[0].certificateStore)
+                        .toEqual('My');
                 });
             });
             describe('linux:', () => {
@@ -3267,9 +3732,9 @@ describe('virtualMachineSettings:', () => {
                     linuxSettings.osType = 'linux';
 
                     let processedParam = virtualMachineSettings.process({ settings: linuxSettings, buildingBlockSettings });
-                    expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.osProfile.adminPassword).toEqual('$SECRET$');
-                    expect(processedParam.parameters.virtualMachines[0].virtualMachines[1].properties.osProfile.adminPassword).toEqual('$SECRET$');
-                    expect(processedParam.parameters.secrets.secrets[0].value).toEqual(linuxSettings.adminPassword);
+                    expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.osProfile.adminPassword).toEqual('$AUTHENTICATION$');
+                    expect(processedParam.parameters.virtualMachines[0].virtualMachines[1].properties.osProfile.adminPassword).toEqual('$AUTHENTICATION$');
+                    expect(processedParam.parameters.secrets.secrets[0].authentication.value).toEqual(linuxSettings.adminPassword);
                 });
                 it('validates that for ssh AuthenticationType, linuxConfiguration is correctly added to the osProfile', () => {
                     let linuxSettings = _.cloneDeep(testSettings);
@@ -3281,12 +3746,12 @@ describe('virtualMachineSettings:', () => {
                     expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.osProfile.hasOwnProperty('linuxConfiguration')).toEqual(true);
                     expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.osProfile.linuxConfiguration.disablePasswordAuthentication).toEqual(true);
                     expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.osProfile.linuxConfiguration.ssh.publicKeys[0].path).toEqual(`/home/${linuxSettings.adminUsername}/.ssh/authorized_keys`);
-                    expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.osProfile.linuxConfiguration.ssh.publicKeys[0].keyData).toEqual('$SECRET$');
+                    expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.osProfile.linuxConfiguration.ssh.publicKeys[0].keyData).toEqual('$AUTHENTICATION$');
 
                     expect(processedParam.parameters.virtualMachines[0].virtualMachines[1].properties.osProfile.hasOwnProperty('linuxConfiguration')).toEqual(true);
                     expect(processedParam.parameters.virtualMachines[0].virtualMachines[1].properties.osProfile.linuxConfiguration.disablePasswordAuthentication).toEqual(true);
                     expect(processedParam.parameters.virtualMachines[0].virtualMachines[1].properties.osProfile.linuxConfiguration.ssh.publicKeys[0].path).toEqual(`/home/${linuxSettings.adminUsername}/.ssh/authorized_keys`);
-                    expect(processedParam.parameters.virtualMachines[0].virtualMachines[1].properties.osProfile.linuxConfiguration.ssh.publicKeys[0].keyData).toEqual('$SECRET$');
+                    expect(processedParam.parameters.virtualMachines[0].virtualMachines[1].properties.osProfile.linuxConfiguration.ssh.publicKeys[0].keyData).toEqual('$AUTHENTICATION$');
                 });
                 it('validates that for ssh AuthenticationType, adminPassword is set to null', () => {
                     let linuxSettings = _.cloneDeep(testSettings);
@@ -3297,6 +3762,30 @@ describe('virtualMachineSettings:', () => {
                     let processedParam = virtualMachineSettings.process({ settings: linuxSettings, buildingBlockSettings });
                     expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.osProfile.adminPassword).toEqual(null);
                     expect(processedParam.parameters.virtualMachines[0].virtualMachines[1].properties.osProfile.adminPassword).toEqual(null);
+                });
+                it('validates secrets are correctly set', () => {
+                    let windowsSettings = _.cloneDeep(testSettings);
+                    windowsSettings.osType = 'linux';
+                    windowsSettings.secrets = [
+                        {
+                            keyVault: {
+                                name: 'test-keyvault'
+                            },
+                            certificates: [
+                                {
+                                    certificateUrl: 'https://test-keyvault.vault.azure.net/secrets/testcertificate/9223ee75894147d58032693d64d304d6'
+                                }
+                            ]
+                        }
+                    ];
+
+                    let processedParam = virtualMachineSettings.process({ settings: windowsSettings, buildingBlockSettings });
+                    expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.osProfile.secrets[0].sourceVault.id.endsWith(
+                        windowsSettings.secrets[0].keyVault.name)).toEqual(true);
+                    expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.osProfile.secrets[0].vaultCertificates[0].certificateUrl)
+                        .toEqual(windowsSettings.secrets[0].certificates[0].certificateUrl);
+                    expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.osProfile.secrets[0].vaultCertificates[0].certificateStore)
+                        .toBeUndefined();
                 });
             });
         });

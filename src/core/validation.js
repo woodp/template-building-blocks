@@ -283,6 +283,23 @@ let validationUtilities = {
     }
 };
 
+const resourceReferenceValidations = {
+    name: validationUtilities.isNotNullOrWhitespace,
+    subscriptionId: validationUtilities.isGuid,
+    resourceGroupName: validationUtilities.isNotNullOrWhitespace
+};
+
+const keyVaultSecretValidations = {
+    reference: {
+        keyVault: {
+            name: validationUtilities.isNotNullOrWhitespace,
+            subscriptionId: validationUtilities.isGuid,
+            resourceGroupName: validationUtilities.isNotNullOrWhitespace
+        },
+        secretName: validationUtilities.isNotNullOrWhitespace
+    }
+};
+
 let tagsValidations = (value) => {
     let result = {
         result: true
@@ -388,3 +405,5 @@ exports.reduce = reduce;
 exports.tagsValidations = tagsValidations;
 exports.isInvalidUsername = isInvalidUsername;
 exports.isInvalidPassword = isInvalidPassword;
+exports.keyVaultSecretValidations = keyVaultSecretValidations;
+exports.resourceReferenceValidations = resourceReferenceValidations;
