@@ -5,6 +5,23 @@
         "buildingBlocks": {
             "value": [
                 {
+                    "type": "VirtualNetwork",
+                    "settings": [
+                        {
+                            "name": "simple-vnet",
+                            "addressPrefixes": [
+                                "10.0.0.0/16"
+                            ],
+                            "subnets": [
+                                {
+                                    "name": "default",
+                                    "addressPrefix": "10.0.1.0/24"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
                     "type": "VirtualMachine",
                     "settings": {
                         "vmCount": 1,
@@ -13,12 +30,12 @@
                         "adminPassword": "testPassw0rd!23",
                         "nics": [
                             {
-                                "subnetName": "mgmt",
+                                "subnetName": "default",
                                 "isPublic": true
                             }
                         ],
                         "virtualNetwork": {
-                            "name": "msft-hub-vnet"
+                            "name": "simple-vnet"
                         }
                     }
                 }

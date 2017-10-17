@@ -320,9 +320,17 @@ let validateCommandLine = ({commander}) => {
 
     options.sasToken = _.isUndefined(commander.sasToken) ? '' : '?'.concat(commander.sasToken);
 
+    // If cloud is specified, override the default.
+    if (!_.isUndefined(commander.cloud)) {
+        options.cloudName = commander.cloud;
+    }
+
     options.cloud = getCloud({
-        name: _.isUndefined(commander.cloud) ? options.cloudName : commander.cloud
+        name: options.cloudName
     });
+
+    // We have the cloud now, so we need to remove the name since it's in the cloud object.  This is for consistency reasons so we always use the cloud property.
+    delete options.cloudName;
 
     if (!_.isUndefined(commander.buildingBlocks)) {
         // This can be a semicolon separated set of files, we we need to resolve them all
@@ -548,7 +556,7 @@ try {
     if (options.deploy) {
         // We need to set the active cloud.  Currently we do not support deployments across clouds.
         az.setCloud({
-            name: options.cloudName
+            name: options.cloud.name
         });
         _.forEach(results, (value) => {
             // Get the resources groups to create if they don't exist.  Each block is responsible for specifying these.
