@@ -769,6 +769,8 @@ let expandSecurityRules = ({securityRules}) => {
         // We will ignore any missing or invalid fields here, since they will be caught in validations.
         let namedSecurityRule = namedSecurityRules[value.name];
         if (namedSecurityRule) {
+            // Clone so we don't overwrite
+            namedSecurityRule = _.cloneDeep(namedSecurityRule);
             // If we have a named rule, we need to do a couple of things.
             // The user could have overridden one or more of the following:  sourcePortRange, sourceAddressPrefix, destinationAddressPrefix.
             // Therefore, we need to merge these settings with all of the security rules associated with the named security rule.
