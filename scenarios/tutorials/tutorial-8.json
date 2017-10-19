@@ -90,18 +90,48 @@
                 {
                     "type": "VirtualMachine",
                     "settings": {
-                        "vmCount": 1,
+                        "vmCount": 2,
                         "osType": "windows",
                         "namePrefix": "jb",
                         "adminPassword": "testPassw0rd!23",
                         "nics": [
                             {
                                 "subnetName": "mgmt",
-                                "isPublic": true
+                                "isPublic": false,
+                                "backendPoolNames": [
+                                    "BackendPool1"
+                                ],
+                                "inboundNatRulesNames": [
+                                    "RDP-VM"
+                                ]
                             }
                         ],
                         "virtualNetwork": {
                             "name": "msft-hub-vnet"
+                        },
+                        "loadBalancerSettings": {
+                            "frontendIPConfigurations": [
+                                {
+                                    "name": "LoadBalancerFrontEnd",
+                                    "loadBalancerType":"Public"
+                                }
+                            ],
+                            "backendPools": [
+                                {
+                                    "name": "BackendPool1",
+                                    "nicIndex": 0
+                                }
+                            ],
+                            "inboundNatRules": [
+                                {
+                                    "name": "RDP-VM",
+                                    "frontendIPConfigurationName": "LoadBalancerFrontEnd",
+                                    "protocol": "Tcp",
+                                    "startingFrontendPort": 50001,
+                                    "backendPort": 3389,
+                                    "enableFloatingIP": false
+                                }
+                            ]
                         }
                     }
                 },

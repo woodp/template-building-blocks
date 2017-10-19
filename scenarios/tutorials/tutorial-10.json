@@ -90,18 +90,48 @@
                 {
                     "type": "VirtualMachine",
                     "settings": {
-                        "vmCount": 1,
+                        "vmCount": 2,
                         "osType": "windows",
                         "namePrefix": "jb",
                         "adminPassword": "testPassw0rd!23",
                         "nics": [
                             {
                                 "subnetName": "mgmt",
-                                "isPublic": true
+                                "isPublic": false,
+                                "backendPoolNames": [
+                                    "BackendPool1"
+                                ],
+                                "inboundNatRulesNames": [
+                                    "RDP-VM"
+                                ]
                             }
                         ],
                         "virtualNetwork": {
                             "name": "msft-hub-vnet"
+                        },
+                        "loadBalancerSettings": {
+                            "frontendIPConfigurations": [
+                                {
+                                    "name": "LoadBalancerFrontEnd",
+                                    "loadBalancerType": "Public"
+                                }
+                            ],
+                            "backendPools": [
+                                {
+                                    "name": "BackendPool1",
+                                    "nicIndex": 0
+                                }
+                            ],
+                            "inboundNatRules": [
+                                {
+                                    "name": "RDP-VM",
+                                    "frontendIPConfigurationName": "LoadBalancerFrontEnd",
+                                    "protocol": "Tcp",
+                                    "startingFrontendPort": 50001,
+                                    "backendPort": 3389,
+                                    "enableFloatingIP": false
+                                }
+                            ]
                         }
                     }
                 },
@@ -626,6 +656,176 @@
                     ]
                 },
                 {
+                    "type": "VirtualMachine",
+                    "settings": {
+                        "vmCount": 2,
+                        "namePrefix": "biz",
+                        "size": "Standard_DS1_v2",
+                        "adminUsername": "testadminuser",
+                        "adminPassword": "test$!Passw0rd111",
+                        "virtualNetwork": {
+                            "name": "msft-spoke1-vnet"
+                        },
+                        "nics": [
+                            {
+                                "isPublic": false,
+                                "subnetName": "biz",
+                                "backendPoolNames": [
+                                    "BizBackendPool1"
+                                ]
+                            }
+                        ],
+                        "osType": "windows",
+                        "scaleSetSettings": {},
+                        "loadBalancerSettings": {
+                            "frontendIPConfigurations": [
+                                {
+                                    "name": "BizLoadBalancerFrontEnd",
+                                    "loadBalancerType": "Internal",
+                                    "internalLoadBalancerSettings": {
+                                        "privateIPAddress": "10.1.2.4",
+                                        "subnetName": "biz"
+                                    }
+                                }
+                            ],
+                            "loadBalancingRules": [
+                                {
+                                    "name": "BizLBRule",
+                                    "frontendPort": 80,
+                                    "backendPort": 80,
+                                    "protocol": "Tcp",
+                                    "backendPoolName": "BizBackendPool1",
+                                    "frontendIPConfigurationName": "BizLoadBalancerFrontEnd",
+                                    "idleTimeoutInMinutes": 15,
+                                    "enableFloatingIP": false,
+                                    "probeName": "bizprobe"
+                                }
+                            ],
+                            "probes": [
+                                {
+                                    "name": "bizprobe",
+                                    "protocol": "Tcp",
+                                    "port": 80,
+                                    "intervalInSeconds": 15,
+                                    "numberOfProbes": 2
+                                }
+                            ],
+                            "backendPools": [
+                                {
+                                    "name": "BizBackendPool1",
+                                    "nicIndex": 0
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "type": "VirtualMachine",
+                    "settings": {
+                        "vmCount": 3,
+                        "namePrefix": "web",
+                        "size": "Standard_DS1_v2",
+                        "adminUsername": "testadminuser",
+                        "adminPassword": "test$!Passw0rd111",
+                        "virtualNetwork": {
+                            "name": "msft-spoke1-vnet"
+                        },
+                        "nics": [
+                            {
+                                "isPublic": false,
+                                "privateIPAllocationMethod": "Static",
+                                "startingIPAddress": "10.1.1.4",
+                                "subnetName": "web"
+                            }
+                        ],
+                        "osType": "windows",
+                        "extensions": [
+                            {
+                                "name": "iis-config-ext",
+                                "publisher": "Microsoft.Powershell",
+                                "type": "DSC",
+                                "typeHandlerVersion": "2.1",
+                                "autoUpgradeMinorVersion": true,
+                                "settings": {
+                                    "ModulesUrl": "https://raw.githubusercontent.com/mspnp/reference-architectures/master/virtual-machines/multi-vm/extensions/windows/iisaspnet.ps1.zip",
+                                    "configurationFunction": "iisaspnet.ps1\\iisaspnet"
+                                },
+                                "protectedSettings": {}
+                            }
+                        ],
+                        "applicationGatewaySettings": {
+                            "name": "webAppGateway",
+                            "sku": {
+                                "size": "Small",
+                                "capacity": 2,
+                                "tier": "Standard"
+                            },
+                            "gatewayIPConfigurations": [
+                                {
+                                    "name": "webIPConfig",
+                                    "subnetName": "web"
+                                }
+                            ],
+                            "frontendIPConfigurations": [
+                                {
+                                    "name": "webFrontEndIPConfig1",
+                                    "applicationGatewayType": "Internal",
+                                    "internalApplicationGatewaySettings": {
+                                        "subnetName": "web"
+                                    }
+                                }
+                            ],
+                            "frontendPorts": [
+                              {
+                                  "name": "webFrontEndPort1",
+                                  "port": 80
+                              }  
+                            ],
+                            "backendAddressPools": [
+                                {
+                                    "name": "webBackendAddressPool",
+                                    "backendAddresses": [
+                                        {
+                                            "ipAddress": "10.1.1.4"
+                                        },
+                                        {
+                                            "ipAddress": "10.1.1.5"
+                                        },
+                                        {
+                                            "ipAddress": "10.1.1.6"
+                                        }
+                                    ]
+                                }
+                            ],
+                            "backendHttpSettings": [
+                                {
+                                    "name": "webBackendHttpSetting1",
+                                    "port": 80,
+                                    "protocol": "Http",
+                                    "cookieBasedAffinity": "Disabled"
+                                }
+                            ],
+                            "httpListeners": [
+                                {
+                                    "name":"webHttpListener1",
+                                    "frontendIPConfigurationName": "webFrontEndIPConfig1",
+                                    "frontendPortName": "webFrontEndPort1",
+                                    "protocol": "Http"
+                                }
+                            ],
+                            "requestRoutingRules": [
+                                {
+                                    "name": "webRule1",
+                                    "ruleType": "Basic",
+                                    "httpListenerName": "webHttpListener1",
+                                    "backendAddressPoolName": "webBackendAddressPool",
+                                    "backendHttpSettingName": "webBackendHttpSetting1"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
                     "type": "NetworkSecurityGroup",
                     "settings": [
                         {
@@ -667,6 +867,40 @@
                                     "name": "msft-hub-vnet",
                                     "subnets": [
                                         "ad"
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "name": "web-nsg",
+                            "securityRules": [
+                                {
+                                    "name": "HTTP",
+                                    "sourceAddressPrefix": "10.0.1.0/24"
+                                }
+                            ],
+                            "virtualNetworks": [
+                                {
+                                    "name": "msft-spoke1-vnet",
+                                    "subnets": [
+                                        "web"
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "name": "biz-nsg",
+                            "securityRules": [
+                                {
+                                    "name": "HTTP",
+                                    "sourceAddressPrefix": "10.1.1.0/24"
+                                }
+                            ],
+                            "virtualNetworks": [
+                                {
+                                    "name": "msft-spoke1-vnet",
+                                    "subnets": [
+                                        "biz"
                                     ]
                                 }
                             ]
