@@ -80,6 +80,7 @@
                         "vmCount": 1,
                         "osType": "windows",
                         "namePrefix": "jb",
+                        "adminUserName": "tutorialAdmin",
                         "adminPassword": "testPassw0rd!23",
                         "nics": [
                             {
@@ -98,6 +99,7 @@
                         "vmCount": 2,
                         "osType": "windows",
                         "namePrefix": "ad",
+                        "adminUserName": "tutorialAdmin",
                         "adminPassword": "testPassw0rd!23",
                         "nics": [
                             {

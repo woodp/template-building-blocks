@@ -75,7 +75,8 @@
                         "vmCount": 1,
                         "osType": "windows",
                         "namePrefix": "jb",
-                        "adminPassword": "testPassw0rd!23",
+                        "adminUserName": "tutorialAdmin",
+						"adminPassword": "testPassw0rd!23",
                         "nics": [
                             {
                                 "subnetName": "mgmt",
@@ -93,7 +94,8 @@
                         "vmCount": 2,
                         "osType": "windows",
                         "namePrefix": "ad",
-                        "adminPassword": "testPassw0rd!23",
+                        "adminUserName": "tutorialAdmin",
+						"adminPassword": "testPassw0rd!23",
                         "nics": [
                             {
                                 "subnetName": "ad",

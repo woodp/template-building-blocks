@@ -93,6 +93,7 @@
                         "vmCount": 2,
                         "osType": "windows",
                         "namePrefix": "jb",
+                        "adminUserName": "tutorialAdmin",
                         "adminPassword": "testPassw0rd!23",
                         "nics": [
                             {
@@ -141,6 +142,7 @@
                         "vmCount": 2,
                         "osType": "windows",
                         "namePrefix": "ad",
+                        "adminUserName": "tutorialAdmin",
                         "adminPassword": "testPassw0rd!23",
                         "nics": [
                             {
@@ -341,6 +343,7 @@
                         "namePrefix": "sql",
                         "size": "Standard_DS3_v2",
                         "computerNamePrefix": "sql",
+                        "adminUserName": "tutorialAdmin",
                         "adminPassword": "testPassw0rd!23",
                         "osType": "windows",
                         "imageReference": {
@@ -451,6 +454,7 @@
                         "namePrefix": "fsw",
                         "size": "Standard_DS1_v2",
                         "computerNamePrefix": "fsw",
+                        "adminUserName": "tutorialAdmin",
                         "adminPassword": "testPassw0rd!23",
                         "osType": "windows",
                         "virtualNetwork": {
