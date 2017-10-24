@@ -680,7 +680,7 @@
                             }
                         ],
                         "osType": "windows",
-                        "scaleSetSettings": { },
+                        "scaleSetSettings": {},
                         "loadBalancerSettings": {
                             "frontendIPConfigurations": [
                                 {

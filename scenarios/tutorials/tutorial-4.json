@@ -50,7 +50,7 @@
                                 {
                                     "name": "web",
                                     "addressPrefix": "10.1.1.0/24"
-                                }                                
+                                }
                             ],
                             "virtualNetworkPeerings": [
                                 {
@@ -65,7 +65,7 @@
                             "tags": {
                                 "department": "HR",
                                 "managedBy": "DevOps"
-                            }                            
+                            }
                         }
                     ]
                 },
@@ -76,7 +76,7 @@
                         "osType": "windows",
                         "namePrefix": "jb",
                         "adminUserName": "tutorialAdmin",
-						"adminPassword": "testPassw0rd!23",
+                        "adminPassword": "testPassw0rd!23",
                         "nics": [
                             {
                                 "subnetName": "mgmt",
@@ -95,7 +95,7 @@
                         "osType": "windows",
                         "namePrefix": "ad",
                         "adminUserName": "tutorialAdmin",
-						"adminPassword": "testPassw0rd!23",
+                        "adminPassword": "testPassw0rd!23",
                         "nics": [
                             {
                                 "subnetName": "ad",
