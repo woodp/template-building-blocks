@@ -652,15 +652,8 @@
                             "name": "ad-nsg",
                             "securityRules": [
                                 {
-                                    "name": "AD-RDP",
-                                    "direction": "Inbound",
-                                    "priority": 100,
-                                    "sourceAddressPrefix": "10.0.2.0/24",
-                                    "sourcePortRange": 3389,
-                                    "destinationAddressPrefix": "*",
-                                    "destinationPortRange": 3389,
-                                    "access": "Allow",
-                                    "protocol": "TCP"
+                                    "name": "RDP",
+                                    "sourceAddressPrefix": "10.0.2.0/24"
                                 },
                                 {
                                     "name": "ActiveDirectory"
