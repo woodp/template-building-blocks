@@ -46,7 +46,7 @@
                                 {
                                     "name": "web",
                                     "addressPrefix": "10.1.1.0/24"
-                                }                                
+                                }
                             ],
                             "virtualNetworkPeerings": [
                                 {
@@ -61,7 +61,7 @@
                             "tags": {
                                 "department": "HR",
                                 "managedBy": "DevOps"
-                            }                            
+                            }
                         }
                     ]
                 },
