@@ -161,7 +161,7 @@
                                         ]
                                     },
                                     "protectedSettings": {
-                                        "commandToExecute": "powershell -ExecutionPolicy Unrestricted -File adds-replication-site.ps1 -DomainName contoso.com -AdminUser adminUser -AdminPassword testPassw0rd!23 -SiteName Azbb-Tutorial-Site -OnPremsiteName Default-First-Site-Name -Cidr 10.0.0.0/16 -ReplicationFrequency 10"
+                                        "commandToExecute": "powershell -ExecutionPolicy Unrestricted -File adds-replication-site.ps1 -DomainName contoso.com -AdminUser tutorialAdmin -AdminPassword testPassw0rd!23 -SiteName Azbb-Tutorial-Site -OnPremsiteName Default-First-Site-Name -Cidr 10.0.0.0/16 -ReplicationFrequency 10"
                                     }
                                 }
                             ]
@@ -185,7 +185,7 @@
                                     "settings": {
                                         "Name": "contoso.com",
                                         "OUPath": "",
-                                        "User": "contoso.com\\adminUser",
+                                        "User": "contoso.com\\tutorialAdmin",
                                         "Restart": true,
                                         "Options": 3
                                     },
@@ -205,7 +205,7 @@
                                         ]
                                     },
                                     "protectedSettings": {
-                                        "commandToExecute": "powershell -ExecutionPolicy Unrestricted -File adds.ps1 -DomainName contoso.com -DomainNetbiosName contoso -SafeModePassword Saf3M0de@PW -AdminUser adminUser -AdminPassword testPassw0rd!23 -SiteName Default-First-Site-Name"
+                                        "commandToExecute": "powershell -ExecutionPolicy Unrestricted -File adds.ps1 -DomainName contoso.com -DomainNetbiosName contoso -SafeModePassword Saf3M0de@PW -AdminUser tutorialAdmin -AdminPassword testPassw0rd!23 -SiteName Default-First-Site-Name"
                                     }
                                 }
                             ]
