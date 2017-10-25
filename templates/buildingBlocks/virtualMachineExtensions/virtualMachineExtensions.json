@@ -24,7 +24,7 @@
         {
             "type": "Microsoft.Resources/deployments",
             "apiVersion": "2017-05-10",
-            "name": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-', copyIndex(), '-', parameters('extensions')[copyIndex()].name, variables('templateUniqueString'))]",
+            "name": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-ext-', copyIndex(), '-', variables('templateUniqueString'))]",
             "copy": {
                 "name": "ext-iterator",
                 "count": "[length(parameters('extensions'))]",

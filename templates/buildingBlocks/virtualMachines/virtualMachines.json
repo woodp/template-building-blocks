@@ -59,8 +59,8 @@
           "loadBalancers": {
             "value": "[if(contains(parameters('virtualMachines')[copyIndex()], 'loadBalancers'), parameters('virtualMachines')[copyIndex()]['loadBalancers'], json('[]'))]"
           },
-          "scaleSet": {
-            "value": "[if(contains(parameters('virtualMachines')[copyIndex()], 'scaleSet'), parameters('virtualMachines')[copyIndex()]['scaleSet'], json('[]'))]"
+          "scaleSets": {
+            "value": "[if(contains(parameters('virtualMachines')[copyIndex()], 'scaleSets'), parameters('virtualMachines')[copyIndex()]['scaleSets'], json('[]'))]"
           },
           "autoScaleSettings": {
             "value": "[if(contains(parameters('virtualMachines')[copyIndex()], 'autoScaleSettings'), parameters('virtualMachines')[copyIndex()]['autoScaleSettings'], json('[]'))]"

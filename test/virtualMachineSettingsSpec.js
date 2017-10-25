@@ -1904,7 +1904,9 @@ describe('virtualMachineSettings:', () => {
                 settings.secrets = [
                     {
                         keyVault: {
-                            name: 'test-keyvault'
+                            name: 'test-keyvault',
+                            resourceGroupName: 'test-rg',
+                            subscriptionId: '00000000-0000-1000-A000-000000000000'
                         },
                         certificates: [
                             {
@@ -3159,13 +3161,13 @@ describe('virtualMachineSettings:', () => {
                 settings.namePrefix = 'temp';
                 settings.scaleSetSettings = {};
                 let processedParam = virtualMachineSettings.process({ settings: settings, buildingBlockSettings });
-                expect(processedParam.parameters.virtualMachines[0].scaleSet[0].properties.virtualMachineProfile.osProfile.computerNamePrefix).toEqual('temp');
+                expect(processedParam.parameters.virtualMachines[0].scaleSets[0].properties.virtualMachineProfile.osProfile.computerNamePrefix).toEqual('temp');
             });
             it('For scaleset, validates that computerNames is computed as computerNamePrefix, if computernamePrefix is specified', () => {
                 settings.computerNamePrefix = 'temp';
                 settings.scaleSetSettings = {};
                 let processedParam = virtualMachineSettings.process({ settings: settings, buildingBlockSettings });
-                expect(processedParam.parameters.virtualMachines[0].scaleSet[0].properties.virtualMachineProfile.osProfile.computerNamePrefix).toEqual('temp');
+                expect(processedParam.parameters.virtualMachines[0].scaleSets[0].properties.virtualMachineProfile.osProfile.computerNamePrefix).toEqual('temp');
             });
             it('validates that vm size is added to the hardwareProfile in the output', () => {
 

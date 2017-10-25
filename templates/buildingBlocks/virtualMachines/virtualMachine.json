@@ -60,7 +60,7 @@
           "description": "secrets"
         }
       },
-      "scaleSet": {
+      "scaleSets": {
         "type": "array",
         "defaultValue": [],
         "metadata": {
@@ -83,7 +83,7 @@
       }
     },
     "variables": {
-      "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('storageAccounts')), string(parameters('diagnosticStorageAccounts')), string(parameters('networkInterfaces')), string(parameters('publicIpAddresses')), string(parameters('availabilitySet')), string(parameters('virtualMachines')), string(parameters('scaleSet')), string(parameters('autoScaleSettings')), string(parameters('applicationGateways'))))]",
+      "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('storageAccounts')), string(parameters('diagnosticStorageAccounts')), string(parameters('networkInterfaces')), string(parameters('publicIpAddresses')), string(parameters('availabilitySet')), string(parameters('virtualMachines')), string(parameters('scaleSets')), string(parameters('autoScaleSettings')), string(parameters('applicationGateways'))))]",
       "pipTemplate": "[concat(uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/publicIPAddresses.json'), parameters('deploymentContext').sasToken)]",
       "nicTemplate": "[concat(uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/networkInterfaces.json'), parameters('deploymentContext').sasToken)]",
       "storageTemplate": "[concat(uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Storage/storageAccounts.json'), parameters('deploymentContext').sasToken)]",
@@ -318,7 +318,7 @@
         "type": "Microsoft.Resources/deployments",
         "apiVersion": "2017-05-10",
         "name": "[variables('vmssDeploymentName')]",
-        "condition": "[greater(length(parameters('scaleSet')), 0)]",
+        "condition": "[greater(length(parameters('scaleSets')), 0)]",
         "dependsOn": [
           "[variables('vmStorageDeploymentName')]",
           "[variables('diagnosticStorageDeploymentName')]",
@@ -338,13 +338,14 @@
                 "sasToken": "[parameters('deploymentContext').sasToken]"
               }
             },
-            "scaleSet": {
-              "value": "[parameters('scaleSet')]"
+            "scaleSets": {
+              "value": "[parameters('scaleSets')]"
             },
+            "authentication": "[parameters('secrets').authentication]",
             "secrets": {
               "value": "[parameters('secrets')]"
             }
-          }
+          } 
         }
       },
       {

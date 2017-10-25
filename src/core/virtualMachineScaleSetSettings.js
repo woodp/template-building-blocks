@@ -130,7 +130,12 @@ function transform(param, resources) {
             name: ext.name,
             properties: ext.extensionSettings
         };
-        transformed.properties.protectedSettings = JSON.parse(ext.extensionProtectedSettings.value);
+
+        if (ext.extensionProtectedSettings.reference) {
+            transformed.properties.protectedSettings = ext.extensionProtectedSettings;
+        } else {
+            transformed.properties.protectedSettings = JSON.parse(ext.extensionProtectedSettings.value);
+        }
         return transformed;
     });
 
@@ -193,7 +198,7 @@ function transform(param, resources) {
     }
 
     let accumulator = {};
-    accumulator['scaleSet'] = [{
+    accumulator['scaleSets'] = [{
         name: param.name,
         sku: sku,
         properties: properties,

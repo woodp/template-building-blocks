@@ -238,7 +238,7 @@ let isValidOutputFormat = (value) => {
     return v.utilities.isStringInArray(value, validOutputFormats);
 };
 
-let createResourceGroups = ({resourceGroups}) => {
+let createResourceGroups = ({resourceGroups, azOptions}) => {
     // We need to group them in an efficient way for the CLI
     resourceGroups = _.groupBy(resourceGroups, (value) => {
         return value.subscriptionId;
@@ -247,27 +247,31 @@ let createResourceGroups = ({resourceGroups}) => {
     _.forOwn(resourceGroups, (value, key) => {
         // Set the subscription for the tooling so we can create the resource groups in the right subscription
         az.setSubscription({
-            subscriptionId: key
+            subscriptionId: key,
+            azOptions: azOptions
         });
         _.forEach(value, (value) => {
             az.createResourceGroupIfNotExists({
                 resourceGroupName: value.resourceGroupName,
-                location: value.location
+                location: value.location,
+                azOptions: azOptions
             });
         });
     });
 };
 
-let deployTemplate = ({processedBuildingBlock}) => {
+let deployTemplate = ({processedBuildingBlock, azOptions}) => {
     // Get the current date in UTC and remove the separators.  We can use this as our deployment name.
 
     az.setSubscription({
-        subscriptionId: processedBuildingBlock.buildingBlockSettings.subscriptionId
+        subscriptionId: processedBuildingBlock.buildingBlockSettings.subscriptionId,
+        azOptions: azOptions
     });
 
     az.createResourceGroupIfNotExists({
         location: processedBuildingBlock.buildingBlockSettings.location,
         resourceGroupName: processedBuildingBlock.buildingBlockSettings.resourceGroupName,
+        azOptions: azOptions
     });
 
     // In case we have a SAS token, we need to append it to the template uri.  It will be passed into the building block in
@@ -277,7 +281,8 @@ let deployTemplate = ({processedBuildingBlock}) => {
         deploymentName: processedBuildingBlock.deploymentName,
         resourceGroupName: processedBuildingBlock.buildingBlockSettings.resourceGroupName,
         templateUri: templateUri,
-        parameterFile: processedBuildingBlock.outputFilename
+        parameterFile: processedBuildingBlock.outputFilename,
+        azOptions: azOptions
     });
 };
 
@@ -320,6 +325,10 @@ let validateCommandLine = ({commander}) => {
         options.deploy = true;
     }
 
+    options.azOptions = {
+        debug: commander.debug === true
+    };
+
     if (!_.isUndefined(commander.subscriptionId)) {
         options.subscriptionId = commander.subscriptionId;
     }
@@ -340,7 +349,8 @@ let validateCommandLine = ({commander}) => {
     }
 
     options.cloud = getCloud({
-        name: options.cloudName
+        name: options.cloudName,
+        azOptions: options.azOptions
     });
 
     // We have the cloud now, so we need to remove the name since it's in the cloud object.  This is for consistency reasons so we always use the cloud property.
@@ -452,6 +462,7 @@ try {
         .option('-t, --template-base-uri <template-base-uri>', 'base uri for building block templates')
         .option('-k, --sas-token <sas-token>', 'sas token to pass to access template-base-uri')
         .option('-b, --building-blocks <building-blocks>', 'additional building blocks to add to the pipeline')
+        .option('--debug', 'passes --debug to Azure CLI for debugging')
         .on('--help', () => {
             console.log();
             console.log('  Visit https://aka.ms/azbbv2 for more information.');
@@ -570,18 +581,21 @@ try {
     if (options.deploy) {
         // We need to set the active cloud.  Currently we do not support deployments across clouds.
         az.setCloud({
-            name: options.cloud.name
+            name: options.cloud.name,
+            azOptions: options.azOptions
         });
         _.forEach(results, (value) => {
             // Get the resources groups to create if they don't exist.  Each block is responsible for specifying these.
             createResourceGroups({
-                resourceGroups: value.resourceGroups
+                resourceGroups: value.resourceGroups,
+                azOptions: options.azOptions
             });
             if (value.preDeployment) {
                 value.preDeployment(value.preDeploymentParameter);
             }
             deployTemplate({
-                processedBuildingBlock: value
+                processedBuildingBlock: value,
+                azOptions: options.azOptions
             });
             if (value.postDeployment) {
                 value.postDeployment(value.postDeploymentParameter);
