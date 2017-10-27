@@ -93,6 +93,7 @@
                         "vmCount": 1,
                         "osType": "windows",
                         "namePrefix": "jb",
+                        "adminUserName": "tutorialAdmin",
                         "adminPassword": "testPassw0rd!23",
                         "nics": [
                             {
@@ -111,6 +112,7 @@
                         "vmCount": 2,
                         "osType": "windows",
                         "namePrefix": "ad",
+                        "adminUserName": "tutorialAdmin",
                         "adminPassword": "testPassw0rd!23",
                         "nics": [
                             {
@@ -172,7 +174,7 @@
                                         ]
                                     },
                                     "protectedSettings": {
-                                        "commandToExecute": "powershell -ExecutionPolicy Unrestricted -File adds-replication-site.ps1 -DomainName contoso.com -AdminUser adminUser -AdminPassword testPassw0rd!23 -SiteName Azbb-Tutorial-Site -OnPremsiteName Default-First-Site-Name -Cidr 10.0.0.0/16 -ReplicationFrequency 10"
+                                        "commandToExecute": "powershell -ExecutionPolicy Unrestricted -File adds-replication-site.ps1 -DomainName contoso.com -AdminUser tutorialAdmin -AdminPassword testPassw0rd!23 -SiteName Azbb-Tutorial-Site -OnPremsiteName Default-First-Site-Name -Cidr 10.0.0.0/16 -ReplicationFrequency 10"
                                     }
                                 }
                             ]
@@ -196,7 +198,7 @@
                                     "settings": {
                                         "Name": "contoso.com",
                                         "OUPath": "",
-                                        "User": "contoso.com\\adminUser",
+                                        "User": "contoso.com\\tutorialAdmin",
                                         "Restart": true,
                                         "Options": 3
                                     },
@@ -216,7 +218,7 @@
                                         ]
                                     },
                                     "protectedSettings": {
-                                        "commandToExecute": "powershell -ExecutionPolicy Unrestricted -File adds.ps1 -DomainName contoso.com -DomainNetbiosName contoso -SafeModePassword Saf3M0de@PW -AdminUser adminUser -AdminPassword testPassw0rd!23 -SiteName Default-First-Site-Name"
+                                        "commandToExecute": "powershell -ExecutionPolicy Unrestricted -File adds.ps1 -DomainName contoso.com -DomainNetbiosName contoso -SafeModePassword Saf3M0de@PW -AdminUser tutorialAdmin -AdminPassword testPassw0rd!23 -SiteName Default-First-Site-Name"
                                     }
                                 }
                             ]
@@ -311,6 +313,7 @@
                         "namePrefix": "sql",
                         "size": "Standard_DS3_v2",
                         "computerNamePrefix": "sql",
+                        "adminUserName": "tutorialAdmin",
                         "adminPassword": "testPassw0rd!23",
                         "osType": "windows",
                         "imageReference": {
@@ -403,7 +406,7 @@
                                 "settings": {
                                     "Name": "contoso.com",
                                     "OUPath": "",
-                                    "User": "contoso.com\\adminUser",
+                                    "User": "contoso.com\\tutorialAdmin",
                                     "Restart": true,
                                     "Options": 3
                                 },
@@ -421,6 +424,7 @@
                         "namePrefix": "fsw",
                         "size": "Standard_DS1_v2",
                         "computerNamePrefix": "fsw",
+                        "adminUserName": "tutorialAdmin",
                         "adminPassword": "testPassw0rd!23",
                         "osType": "windows",
                         "virtualNetwork": {
@@ -456,7 +460,7 @@
                                 "settings": {
                                     "Name": "contoso.com",
                                     "OUPath": "",
-                                    "User": "contoso.com\\adminUser",
+                                    "User": "contoso.com\\tutorialAdmin",
                                     "Restart": true,
                                     "Options": 3
                                 },
@@ -477,7 +481,7 @@
                                         "domainName": "contoso.com",
                                         "SharePath": "sql-fs",
                                         "adminCreds": {
-                                            "userName": "adminUser",
+                                            "userName": "tutorialAdmin",
                                             "password": "privateSettingsRef:adminPassword"
                                         }
                                     }
@@ -545,7 +549,7 @@
                                             "domainName": "contoso.com",
                                             "sqlAlwaysOnEndpointName": "ra-ntier-sql-hadr",
                                             "adminCreds": {
-                                                "userName": "adminUser",
+                                                "userName": "tutorialAdmin",
                                                 "password": "privateSettingsRef:adminPassword"
                                             },
                                             "sqlServiceCreds": {
@@ -598,7 +602,7 @@
                                             "secondaryReplica": "sql-vm1",
                                             "dnsServerName": "ad-vm1",
                                             "adminCreds": {
-                                                "userName": "adminUser",
+                                                "userName": "tutorialAdmin",
                                                 "password": "privateSettingsRef:adminPassword"
                                             },
                                             "sqlServiceCreds": {
@@ -648,15 +652,8 @@
                             "name": "ad-nsg",
                             "securityRules": [
                                 {
-                                    "name": "AD-RDP",
-                                    "direction": "Inbound",
-                                    "priority": 100,
-                                    "sourceAddressPrefix": "10.0.2.0/24",
-                                    "sourcePortRange": 3389,
-                                    "destinationAddressPrefix": "*",
-                                    "destinationPortRange": 3389,
-                                    "access": "Allow",
-                                    "protocol": "TCP"
+                                    "name": "RDP",
+                                    "sourceAddressPrefix": "10.0.2.0/24"
                                 },
                                 {
                                     "name": "ActiveDirectory"
