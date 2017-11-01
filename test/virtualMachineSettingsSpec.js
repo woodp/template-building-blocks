@@ -1720,8 +1720,8 @@ describe('virtualMachineSettings:', () => {
             it('validates that computerNames are correctly computed', () => {
 
                 let processedParam = virtualMachineSettings.process({ settings: testSettings, buildingBlockSettings });
-                expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.osProfile.computerName).toEqual('test-vm1');
-                expect(processedParam.parameters.virtualMachines[0].virtualMachines[1].properties.osProfile.computerName).toEqual('test-vm2');
+                expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.osProfile.computerName).toEqual('test1');
+                expect(processedParam.parameters.virtualMachines[0].virtualMachines[1].properties.osProfile.computerName).toEqual('test2');
             });
             it('validates that vm size is added to the hardwareProfile in the output', () => {
 

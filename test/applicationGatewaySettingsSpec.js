@@ -40,7 +40,7 @@ describe('applicationGatewaySettings:', () => {
         ],
         backendHttpSettingsCollection: [
             {
-                name: 'appGatewayBackendHttpSettings',
+                name: 'appGatewaybackendHttpSettings',
                 port: 80,
                 protocol: 'Https',
                 cookieBasedAffinity: 'Disabled',
@@ -64,13 +64,13 @@ describe('applicationGatewaySettings:', () => {
             {
                 name: 'pb-rule1',
                 defaultBackendAddressPoolName: 'appGatewayBackendPool',
-                defaultBackendHttpSettingName: 'appGatewayBackendHttpSettings',
+                defaultbackendHttpSettingsName: 'appGatewaybackendHttpSettings',
                 pathRules: [
                     {
                         name: 'p2',
                         paths: ['/path'],
                         backendAddressPoolName: 'appGatewayBackendPool',
-                        backendHttpSettingName: 'appGatewayBackendHttpSettings'
+                        backendHttpSettingsName: 'appGatewaybackendHttpSettings'
                     }
                 ]
             }
@@ -81,7 +81,7 @@ describe('applicationGatewaySettings:', () => {
                 ruleType: 'Basic',
                 httpListenerName: 'appGatewayHttpListener',
                 backendAddressPoolName: 'appGatewayBackendPool',
-                backendHttpSettingName: 'appGatewayBackendHttpSettings'
+                backendHttpSettingsName: 'appGatewaybackendHttpSettings'
             }
         ],
         frontendPorts: [
@@ -345,7 +345,7 @@ describe('applicationGatewaySettings:', () => {
         it('valid backendHttpSettingsCollection port must be between 0 and 65535', () => {
             settings.backendHttpSettingsCollection = [
                 {
-                    name: 'appGatewayBackendHttpSettings',
+                    name: 'appGatewaybackendHttpSettings',
                     port: 80,
                     protocol: 'Http',
                     cookieBasedAffinity: 'Disabled',
@@ -372,7 +372,7 @@ describe('applicationGatewaySettings:', () => {
         it('backendHttpSettingsCollection port must be between 0 and 65535', () => {
             settings.backendHttpSettingsCollection = [
                 {
-                    name: 'appGatewayBackendHttpSettings',
+                    name: 'appGatewaybackendHttpSettings',
                     port: 800234,
                     protocol: 'Http',
                     cookieBasedAffinity: 'Disabled',
@@ -390,7 +390,7 @@ describe('applicationGatewaySettings:', () => {
         it('backendHttpSettingsCollection protocol must be Http or Https', () => {
             settings.backendHttpSettingsCollection = [
                 {
-                    name: 'appGatewayBackendHttpSettings',
+                    name: 'appGatewaybackendHttpSettings',
                     port: 80,
                     protocol: 'invalid',
                     cookieBasedAffinity: 'Disabled',
@@ -408,7 +408,7 @@ describe('applicationGatewaySettings:', () => {
         it('backendHttpSettingsCollection probeEnabled must be boolean', () => {
             settings.backendHttpSettingsCollection = [
                 {
-                    name: 'appGatewayBackendHttpSettings',
+                    name: 'appGatewaybackendHttpSettings',
                     port: 80,
                     protocol: 'Https',
                     cookieBasedAffinity: 'Disabled',
@@ -426,7 +426,7 @@ describe('applicationGatewaySettings:', () => {
         it('backendHttpSettingsCollection probeEnabled must be boolean', () => {
             settings.backendHttpSettingsCollection = [
                 {
-                    name: 'appGatewayBackendHttpSettings',
+                    name: 'appGatewaybackendHttpSettings',
                     port: 80,
                     protocol: 'Https',
                     cookieBasedAffinity: 'Disabled',
@@ -444,7 +444,7 @@ describe('applicationGatewaySettings:', () => {
         it('backendHttpSettingsCollection cookieBasedAffinity must be enabled or disabled', () => {
             settings.backendHttpSettingsCollection = [
                 {
-                    name: 'appGatewayBackendHttpSettings',
+                    name: 'appGatewaybackendHttpSettings',
                     port: 80,
                     protocol: 'Https',
                     cookieBasedAffinity: 'invalid',
@@ -546,7 +546,7 @@ describe('applicationGatewaySettings:', () => {
                 {
                     name: 'pb-rule1',
                     defaultBackendAddressPoolName: 'appGatewayBackendPool',
-                    defaultBackendHttpSettingName: 'appGatewayBackendHttpSettings',
+                    defaultbackendHttpSettingsName: 'appGatewaybackendHttpSettings',
                     pathRules: [
                         {
                             name: 'p2',
@@ -554,7 +554,7 @@ describe('applicationGatewaySettings:', () => {
                                 '/bar'
                             ],
                             backendAddressPoolName: 'appGatewayBackendPool',
-                            backendHttpSettingName: 'appGatewayBackendHttpSettings'
+                            backendHttpSettingsName: 'appGatewaybackendHttpSettings'
                         }
                     ]
                 }
@@ -568,7 +568,7 @@ describe('applicationGatewaySettings:', () => {
                 {
                     name: 'pb-rule1',
                     defaultBackendAddressPoolName: 'invalid',
-                    defaultBackendHttpSettingName: 'appGatewayBackendHttpSettings',
+                    defaultbackendHttpSettingsName: 'appGatewaybackendHttpSettings',
                     pathRules: [
                         {
                             name: 'p2',
@@ -576,7 +576,7 @@ describe('applicationGatewaySettings:', () => {
                                 '/bar'
                             ],
                             backendAddressPoolName: 'appGatewayBackendPool',
-                            backendHttpSettingName: 'appGatewayBackendHttpSettings'
+                            backendHttpSettingsName: 'appGatewaybackendHttpSettings'
                         }
                     ]
                 }
@@ -586,12 +586,12 @@ describe('applicationGatewaySettings:', () => {
             expect(result.length).toEqual(1);
             expect(result[0].name).toEqual('.urlPathMaps[0].defaultBackendAddressPoolName');
         });
-        it('urlPathMaps invalid defaultBackendHttpSettingName', () => {
+        it('urlPathMaps invalid defaultbackendHttpSettingsName', () => {
             settings.urlPathMaps = [
                 {
                     name: 'pb-rule1',
                     defaultBackendAddressPoolName: 'appGatewayBackendPool',
-                    defaultBackendHttpSettingName: 'invalid',
+                    defaultbackendHttpSettingsName: 'invalid',
                     pathRules: [
                         {
                             name: 'p2',
@@ -599,7 +599,7 @@ describe('applicationGatewaySettings:', () => {
                                 '/bar'
                             ],
                             backendAddressPoolName: 'appGatewayBackendPool',
-                            backendHttpSettingName: 'appGatewayBackendHttpSettings'
+                            backendHttpSettingsName: 'appGatewaybackendHttpSettings'
                         }
                     ]
                 }
@@ -607,14 +607,14 @@ describe('applicationGatewaySettings:', () => {
 
             let result = mergeAndValidate(settings, buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.urlPathMaps[0].defaultBackendHttpSettingName');
+            expect(result[0].name).toEqual('.urlPathMaps[0].defaultbackendHttpSettingsName');
         });
         it('urlPathMaps invalid backendAddressPoolName', () => {
             settings.urlPathMaps = [
                 {
                     name: 'pb-rule1',
                     defaultBackendAddressPoolName: 'appGatewayBackendPool',
-                    defaultBackendHttpSettingName: 'appGatewayBackendHttpSettings',
+                    defaultbackendHttpSettingsName: 'appGatewaybackendHttpSettings',
                     pathRules: [
                         {
                             name: 'p2',
@@ -622,7 +622,7 @@ describe('applicationGatewaySettings:', () => {
                                 '/bar'
                             ],
                             backendAddressPoolName: 'invalid',
-                            backendHttpSettingName: 'appGatewayBackendHttpSettings'
+                            backendHttpSettingsName: 'appGatewaybackendHttpSettings'
                         }
                     ]
                 }
@@ -632,12 +632,12 @@ describe('applicationGatewaySettings:', () => {
             expect(result.length).toEqual(1);
             expect(result[0].name).toEqual('.urlPathMaps[0].pathRules[0].backendAddressPoolName');
         });
-        it('urlPathMaps invalid backendHttpSettingName', () => {
+        it('urlPathMaps invalid backendHttpSettingsName', () => {
             settings.urlPathMaps = [
                 {
                     name: 'pb-rule1',
                     defaultBackendAddressPoolName: 'appGatewayBackendPool',
-                    defaultBackendHttpSettingName: 'appGatewayBackendHttpSettings',
+                    defaultbackendHttpSettingsName: 'appGatewaybackendHttpSettings',
                     pathRules: [
                         {
                             name: 'p2',
@@ -645,7 +645,7 @@ describe('applicationGatewaySettings:', () => {
                                 '/bar'
                             ],
                             backendAddressPoolName: 'appGatewayBackendPool',
-                            backendHttpSettingName: 'invalid'
+                            backendHttpSettingsName: 'invalid'
                         }
                     ]
                 }
@@ -653,14 +653,14 @@ describe('applicationGatewaySettings:', () => {
 
             let result = mergeAndValidate(settings, buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.urlPathMaps[0].pathRules[0].backendHttpSettingName');
+            expect(result[0].name).toEqual('.urlPathMaps[0].pathRules[0].backendHttpSettingsName');
         });
         it('urlPathMaps pathRules cannot be undefined', () => {
             settings.urlPathMaps = [
                 {
                     name: 'pb-rule1',
                     defaultBackendAddressPoolName: 'appGatewayBackendPool',
-                    defaultBackendHttpSettingName: 'appGatewayBackendHttpSettings'
+                    defaultbackendHttpSettingsName: 'appGatewaybackendHttpSettings'
                 }
             ];
 
@@ -673,7 +673,7 @@ describe('applicationGatewaySettings:', () => {
                 {
                     name: 'pb-rule1',
                     defaultBackendAddressPoolName: 'appGatewayBackendPool',
-                    defaultBackendHttpSettingName: 'appGatewayBackendHttpSettings',
+                    defaultbackendHttpSettingsName: 'appGatewaybackendHttpSettings',
                     pathRules: []
                 }
             ];
@@ -687,12 +687,12 @@ describe('applicationGatewaySettings:', () => {
                 {
                     name: 'pb-rule1',
                     defaultBackendAddressPoolName: 'appGatewayBackendPool',
-                    defaultBackendHttpSettingName: 'appGatewayBackendHttpSettings',
+                    defaultbackendHttpSettingsName: 'appGatewaybackendHttpSettings',
                     pathRules: [
                         {
                             name: 'p2',
                             backendAddressPoolName: 'appGatewayBackendPool',
-                            backendHttpSettingName: 'appGatewayBackendHttpSettings'
+                            backendHttpSettingsName: 'appGatewaybackendHttpSettings'
                         }
                     ]
                 }
@@ -707,13 +707,13 @@ describe('applicationGatewaySettings:', () => {
                 {
                     name: 'pb-rule1',
                     defaultBackendAddressPoolName: 'appGatewayBackendPool',
-                    defaultBackendHttpSettingName: 'appGatewayBackendHttpSettings',
+                    defaultbackendHttpSettingsName: 'appGatewaybackendHttpSettings',
                     pathRules: [
                         {
                             name: 'p2',
                             paths: [],
                             backendAddressPoolName: 'appGatewayBackendPool',
-                            backendHttpSettingName: 'appGatewayBackendHttpSettings'
+                            backendHttpSettingsName: 'appGatewaybackendHttpSettings'
                         }
                     ]
                 }
@@ -730,7 +730,7 @@ describe('applicationGatewaySettings:', () => {
                     ruleType: 'Basic',
                     httpListenerName: 'appGatewayHttpListener',
                     backendAddressPoolName: 'appGatewayBackendPool',
-                    backendHttpSettingName: 'appGatewayBackendHttpSettings'
+                    backendHttpSettingsName: 'appGatewaybackendHttpSettings'
                 }
             ];
             let result = mergeAndValidate(settings, buildingBlockSettings);
@@ -762,7 +762,7 @@ describe('applicationGatewaySettings:', () => {
                     ruleType: 'Basic',
                     httpListenerName: 'appGatewayHttpListener',
                     backendAddressPoolName: 'appGatewayBackendPool',
-                    backendHttpSettingName: 'appGatewayBackendHttpSettings'
+                    backendHttpSettingsName: 'appGatewaybackendHttpSettings'
                 }
             ];
             let result = mergeAndValidate(settings, buildingBlockSettings);
@@ -776,7 +776,7 @@ describe('applicationGatewaySettings:', () => {
                     ruleType: 'Basic',
                     httpListenerName: 'invalid',
                     backendAddressPoolName: 'appGatewayBackendPool',
-                    backendHttpSettingName: 'appGatewayBackendHttpSettings'
+                    backendHttpSettingsName: 'appGatewaybackendHttpSettings'
                 }
             ];
             let result = mergeAndValidate(settings, buildingBlockSettings);
@@ -790,26 +790,26 @@ describe('applicationGatewaySettings:', () => {
                     ruleType: 'Basic',
                     httpListenerName: 'appGatewayHttpListener',
                     backendAddressPoolName: 'invalid',
-                    backendHttpSettingName: 'appGatewayBackendHttpSettings'
+                    backendHttpSettingsName: 'appGatewaybackendHttpSettings'
                 }
             ];
             let result = mergeAndValidate(settings, buildingBlockSettings);
             expect(result.length).toEqual(1);
             expect(result[0].name).toEqual('.requestRoutingRules[0].backendAddressPoolName');
         });
-        it('requestRoutingRules a valid backendHttpSettingName must be specified when type is Basic', () => {
+        it('requestRoutingRules a valid backendHttpSettingsName must be specified when type is Basic', () => {
             settings.requestRoutingRules = [
                 {
                     name: 'rule1',
                     ruleType: 'Basic',
                     httpListenerName: 'appGatewayHttpListener',
                     backendAddressPoolName: 'appGatewayBackendPool',
-                    backendHttpSettingName: 'invalid'
+                    backendHttpSettingsName: 'invalid'
                 }
             ];
             let result = mergeAndValidate(settings, buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.requestRoutingRules[0].backendHttpSettingName');
+            expect(result[0].name).toEqual('.requestRoutingRules[0].backendHttpSettingsName');
         });
         it('requestRoutingRules ruleType must be Basic or PathBasedRouting', () => {
             settings.requestRoutingRules = [
@@ -818,7 +818,7 @@ describe('applicationGatewaySettings:', () => {
                     ruleType: 'invalid',
                     httpListenerName: 'appGatewayHttpListener',
                     backendAddressPoolName: 'appGatewayBackendPool',
-                    backendHttpSettingName: 'appGatewayBackendHttpSettings'
+                    backendHttpSettingsName: 'appGatewaybackendHttpSettings'
                 }
             ];
             let result = mergeAndValidate(settings, buildingBlockSettings);
@@ -880,19 +880,19 @@ describe('applicationGatewaySettings:', () => {
             expect(result.length).toEqual(1);
             expect(result[0].name).toEqual('.requestRoutingRules[0].backendAddressPoolName');
         });
-        it('requestRoutingRules when ruleType is PathBasedRouting backendHttpSettingName cannot be specified', () => {
+        it('requestRoutingRules when ruleType is PathBasedRouting backendHttpSettingsName cannot be specified', () => {
             settings.requestRoutingRules = [
                 {
                     name: 'rule1',
                     ruleType: 'PathBasedRouting',
                     httpListenerName: 'appGatewayHttpListener',
                     urlPathMapName: 'pb-rule1',
-                    backendHttpSettingName: 'appGatewayBackendHttpSettings'
+                    backendHttpSettingsName: 'appGatewaybackendHttpSettings'
                 }
             ];
             let result = mergeAndValidate(settings, buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.requestRoutingRules[0].backendHttpSettingName');
+            expect(result[0].name).toEqual('.requestRoutingRules[0].backendHttpSettingsName');
         });
         it('requestRoutingRules invalid redirectConfigurationName', () => {
             settings.redirectConfigurations = [
@@ -937,7 +937,7 @@ describe('applicationGatewaySettings:', () => {
             expect(result.length).toEqual(1);
             expect(result[0].name).toEqual('.requestRoutingRules[0].backendAddressPoolName');
         });
-        it('requestRoutingRules backendHttpSettingName and redirectConfigurationName cannot be both specified', () => {
+        it('requestRoutingRules backendHttpSettingsName and redirectConfigurationName cannot be both specified', () => {
             settings.redirectConfigurations = [
                 {
                     name: 'appGatewayRedirect',
@@ -952,12 +952,12 @@ describe('applicationGatewaySettings:', () => {
                     ruleType: 'Basic',
                     redirectConfigurationName: 'appGatewayRedirect',
                     httpListenerName: 'appGatewayHttpListener',
-                    backendHttpSettingName: 'appGatewayBackendHttpSettings'
+                    backendHttpSettingsName: 'appGatewaybackendHttpSettings'
                 }
             ];
             let result = mergeAndValidate(settings, buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.requestRoutingRules[0].backendHttpSettingName');
+            expect(result[0].name).toEqual('.requestRoutingRules[0].backendHttpSettingsName');
         });
 
         it('valid probes', () => {
@@ -970,7 +970,7 @@ describe('applicationGatewaySettings:', () => {
                     interval: 30,
                     timeout: 30,
                     unhealthyThreshold: 3,
-                    pickHostNameFromBackendHttpSettings: false,
+                    pickHostNameFrombackendHttpSettings: false,
                     match: {
                         statusCodes: ['200', '200-339']
                     }
@@ -989,7 +989,7 @@ describe('applicationGatewaySettings:', () => {
                     interval: 30,
                     timeout: 30,
                     unhealthyThreshold: 3,
-                    pickHostNameFromBackendHttpSettings: false
+                    pickHostNameFrombackendHttpSettings: false
                 }
             ];
             let result = mergeAndValidate(settings, buildingBlockSettings);
@@ -1004,7 +1004,7 @@ describe('applicationGatewaySettings:', () => {
                     interval: 30,
                     timeout: 30,
                     unhealthyThreshold: 3,
-                    pickHostNameFromBackendHttpSettings: false
+                    pickHostNameFrombackendHttpSettings: false
                 }
             ];
             let result = mergeAndValidate(settings, buildingBlockSettings);
@@ -1650,11 +1650,11 @@ describe('applicationGatewaySettings:', () => {
             expect(result.length).toEqual(2);
             expect(result[1].name).toEqual('.urlPathMaps[0].defaultRedirectConfigurationName');
         });
-        it('urlPathMaps defaultRedirectConfigurationName and defaultBackendHttpSettingName cannot be both specified', () => {
+        it('urlPathMaps defaultRedirectConfigurationName and defaultbackendHttpSettingsName cannot be both specified', () => {
             settings.urlPathMaps = [
                 {
                     name: 'pb-rule1',
-                    defaultBackendHttpSettingName: 'appGatewayBackendHttpSettings',
+                    defaultbackendHttpSettingsName: 'appGatewaybackendHttpSettings',
                     defaultRedirectConfigurationName: 'appGatewayRedirect',
                     pathRules: [
                         {
@@ -1723,7 +1723,7 @@ describe('applicationGatewaySettings:', () => {
             expect(result.length).toEqual(2);
             expect(result[1].name).toEqual('.urlPathMaps[0].pathRules[0].redirectConfigurationName');
         });
-        it('urlPathMaps defaultRedirectConfigurationName and backendHttpSettingName cannot be both specified', () => {
+        it('urlPathMaps defaultRedirectConfigurationName and backendHttpSettingsName cannot be both specified', () => {
             settings.urlPathMaps = [
                 {
                     name: 'pb-rule1',
@@ -1735,7 +1735,7 @@ describe('applicationGatewaySettings:', () => {
                                 '/bar'
                             ],
                             redirectConfigurationName: 'appGatewayRedirect',
-                            backendHttpSettingName: 'appGatewayBackendHttpSettings'
+                            backendHttpSettingsName: 'appGatewaybackendHttpSettings'
                         }
                     ]
                 }
