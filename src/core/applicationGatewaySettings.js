@@ -478,7 +478,7 @@ let applicationGatewayValidations = {
                 let matched = _.filter(baseSettings.backendAddressPools, (o) => { return (o.name === value); });
                 return (baseSettings.backendAddressPools.length > 0 && matched.length === 0) ? result : { result: true };
             },
-            defaultBackendHttpSettingName: (value, parent) => {
+            defaultbackendHttpSettingsName: (value, parent) => {
                 if (parent.defaultRedirectConfigurationName) {
                     if (_.isUndefined(value)) {
                         return {
@@ -493,13 +493,13 @@ let applicationGatewayValidations = {
                 }
                 let result = {
                     result: false,
-                    message: `Invalid defaultBackendHttpSettingName ${value} in urlPathMaps`
+                    message: `Invalid defaultbackendHttpSettingsName ${value} in urlPathMaps`
                 };
                 let matched = _.filter(baseSettings.backendHttpSettingsCollection, (o) => { return (o.name === value); });
                 return (baseSettings.backendHttpSettingsCollection.length > 0 && matched.length === 0) ? result : { result: true };
             },
             defaultRedirectConfigurationName: (value, parent) => {
-                if ((parent.defaultBackendAddressPoolName) || (parent.defaultBackendHttpSettingName)) {
+                if ((parent.defaultBackendAddressPoolName) || (parent.defaultbackendHttpSettingsName)) {
                     if (_.isUndefined(value)) {
                         return {
                             result: true
@@ -507,7 +507,7 @@ let applicationGatewayValidations = {
                     } else {
                         return {
                             result: false,
-                            message: 'Value cannot be specified if defaultBackendAddressPoolName or defaultBackendHttpSettingName is defined'
+                            message: 'Value cannot be specified if defaultBackendAddressPoolName or defaultbackendHttpSettingsName is defined'
                         };
                     }
                 }
@@ -559,7 +559,7 @@ let applicationGatewayValidations = {
                         let matched = _.filter(baseSettings.backendAddressPools, (o) => { return (o.name === value); });
                         return (baseSettings.backendAddressPools.length > 0 && matched.length === 0) ? result : { result: true };
                     },
-                    backendHttpSettingName: (value, parent) => {
+                    backendHttpSettingsName: (value, parent) => {
                         if (parent.redirectConfigurationName) {
                             if (_.isUndefined(value)) {
                                 return {
@@ -575,13 +575,13 @@ let applicationGatewayValidations = {
 
                         let result = {
                             result: false,
-                            message: `Invalid backendHttpSettingName ${value} in urlPathMaps`
+                            message: `Invalid backendHttpSettingsName ${value} in urlPathMaps`
                         };
                         let matched = _.filter(baseSettings.backendHttpSettingsCollection, (o) => { return (o.name === value); });
                         return (baseSettings.backendHttpSettingsCollection.length > 0 && matched.length === 0) ? result : { result: true };
                     },
                     redirectConfigurationName: (value, parent) => {
-                        if ((parent.backendAddressPoolName) || (parent.backendHttpSettingName)) {
+                        if ((parent.backendAddressPoolName) || (parent.backendHttpSettingsName)) {
                             if (_.isUndefined(value)) {
                                 return {
                                     result: true
@@ -589,7 +589,7 @@ let applicationGatewayValidations = {
                             } else {
                                 return {
                                     result: false,
-                                    message: 'Value cannot be specified if backendAddressPoolName or backendHttpSettingName is defined'
+                                    message: 'Value cannot be specified if backendAddressPoolName or backendHttpSettingsName is defined'
                                 };
                             }
                         }
@@ -643,7 +643,7 @@ let applicationGatewayValidations = {
                 let matched = _.filter(baseSettings.backendAddressPools, (o) => { return (o.name === value); });
                 return (baseSettings.backendAddressPools.length > 0 && matched.length === 0) ? result : { result: true };
             },
-            backendHttpSettingName: (value, parent) => {
+            backendHttpSettingsName: (value, parent) => {
                 if (parent.ruleType === 'PathBasedRouting') {
                     if (_.isUndefined(value)) {
                         return { result: true };
@@ -665,7 +665,7 @@ let applicationGatewayValidations = {
                 }
                 let result = {
                     result: false,
-                    message: `Invalid backendHttpSettingName ${value} in requestRoutingRules`
+                    message: `Invalid backendHttpSettingsName ${value} in requestRoutingRules`
                 };
                 let matched = _.filter(baseSettings.backendHttpSettingsCollection, (o) => { return (o.name === value); });
                 return (baseSettings.backendHttpSettingsCollection.length > 0 && matched.length === 0) ? result : { result: true };
@@ -1105,7 +1105,7 @@ let processProperties = {
                         id: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/applicationGateways/backendAddressPools', parent.name, rule.backendAddressPoolName)
                     };
                     result.properties.backendHttpSettings = {
-                        id: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/applicationGateways/backendHttpSettingsCollection', parent.name, rule.backendHttpSettingName)
+                        id: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/applicationGateways/backendHttpSettingsCollection', parent.name, rule.backendHttpSettingsName)
                     };
                 }
 
@@ -1128,7 +1128,7 @@ let processProperties = {
                     id: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/applicationGateways/backendAddressPools', parent.name, map.defaultBackendAddressPoolName)
                 };
                 result.properties.defaultBackendHttpSettings = {
-                    id: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/applicationGateways/backendHttpSettingsCollection', parent.name, map.defaultBackendHttpSettingName)
+                    id: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/applicationGateways/backendHttpSettingsCollection', parent.name, map.defaultbackendHttpSettingsName)
                 };
             }
 
@@ -1157,7 +1157,7 @@ let processProperties = {
                         id: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/applicationGateways/backendAddressPools', parent.name, rule.backendAddressPoolName)
                     };
                     routingRule.properties.backendHttpSettings = {
-                        id: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/applicationGateways/backendHttpSettingsCollection', parent.name, rule.backendHttpSettingName)
+                        id: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/applicationGateways/backendHttpSettingsCollection', parent.name, rule.backendHttpSettingsName)
                     };
                 }
             } else {

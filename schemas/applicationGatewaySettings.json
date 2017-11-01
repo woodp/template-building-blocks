@@ -280,7 +280,7 @@
                 "path"
             ]
         },
-        "backendHttpSetting": {
+        "backendHttpSettings": {
             "type": "object",
             "properties": {
                 "port": {
@@ -838,7 +838,7 @@
                         "backendHttpSettingsCollection": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/backendHttpSetting"
+                                "$ref": "#/definitions/backendHttpSettings"
                             }
                         },
                         "httpListeners": {
