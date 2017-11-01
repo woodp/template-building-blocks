@@ -282,8 +282,8 @@ let virtualMachineValidations = {
     namePrefix: v.validationUtilities.isNotNullOrWhitespace,
     computerNamePrefix: (value) => {
         return {
-            result: (!v.utilities.isNullOrWhitespace(value)) && (value.length < 8),
-            message: 'Value cannot be longer than 7 characters'
+            result: (!v.utilities.isNullOrWhitespace(value)) && (value.length < 11),
+            message: 'Value cannot be longer than 10 characters'
         };
     },
     size: v.validationUtilities.isNotNullOrWhitespace,
@@ -1120,7 +1120,7 @@ let processorProperties = {
     computerNamePrefix: (value, key, index) => {
         return {
             osProfile: {
-                computerName: value.concat('-vm', index + 1)
+                computerName: value.concat(index + 1)
             }
         };
     },
