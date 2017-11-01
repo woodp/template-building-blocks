@@ -228,7 +228,7 @@
                                     "settings": {
                                         "Name": "contoso.com",
                                         "OUPath": "",
-                                        "User": "contoso.com\\tutorialAdmin",
+                                        "User": "contoso.com\\adminUser",
                                         "Restart": true,
                                         "Options": 3
                                     },
@@ -436,7 +436,7 @@
                                 "settings": {
                                     "Name": "contoso.com",
                                     "OUPath": "",
-                                    "User": "contoso.com\\tutorialAdmin",
+                                    "User": "contoso.com\\adminUser",
                                     "Restart": true,
                                     "Options": 3
                                 },
@@ -490,7 +490,7 @@
                                 "settings": {
                                     "Name": "contoso.com",
                                     "OUPath": "",
-                                    "User": "contoso.com\\tutorialAdmin",
+                                    "User": "contoso.com\\adminUser",
                                     "Restart": true,
                                     "Options": 3
                                 },
