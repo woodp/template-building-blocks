@@ -23,18 +23,6 @@
         },
         {
             "type": "node",
-            "request": "launch",
-            "name": "Run eslint",
-            "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/eslint",
-            "runtimeArgs": [
-                "--config", ".eslintrc.json",
-                "src/**/*.js",
-                "test/**/*.js"
-            ],
-            "console": "integratedTerminal"
-        },
-        {
-            "type": "node",
             "request": "attach",
             "name": "Attach to Process",
             "port": 5858
