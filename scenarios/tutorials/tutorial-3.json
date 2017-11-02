@@ -71,7 +71,7 @@
                         "vmCount": 1,
                         "osType": "windows",
                         "namePrefix": "jb",
-                        "adminUserName": "tutorialAdmin",
+                        "adminUsername": "tutorialAdmin",
                         "adminPassword": "testPassw0rd!23",
                         "nics": [
                             {

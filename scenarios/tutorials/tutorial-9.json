@@ -93,7 +93,7 @@
                         "vmCount": 2,
                         "osType": "windows",
                         "namePrefix": "jb",
-                        "adminUserName": "tutorialAdmin",
+                        "adminUsername": "tutorialAdmin",
                         "adminPassword": "testPassw0rd!23",
                         "nics": [
                             {
@@ -142,7 +142,7 @@
                         "vmCount": 2,
                         "osType": "windows",
                         "namePrefix": "ad",
-                        "adminUserName": "tutorialAdmin",
+                        "adminUsername": "tutorialAdmin",
                         "adminPassword": "testPassw0rd!23",
                         "nics": [
                             {
@@ -228,7 +228,7 @@
                                     "settings": {
                                         "Name": "contoso.com",
                                         "OUPath": "",
-                                        "User": "contoso.com\\adminUser",
+                                        "User": "contoso.com\\tutorialAdmin",
                                         "Restart": true,
                                         "Options": 3
                                     },
@@ -343,7 +343,7 @@
                         "namePrefix": "sql",
                         "size": "Standard_DS3_v2",
                         "computerNamePrefix": "sql",
-                        "adminUserName": "tutorialAdmin",
+                        "adminUsername": "tutorialAdmin",
                         "adminPassword": "testPassw0rd!23",
                         "osType": "windows",
                         "imageReference": {
@@ -436,7 +436,7 @@
                                 "settings": {
                                     "Name": "contoso.com",
                                     "OUPath": "",
-                                    "User": "contoso.com\\adminUser",
+                                    "User": "contoso.com\\tutorialAdmin",
                                     "Restart": true,
                                     "Options": 3
                                 },
@@ -454,7 +454,7 @@
                         "namePrefix": "fsw",
                         "size": "Standard_DS1_v2",
                         "computerNamePrefix": "fsw",
-                        "adminUserName": "tutorialAdmin",
+                        "adminUsername": "tutorialAdmin",
                         "adminPassword": "testPassw0rd!23",
                         "osType": "windows",
                         "virtualNetwork": {
@@ -490,7 +490,7 @@
                                 "settings": {
                                     "Name": "contoso.com",
                                     "OUPath": "",
-                                    "User": "contoso.com\\adminUser",
+                                    "User": "contoso.com\\tutorialAdmin",
                                     "Restart": true,
                                     "Options": 3
                                 },
