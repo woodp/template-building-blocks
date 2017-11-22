@@ -112,12 +112,6 @@
                         "virtualNetwork": {
                             "name": "msft-hub-vnet"
                         },
-                        "imageReference": {
-                            "publisher": "MicrosoftWindowsServer",
-                            "offer": "WindowsServer",
-                            "sku": "2012-R2-Datacenter",
-                            "version": "latest"
-                        },
                         "dataDisks": {
                             "count": 1,
                             "diskSizeGB": 127,
