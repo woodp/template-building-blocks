@@ -1,13 +1,34 @@
 #!/usr/bin/env node
 'use strict';
 
-let commander = require('commander');
-let fs = require('fs');
-let path = require('path');
-let _ = require('lodash');
-let v = require('./core/validation');
+const commander = require('commander');
+const fs = require('fs');
+const path = require('path');
+const _ = require('lodash');
+const v = require('./core/validation');
 const os = require('os');
 const az = require('./azCLI');
+const semver = require('semver');
+
+
+const AZBB_VERSION = '2.0.3';
+
+let getDefaultOptions = () => {
+    let defaultOptions = {
+        cloudName: 'AzureCloud',
+        outputFormat: 'files',
+        deploy: false,
+        // This will allow us to tolerate template changes using tags
+        templateBaseUri: semver.satisfies(AZBB_VERSION, '>=2.0.0 <2.1.0') ? 'https://raw.githubusercontent.com/mspnp/template-building-blocks/v2.0.0/templates' :
+            semver.satisfies(AZBB_VERSION, '>=2.1.0') ? 'https://raw.githubusercontent.com/mspnp/template-building-blocks/v2.1.0/templates' : null
+    };
+
+    if (!defaultOptions.templateBaseUri) {
+        throw new Error(`templateBaseUri not found for version: ${AZBB_VERSION}`);
+    }
+
+    return defaultOptions;
+}
 
 let padInteger = (number, mask) => {
     if ((!_.isSafeInteger(number)) || (number < 0)) {
@@ -260,13 +281,6 @@ let deployTemplate = ({processedBuildingBlock}) => {
     });
 };
 
-let defaultOptions = {
-    cloudName: 'AzureCloud',
-    outputFormat: 'files',
-    deploy: false,
-    templateBaseUri: 'https://raw.githubusercontent.com/mspnp/template-building-blocks/master/templates'
-};
-
 let getCloud = ({name}) => {
     let registeredClouds = az.getRegisteredClouds();
 
@@ -282,7 +296,7 @@ let getCloud = ({name}) => {
 };
 
 let validateCommandLine = ({commander}) => {
-    let options = _.cloneDeep(defaultOptions);
+    let options = _.cloneDeep(getDefaultOptions());
 
     if (_.isUndefined(commander.parametersFile)) {
         throw new Error('no parameters file specified');
@@ -425,7 +439,7 @@ try {
     commander
         .name('azbb')
         .description(description.join('\n'))
-        .version('2.0.2')
+        .version(AZBB_VERSION)
         .option('-s, --subscription-id <subscription-id>', 'Azure subscription id', validateSubscriptionId)
         .option('-l, --location <location>', 'Azure region in which to create the resource group')
         .option('-g, --resource-group <resource-group>', 'name of the resource group')

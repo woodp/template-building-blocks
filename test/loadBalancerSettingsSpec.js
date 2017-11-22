@@ -890,6 +890,50 @@ describe('loadBalancerSettings', () => {
             expect(validations.length).toEqual(1);
             expect(validations[0].name).toEqual('.inboundNatPools[1].frontendIPConfigurationName');
         });
+        it('loadDistribution is undefined', () => {
+            testSettings.frontendIPConfigurations = [
+                {
+                    name: 'feConfig1',
+                    loadBalancerType: 'Public'
+                }
+            ];
+            testSettings.backendPools = [
+                {
+                    name: 'lb-bep1'
+                }
+            ];
+            testSettings.loadBalancingRules = [
+                {
+                    name: 'lbr1',
+                    frontendPort: 80,
+                    backendPort: 80,
+                    protocol: 'Tcp',
+                    backendPoolName: 'lb-bep1',
+                    frontendIPConfigurationName: 'feConfig1',
+                    enableFloatingIP: false,
+                    probeName: 'lbp1',
+                    idleTimeoutInMinutes: 4
+                }
+            ];
+            testSettings.probes = [
+                {
+                    name: 'lbp1',
+                    port: 80,
+                    protocol: 'Http',
+                    requestPath: '/'
+                }
+            ];
+            let merged = loadBalancerSettings.merge({ settings: testSettings });
+            merged.loadBalancingRules = _.map(merged.loadBalancingRules, (value) => {
+                delete value.loadDistribution;
+                return value;
+            });
+            let validations = validation.validate({
+                settings: merged,
+                validations: loadBalancerSettings.validations
+            });
+            expect(validations.length).toEqual(0);
+        });
     });
 
     if (jasmine.testConfiguration.runTransform) {
@@ -905,7 +949,13 @@ describe('loadBalancerSettings', () => {
                 ],
                 subscriptionId: '00000000-0000-1000-8000-000000000000',
                 resourceGroupName: 'test-rg',
-                location: 'westus'
+                location: 'westus',
+                virtualNetwork: {
+                    name: 'test-vnet',
+                    subscriptionId: '00000000-0000-1000-8000-000000000000',
+                    resourceGroupName: 'test-rg',
+                    location: 'westus'
+                }
             };
             let testSettings;
             beforeEach(() => {
@@ -947,6 +997,11 @@ describe('loadBalancerSettings', () => {
                     }
                 ];
                 let merged = loadBalancerSettings.merge({ settings: testSettings });
+                let validations = validation.validate({
+                    settings: merged,
+                    validations: loadBalancerSettings.validations
+                });
+                expect(validations.length).toEqual(0);
                 let result = loadBalancerSettings.transform(merged);
                 expect(result.loadBalancer[0].properties.loadBalancingRules[0].properties.idleTimeoutInMinutes).toEqual(5);
             });
@@ -984,8 +1039,60 @@ describe('loadBalancerSettings', () => {
                     }
                 ];
                 let merged = loadBalancerSettings.merge({ settings: testSettings });
+                let validations = validation.validate({
+                    settings: merged,
+                    validations: loadBalancerSettings.validations
+                });
+                expect(validations.length).toEqual(0);
                 let result = loadBalancerSettings.transform(merged);
                 expect(result.loadBalancer[0].properties.loadBalancingRules[0].properties.hasOwnProperty('idleTimeoutInMinutes')).toEqual(false);
+            });
+            it('internal load balancer', () => {
+                testSettings.frontendIPConfigurations = [
+                    {
+                        name: 'feConfig1',
+                        loadBalancerType: 'Internal',
+                        internalLoadBalancerSettings: {
+                            privateIPAddress: '192.168.1.1',
+                            subnetName: 'web'
+                        }
+                    }
+                ];
+                testSettings.backendPools = [
+                    {
+                        name: 'lb-bep1'
+                    }
+                ];
+                testSettings.loadBalancingRules = [
+                    {
+                        name: 'lbr1',
+                        frontendPort: 80,
+                        backendPort: 80,
+                        protocol: 'Tcp',
+                        backendPoolName: 'lb-bep1',
+                        frontendIPConfigurationName: 'feConfig1',
+                        enableFloatingIP: false,
+                        loadDistribution: 'SourceIP',
+                        probeName: 'lbp1',
+                        idleTimeoutInMinutes: 5
+                    }
+                ];
+                testSettings.probes = [
+                    {
+                        name: 'lbp1',
+                        port: 80,
+                        protocol: 'Http',
+                        requestPath: '/'
+                    }
+                ];
+                let merged = loadBalancerSettings.merge({ settings: testSettings });
+                let validations = validation.validate({
+                    settings: merged,
+                    validations: loadBalancerSettings.validations
+                });
+                expect(validations.length).toEqual(0);
+                let result = loadBalancerSettings.transform(merged);
+                expect(result.loadBalancer[0].properties.loadBalancingRules[0].properties.idleTimeoutInMinutes).toEqual(5);
             });
         });
     }

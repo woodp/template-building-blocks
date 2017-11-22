@@ -12,6 +12,15 @@ describe('localNetworkGatewaySettings', () => {
             location: 'westus'
         };
 
+        it('invalid localNetworkGateway', () => {
+            expect(() => {
+                let result = merge({
+                    settings: 'NOT_VALID',
+                    buildingBlockSettings: buildingBlockSettings
+                });
+            }).toThrow();
+        });
+
         it('defaults merged', () => {
             let result = merge({
                 settings: {},
@@ -173,6 +182,18 @@ describe('localNetworkGatewaySettings', () => {
 
         it('addressPrefixes empty', () => {
             settings.addressPrefixes = [];
+
+            let errors = validation.validate({
+                settings: settings,
+                validations: lgwValidations
+            });
+
+            expect(errors.length).toEqual(1);
+            expect(errors[0].name).toEqual('.addressPrefixes');
+        });
+
+        it('addressPrefixes not an array', () => {
+            settings.addressPrefixes = 'NOT_VALID';
 
             let errors = validation.validate({
                 settings: settings,
