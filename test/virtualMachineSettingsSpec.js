@@ -115,11 +115,11 @@ describe('virtualMachineSettings:', () => {
             let mergedValue = merge({ settings, buildingBlockSettings });
             expect(mergedValue.osType).toEqual('windows');
         });
-        it('when computerName is not specified, should use namePrefix with -vm appended to it.', () => {
+        it('when computerName is not specified, its assigned an empty string at merge.', () => {
             let settings = _.cloneDeep(testSettings);
             delete settings.computerNamePrefix;
             let mergedValue = merge({ settings, buildingBlockSettings });
-            expect(mergedValue.computerNamePrefix).toEqual(settings.namePrefix.concat('-vm'));
+            expect(mergedValue.computerNamePrefix).toEqual('');
         });
         it('when load balancer name is not specified, should use vm namePrefix.', () => {
             let settings = _.cloneDeep(testSettings);
@@ -1184,14 +1184,40 @@ describe('virtualMachineSettings:', () => {
             expect(result.length).toEqual(1);
             expect(result[0].name).toEqual('.namePrefix');
         });
-        it('validates that computerNamePrefix is not null', () => {
+        it('validates that if computerNamePrefix is not specified, then namePrefix is provided', () => {
+            let merge = virtualMachineSettings.__get__('merge');
             settings.computerNamePrefix = null;
+
+            let mergedValue = merge({ settings, buildingBlockSettings });
+            mergedValue.namePrefix = null;
+
+            let result = validate(mergedValue);
+            expect(result.length).toEqual(2);
+        });
+        it('validates that if computerNamePrefix is not specified, then length of computer name computed using namePrefix is <= 15', () => {
+            settings.computerNamePrefix = '';
+            settings.vmCount = 101;
+            settings.namePrefix = 'test123456'; // test123456-vm101
             let result = validate(settings);
             expect(result.length).toEqual(1);
             expect(result[0].name).toEqual('.computerNamePrefix');
         });
-        it('validates that computerNamePrefix is not empty', () => {
+        it('validates that if computerNamePrefix is not specified, then length of computer name computed using namePrefix is <= 15', () => {
             settings.computerNamePrefix = '';
+            settings.vmCount = 101;
+            settings.namePrefix = 'test12345'; // test12345-vm101
+            let result = validate(settings);
+            expect(result.length).toEqual(0);
+        });
+        it('validates that if computerNamePrefix is specified, then length of computer name computed using computerNamePrefix is <= 15', () => {
+            settings.computerNamePrefix = 'test12345678'; // test12345678101
+            settings.vmCount = 101;
+            let result = validate(settings);
+            expect(result.length).toEqual(0);
+        });
+        it('validates that if computerNamePrefix is specified, then length of computer name computed using computerNamePrefix is <= 15', () => {
+            settings.computerNamePrefix = 'test123456789'; // test123456789101
+            settings.vmCount = 101;
             let result = validate(settings);
             expect(result.length).toEqual(1);
             expect(result[0].name).toEqual('.computerNamePrefix');
@@ -2007,6 +2033,11 @@ describe('virtualMachineSettings:', () => {
     });
     if (jasmine.testConfiguration.runTransform) {
         describe('transform:', () => {
+            let settings;
+            beforeEach(() => {
+                settings = _.cloneDeep(testSettings);
+            });
+
             it('validates that number of stamps created are based on vmcount property', () => {
 
                 let processedParam = virtualMachineSettings.process({ settings: testSettings, buildingBlockSettings });
@@ -2018,11 +2049,30 @@ describe('virtualMachineSettings:', () => {
                 expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].name).toEqual('test-vm1');
                 expect(processedParam.parameters.virtualMachines[0].virtualMachines[1].name).toEqual('test-vm2');
             });
-            it('validates that computerNames are correctly computed', () => {
-
-                let processedParam = virtualMachineSettings.process({ settings: testSettings, buildingBlockSettings });
-                expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.osProfile.computerName).toEqual('test1');
-                expect(processedParam.parameters.virtualMachines[0].virtualMachines[1].properties.osProfile.computerName).toEqual('test2');
+            it('For VMs, validates that computerNames is computed as nameprefix-vm1, if computernamePrefix is not specified', () => {
+                settings.computerNamePrefix = null;
+                let processedParam = virtualMachineSettings.process({ settings: settings, buildingBlockSettings });
+                expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.osProfile.computerName).toEqual('test-vm1');
+                expect(processedParam.parameters.virtualMachines[0].virtualMachines[1].properties.osProfile.computerName).toEqual('test-vm2');
+            });
+            it('For VMs, validates that computerNames is computed as computerNamePrefix1, if computernamePrefix is specified', () => {
+                settings.computerNamePrefix = 'temp';
+                let processedParam = virtualMachineSettings.process({ settings: settings, buildingBlockSettings });
+                expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.osProfile.computerName).toEqual('temp1');
+                expect(processedParam.parameters.virtualMachines[0].virtualMachines[1].properties.osProfile.computerName).toEqual('temp2');
+            });
+            it('For scaleset, validates that computerNames is computed as nameprefix, if computernamePrefix is not specified', () => {
+                settings.computerNamePrefix = null;
+                settings.namePrefix = 'temp';
+                settings.scaleSetSettings = {};
+                let processedParam = virtualMachineSettings.process({ settings: settings, buildingBlockSettings });
+                expect(processedParam.parameters.virtualMachines[0].scaleSet[0].properties.virtualMachineProfile.osProfile.computerNamePrefix).toEqual('temp');
+            });
+            it('For scaleset, validates that computerNames is computed as computerNamePrefix, if computernamePrefix is specified', () => {
+                settings.computerNamePrefix = 'temp';
+                settings.scaleSetSettings = {};
+                let processedParam = virtualMachineSettings.process({ settings: settings, buildingBlockSettings });
+                expect(processedParam.parameters.virtualMachines[0].scaleSet[0].properties.virtualMachineProfile.osProfile.computerNamePrefix).toEqual('temp');
             });
             it('validates that vm size is added to the hardwareProfile in the output', () => {
 
