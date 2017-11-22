@@ -7,7 +7,7 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Debug unit tests",
+            "name": "Debug unit tests (node v8.9)",
             "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/cross-env",
             "runtimeArgs": [
                 "RUN_TRANSFORM=true",
@@ -19,6 +19,23 @@
             ],
             "console": "integratedTerminal",
             "protocol": "inspector",
+            "port": 5858
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug unit tests (node v6.10)",
+            "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/cross-env",
+            "runtimeArgs": [
+                "RUN_TRANSFORM=true",
+                "node",
+                "--nolazy",
+                "--debug-brk=5858",
+                "${workspaceRoot}/node_modules/jasmine/bin/jasmine.js",
+                "--config=${workspaceRoot}/jasmine.json"
+            ],
+            "console": "integratedTerminal",
+            "protocol": "legacy",
             "port": 5858
         },
         {
