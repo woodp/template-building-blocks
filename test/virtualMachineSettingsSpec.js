@@ -115,11 +115,11 @@ describe('virtualMachineSettings:', () => {
             let mergedValue = merge({ settings, buildingBlockSettings });
             expect(mergedValue.osType).toEqual('windows');
         });
-        it('when computerName is not specified, should use namePrefix.', () => {
+        it('when computerName is not specified, its assigned an empty string at merge.', () => {
             let settings = _.cloneDeep(testSettings);
             delete settings.computerNamePrefix;
             let mergedValue = merge({ settings, buildingBlockSettings });
-            expect(mergedValue.computerNamePrefix).toEqual(settings.namePrefix);
+            expect(mergedValue.computerNamePrefix).toEqual('');
         });
         it('when load balancer name is not specified, should use vm namePrefix.', () => {
             let settings = _.cloneDeep(testSettings);
@@ -686,12 +686,14 @@ describe('virtualMachineSettings:', () => {
                 singlePlacementGroup: false
             },
             virtualNetwork: {},
-            loadBalancerSettings: {frontendIPConfigurations: [
-                {
-                    name: 'userdefault-feConfig',
-                    loadBalancerType: 'Public'
-                }
-            ]},
+            loadBalancerSettings: {
+                frontendIPConfigurations: [
+                    {
+                        name: 'userdefault-feConfig',
+                        loadBalancerType: 'Public'
+                    }
+                ]
+            },
             tags: {}
         };
 
@@ -979,14 +981,16 @@ describe('virtualMachineSettings:', () => {
             let mergedValue = merge({
                 settings,
                 buildingBlockSettings,
-                defaultSettings: userDefaults });
+                defaultSettings: userDefaults
+            });
             expect(mergedValue.loadBalancerSettings.name).toEqual(`${settings.namePrefix}-lb`);
         });
         it('validates load balancer settings with user-defaults', () => {
             let mergedValue = merge({
                 settings,
                 buildingBlockSettings,
-                defaultSettings: userDefaults });
+                defaultSettings: userDefaults
+            });
             expect(_.isPlainObject(mergedValue.nics[0].publicIpAddress)).toEqual(true);
             expect(mergedValue.nics[0].publicIpAddress.publicIPAllocationMethod).toEqual('Dynamic');
             expect(mergedValue.nics[0].publicIpAddress.publicIPAddressVersion).toEqual('IPv4');
@@ -1005,7 +1009,8 @@ describe('virtualMachineSettings:', () => {
                 let mergedValue = merge({
                     settings: customSettings,
                     buildingBlockSettings,
-                    defaultSettings: userDefaults });
+                    defaultSettings: userDefaults
+                });
                 expect(_.isPlainObject(mergedValue.availabilitySet)).toEqual(true);
                 expect(mergedValue.availabilitySet.platformFaultDomainCount).toEqual(6);
                 expect(mergedValue.availabilitySet.platformUpdateDomainCount).toEqual(10);
@@ -1024,7 +1029,8 @@ describe('virtualMachineSettings:', () => {
                 let mergedValue = merge({
                     settings: customSettings,
                     buildingBlockSettings,
-                    defaultSettings: userDefaults });
+                    defaultSettings: userDefaults
+                });
                 expect(_.isPlainObject(mergedValue.availabilitySet)).toEqual(true);
                 expect(mergedValue.availabilitySet.name).toEqual('user-as');
                 expect(mergedValue.availabilitySet.platformFaultDomainCount).toEqual(6);
@@ -1038,8 +1044,9 @@ describe('virtualMachineSettings:', () => {
                 };
                 let mergedValue = merge({
                     settings: customSettings,
-                    buildingBlockSettings ,
-                    defaultSettings: userDefaults });
+                    buildingBlockSettings,
+                    defaultSettings: userDefaults
+                });
                 expect(_.isPlainObject(mergedValue.availabilitySet)).toEqual(true);
                 expect(mergedValue.availabilitySet.hasOwnProperty('name')).toEqual(true);
                 expect(mergedValue.availabilitySet.name).toEqual('default-as');
@@ -1053,7 +1060,8 @@ describe('virtualMachineSettings:', () => {
                 let mergedValue = merge({
                     settings: customSettings,
                     buildingBlockSettings,
-                    defaultSettings: userDefaults });
+                    defaultSettings: userDefaults
+                });
                 expect(_.isPlainObject(mergedValue.availabilitySet)).toEqual(true);
                 expect(mergedValue.availabilitySet.name).toEqual('default-as');
             });
@@ -1067,7 +1075,8 @@ describe('virtualMachineSettings:', () => {
                 let mergedValue = merge({
                     settings: customSettings,
                     buildingBlockSettings,
-                    defaultSettings: userDefaults });
+                    defaultSettings: userDefaults
+                });
                 expect(mergedValue.availabilitySet.name).toEqual('test-as');
                 expect(mergedValue.availabilitySet.platformFaultDomainCount).toEqual(6);
                 expect(mergedValue.availabilitySet.platformUpdateDomainCount).toEqual(10);
@@ -1082,7 +1091,8 @@ describe('virtualMachineSettings:', () => {
                 let mergedValue = merge({
                     settings: customSettings,
                     buildingBlockSettings,
-                    defaultSettings: userDefaults });
+                    defaultSettings: userDefaults
+                });
                 expect(mergedValue.availabilitySet.name).toEqual('test-as');
                 expect(mergedValue.availabilitySet.platformFaultDomainCount).toEqual(6);
                 expect(mergedValue.availabilitySet.platformUpdateDomainCount).toEqual(10);
@@ -1098,7 +1108,8 @@ describe('virtualMachineSettings:', () => {
                 let mergedValue = merge({
                     settings: customSettings,
                     buildingBlockSettings,
-                    defaultSettings: userDefaults });
+                    defaultSettings: userDefaults
+                });
                 expect(_.isPlainObject(mergedValue.scaleSetSettings)).toEqual(true);
                 expect(mergedValue.scaleSetSettings.overprovision).toEqual(false);
                 expect(mergedValue.scaleSetSettings.singlePlacementGroup).toEqual(false);
@@ -1117,7 +1128,8 @@ describe('virtualMachineSettings:', () => {
                 let mergedValue = merge({
                     settings: customSettings,
                     buildingBlockSettings,
-                    defaultSettings: userDefaults });
+                    defaultSettings: userDefaults
+                });
                 expect(_.isPlainObject(mergedValue.scaleSetSettings)).toEqual(true);
                 expect(mergedValue.scaleSetSettings.overprovision).toEqual(true);
                 expect(mergedValue.scaleSetSettings.singlePlacementGroup).toEqual(true);
@@ -1172,14 +1184,40 @@ describe('virtualMachineSettings:', () => {
             expect(result.length).toEqual(1);
             expect(result[0].name).toEqual('.namePrefix');
         });
-        it('validates that computerNamePrefix is not null', () => {
+        it('validates that if computerNamePrefix is not specified, then namePrefix is provided', () => {
+            let merge = virtualMachineSettings.__get__('merge');
             settings.computerNamePrefix = null;
+
+            let mergedValue = merge({ settings, buildingBlockSettings });
+            mergedValue.namePrefix = null;
+
+            let result = validate(mergedValue);
+            expect(result.length).toEqual(2);
+        });
+        it('validates that if computerNamePrefix is not specified, then length of computer name computed using namePrefix is <= 15', () => {
+            settings.computerNamePrefix = '';
+            settings.vmCount = 101;
+            settings.namePrefix = 'test123456'; // test123456-vm101
             let result = validate(settings);
             expect(result.length).toEqual(1);
             expect(result[0].name).toEqual('.computerNamePrefix');
         });
-        it('validates that computerNamePrefix is not empty', () => {
+        it('validates that if computerNamePrefix is not specified, then length of computer name computed using namePrefix is <= 15', () => {
             settings.computerNamePrefix = '';
+            settings.vmCount = 101;
+            settings.namePrefix = 'test12345'; // test12345-vm101
+            let result = validate(settings);
+            expect(result.length).toEqual(0);
+        });
+        it('validates that if computerNamePrefix is specified, then length of computer name computed using computerNamePrefix is <= 15', () => {
+            settings.computerNamePrefix = 'test12345678'; // test12345678101
+            settings.vmCount = 101;
+            let result = validate(settings);
+            expect(result.length).toEqual(0);
+        });
+        it('validates that if computerNamePrefix is specified, then length of computer name computed using computerNamePrefix is <= 15', () => {
+            settings.computerNamePrefix = 'test123456789'; // test123456789101
+            settings.vmCount = 101;
             let result = validate(settings);
             expect(result.length).toEqual(1);
             expect(result[0].name).toEqual('.computerNamePrefix');
@@ -1703,9 +1741,303 @@ describe('virtualMachineSettings:', () => {
                 expect(result.length).toEqual(0);
             });
         });
+        describe('block validations:', () => {
+            it('availability set cannot have a different resource group', () => {
+                settings.availabilitySet.resourceGroupName = 'diffResourceGroup';
+                let result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.availabilitySet');
+                expect(result[0].message).toContain('Virtual Machine must be in the same resource group, location and subscription than Availability Set');
+            });
+            it('availability set cannot have a different location', () => {
+                settings.availabilitySet.location = 'centralus';
+                let result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.availabilitySet');
+                expect(result[0].message).toContain('Virtual Machine must be in the same resource group, location and subscription than Availability Set');
+            });
+            it('availability set cannot have a different subscription', () => {
+                settings.availabilitySet.subscriptionId = '00000000-0000-1000-8000-000000000000';
+                let result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.availabilitySet');
+                expect(result[0].message).toContain('Virtual Machine must be in the same resource group, location and subscription than Availability Set');
+            });
+
+            it('virtual network cannot have a different location', () => {
+                settings.virtualNetwork.location = 'centralus';
+                let result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.virtualNetwork');
+                expect(result[0].message).toContain('Virtual Machine must be the same location than Virtual Network');
+            });
+
+            it('storage cannot have a different location', () => {
+                settings.storageAccounts.location = 'centralus';
+                let result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.storageAccounts');
+                expect(result[0].message).toContain('Virtual Machine must be in the same location and subscription than storage account');
+            });
+            it('storage cannot have a different subscription', () => {
+                settings.storageAccounts.subscriptionId = '00000000-0000-1000-8000-000000000000';
+                let result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.storageAccounts');
+                expect(result[0].message).toContain('Virtual Machine must be in the same location and subscription than storage account');
+            });
+
+            it('diagnostic storage cannot have a different location', () => {
+                settings.storageAccounts.location = 'centralus';
+                let result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.storageAccounts');
+                expect(result[0].message).toContain('Virtual Machine must be in the same location and subscription than storage account');
+            });
+            it('diagnostic storage cannot have a different subscription', () => {
+                settings.diagnosticStorageAccounts.subscriptionId = '00000000-0000-1000-8000-000000000000';
+                let result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.diagnosticStorageAccounts');
+                expect(result[0].message).toContain('Virtual Machine must be in the same location and subscription than diagnostic storage account');
+            });
+
+            it('network interfaces cannot have a different location', () => {
+                settings.nics[0].location = 'centralus';
+                let result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.nics');
+                expect(result[0].message).toContain('Network interfaces must be in the same location & subscription as virtual machines');
+            });
+            it('network interfaces cannot have a different subscription', () => {
+                settings.nics[1].subscriptionId = '00000000-0000-1000-8000-000000000000';
+                let result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.nics');
+                expect(result[0].message).toContain('Network interfaces must be in the same location & subscription as virtual machines');
+            });
+
+            it('load balancer cannot have a different subscription', () => {
+                let merge = virtualMachineSettings.__get__('merge');
+                settings.loadBalancerSettings = {
+                    name: 'lbtest004',
+                    loadBalancerType: 'Public',
+                    domainNameLabel: 'lbtest004',
+                    publicIPAddressVersion: 'IPv'
+                };
+                settings.loadBalancerSettings.subscriptionId = '00000000-0000-1000-8000-000000000000';
+
+                let mergedValue = merge({ settings, buildingBlockSettings });
+                let result = validate(mergedValue);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.loadBalancerSettings');
+                expect(result[0].message).toContain('Virtual Machine must be in the same subscription than Load Balancer');
+            });
+
+            it('scale set cannot have a different location than vnet', () => {
+                let merge = virtualMachineSettings.__get__('merge');
+                settings.scaleSetSettings = {};
+                settings.nics[0].isPublic = false;
+                settings.virtualNetwork.location = 'centralus';
+
+                let mergedValue = merge({ settings, buildingBlockSettings });
+                let result = validate(mergedValue);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.scaleSetSettings');
+                expect(result[0].message).toContain('Scale set must be in the same location and subscription than virtual network');
+            });
+            it('scale set cannot have a different subscription than vnet', () => {
+                let merge = virtualMachineSettings.__get__('merge');
+                settings.scaleSetSettings = {};
+                settings.nics[0].isPublic = false;
+                settings.virtualNetwork.subscriptionId = '00000000-0000-1000-8000-000000000000';
+
+                let mergedValue = merge({ settings, buildingBlockSettings });
+                let result = validate(mergedValue);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.scaleSetSettings');
+                expect(result[0].message).toContain('Scale set must be in the same location and subscription than virtual network');
+            });
+
+            it('nics cannot have different location than scale set', () => {
+                let merge = virtualMachineSettings.__get__('merge');
+                settings.scaleSetSettings = {};
+                settings.nics[0].location = 'centralus';
+                settings.nics[0].isPublic = false;
+
+                let mergedValue = merge({ settings, buildingBlockSettings });
+                let result = validate(mergedValue);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.nics');
+                expect(result[0].message).toContain('Network interfaces must be in the same location & subscription as virtual machines scale sets');
+            });
+            it('scale set can have a different location than nic', () => {
+                let merge = virtualMachineSettings.__get__('merge');
+                settings.scaleSetSettings = {
+                    location: 'centralus'
+                };
+                settings.nics[0].isPublic = false;
+                settings.virtualNetwork.location = 'centralus'; // otherwise it fails because of vnet
+                let mergedValue = merge({ settings, buildingBlockSettings });
+                let result = validate(mergedValue);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.nics');
+                expect(result[0].message).toContain('Network interfaces must be in the same location & subscription as virtual machines scale sets');
+            });
+            it('scale set cannot have a different subscription than nic', () => {
+                let merge = virtualMachineSettings.__get__('merge');
+                settings.scaleSetSettings = {
+                    subscriptionId: '00000000-0000-1000-8000-000000000000'
+                };
+                settings.virtualNetwork.subscriptionId = '00000000-0000-1000-8000-000000000000'; // otherwise it fails because of vnet
+                settings.nics[0].isPublic = false;
+
+                let mergedValue = merge({ settings, buildingBlockSettings });
+                let result = validate(mergedValue);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.nics');
+                expect(result[0].message).toContain('Network interfaces must be in the same location & subscription as virtual machines scale sets');
+            });
+            it('nic cannot have a different subscription than scale set', () => {
+                let merge = virtualMachineSettings.__get__('merge');
+                settings.scaleSetSettings = {};
+                settings.nics[0].isPublic = false;
+                settings.nics[0].subscriptionId = '00000000-0000-1000-8000-000000000000';
+
+                let mergedValue = merge({ settings, buildingBlockSettings });
+                let result = validate(mergedValue);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.nics');
+                expect(result[0].message).toContain('Network interfaces must be in the same location & subscription as virtual machines scale sets');
+            });
+
+            it('scale set can have a different location than load balancer', () => {
+                let merge = virtualMachineSettings.__get__('merge');
+                settings.scaleSetSettings = {
+                    
+                };
+                settings.nics[0].isPublic = false;
+                settings.loadBalancerSettings = {
+                    name: 'lbtest004',
+                    loadBalancerType: 'Public',
+                    domainNameLabel: 'lbtest004',
+                    publicIPAddressVersion: 'IPv',
+                    location: 'centralus'
+                };
+                let mergedValue = merge({ settings, buildingBlockSettings });
+                let result = validate(mergedValue);
+                expect(result.length).toEqual(0);
+            });
+            it('scale set cannot have a different subscription than load balancer', () => {
+                let merge = virtualMachineSettings.__get__('merge');
+                settings.scaleSetSettings = {
+                    subscriptionId: '00000000-0000-1000-8000-000000000000'
+                };
+                settings.virtualNetwork.subscriptionId = '00000000-0000-1000-8000-000000000000'; // otherwise it fails because of vnet
+                settings.nics[0].isPublic = false;
+                settings.nics[0].subscriptionId = '00000000-0000-1000-8000-000000000000';
+                settings.nics[1].subscriptionId = '00000000-0000-1000-8000-000000000000';
+                settings.loadBalancerSettings = {
+                    name: 'lbtest004',
+                    loadBalancerType: 'Public',
+                    domainNameLabel: 'lbtest004',
+                    publicIPAddressVersion: 'IPv'
+                };
+                let mergedValue = merge({ settings, buildingBlockSettings });
+                let result = validate(mergedValue);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.loadBalancerSettings');
+                expect(result[0].message).toContain('Virtual Machine scale set must be in the same subscription than Load Balancer');
+            });
+            it('load balancer cannot have a different subscription than scale set', () => {
+                let merge = virtualMachineSettings.__get__('merge');
+                settings.scaleSetSettings = {
+                };
+                settings.nics[0].isPublic = false;
+                settings.loadBalancerSettings = {
+                    name: 'lbtest004',
+                    loadBalancerType: 'Public',
+                    domainNameLabel: 'lbtest004',
+                    publicIPAddressVersion: 'IPv',
+                    subscriptionId: '00000000-0000-1000-8000-000000000000'
+                };
+                let mergedValue = merge({ settings, buildingBlockSettings });
+                let result = validate(mergedValue);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.loadBalancerSettings');
+                expect(result[0].message).toContain('Virtual Machine scale set must be in the same subscription than Load Balancer');
+            });
+
+            it('inboundNatRules idleTimeoutInMinutes specified', () => {
+                let settings = _.cloneDeep(testSettings);
+                settings.loadBalancerSettings = {
+                    name: 'lbtest004',
+                    loadBalancerType: 'Public',
+                    domainNameLabel: 'lbtest004',
+                    publicIPAddressVersion: 'IPv'
+                };
+                settings.loadBalancerSettings.frontendIPConfigurations = [
+                    {
+                        name: 'feConfig1',
+                        loadBalancerType: 'Public'
+                    }
+                ];
+                settings.loadBalancerSettings.inboundNatRules = [
+                    {
+                        name: 'natP1',
+                        frontendIPConfigurationName: 'feConfig1',
+                        startingFrontendPort: 60001,
+                        frontendPortRangeEnd: 60020,
+                        backendPort: 3389,
+                        protocol: 'Tcp',
+                        idleTimeoutInMinutes: 5
+                    }
+                ];
+                let result = virtualMachineSettings.process({
+                    settings: settings,
+                    buildingBlockSettings: buildingBlockSettings
+                });
+                expect(result.parameters.virtualMachines[0].loadBalancer[0].properties.inboundNatRules[0].properties.idleTimeoutInMinutes).toEqual(5);
+            });
+            it('inboundNatRules idleTimeoutInMinutes not specified', () => {
+                let settings = _.cloneDeep(testSettings);
+                settings.loadBalancerSettings = {
+                    name: 'lbtest004',
+                    loadBalancerType: 'Public',
+                    domainNameLabel: 'lbtest004',
+                    publicIPAddressVersion: 'IPv'
+                };
+                settings.loadBalancerSettings.frontendIPConfigurations = [
+                    {
+                        name: 'feConfig1',
+                        loadBalancerType: 'Public'
+                    }
+                ];
+                settings.loadBalancerSettings.inboundNatRules = [
+                    {
+                        name: 'natP1',
+                        frontendIPConfigurationName: 'feConfig1',
+                        startingFrontendPort: 60001,
+                        frontendPortRangeEnd: 60020,
+                        backendPort: 3389,
+                        protocol: 'Tcp'
+                    }
+                ];
+                let result = virtualMachineSettings.process({
+                    settings: settings,
+                    buildingBlockSettings: buildingBlockSettings
+                });
+                expect(result.parameters.virtualMachines[0].loadBalancer[0].properties.inboundNatRules[0].properties.hasOwnProperty('idleTimeoutInMinutes')).toEqual(false);
+            });
+        });
     });
     if (jasmine.testConfiguration.runTransform) {
         describe('transform:', () => {
+            let settings;
+            beforeEach(() => {
+                settings = _.cloneDeep(testSettings);
+            });
+
             it('validates that number of stamps created are based on vmcount property', () => {
 
                 let processedParam = virtualMachineSettings.process({ settings: testSettings, buildingBlockSettings });
@@ -1717,11 +2049,30 @@ describe('virtualMachineSettings:', () => {
                 expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].name).toEqual('test-vm1');
                 expect(processedParam.parameters.virtualMachines[0].virtualMachines[1].name).toEqual('test-vm2');
             });
-            it('validates that computerNames are correctly computed', () => {
-
-                let processedParam = virtualMachineSettings.process({ settings: testSettings, buildingBlockSettings });
-                expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.osProfile.computerName).toEqual('test1');
-                expect(processedParam.parameters.virtualMachines[0].virtualMachines[1].properties.osProfile.computerName).toEqual('test2');
+            it('For VMs, validates that computerNames is computed as nameprefix-vm1, if computernamePrefix is not specified', () => {
+                settings.computerNamePrefix = null;
+                let processedParam = virtualMachineSettings.process({ settings: settings, buildingBlockSettings });
+                expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.osProfile.computerName).toEqual('test-vm1');
+                expect(processedParam.parameters.virtualMachines[0].virtualMachines[1].properties.osProfile.computerName).toEqual('test-vm2');
+            });
+            it('For VMs, validates that computerNames is computed as computerNamePrefix1, if computernamePrefix is specified', () => {
+                settings.computerNamePrefix = 'temp';
+                let processedParam = virtualMachineSettings.process({ settings: settings, buildingBlockSettings });
+                expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.osProfile.computerName).toEqual('temp1');
+                expect(processedParam.parameters.virtualMachines[0].virtualMachines[1].properties.osProfile.computerName).toEqual('temp2');
+            });
+            it('For scaleset, validates that computerNames is computed as nameprefix, if computernamePrefix is not specified', () => {
+                settings.computerNamePrefix = null;
+                settings.namePrefix = 'temp';
+                settings.scaleSetSettings = {};
+                let processedParam = virtualMachineSettings.process({ settings: settings, buildingBlockSettings });
+                expect(processedParam.parameters.virtualMachines[0].scaleSet[0].properties.virtualMachineProfile.osProfile.computerNamePrefix).toEqual('temp');
+            });
+            it('For scaleset, validates that computerNames is computed as computerNamePrefix, if computernamePrefix is specified', () => {
+                settings.computerNamePrefix = 'temp';
+                settings.scaleSetSettings = {};
+                let processedParam = virtualMachineSettings.process({ settings: settings, buildingBlockSettings });
+                expect(processedParam.parameters.virtualMachines[0].scaleSet[0].properties.virtualMachineProfile.osProfile.computerNamePrefix).toEqual('temp');
             });
             it('validates that vm size is added to the hardwareProfile in the output', () => {
 
@@ -2294,234 +2645,6 @@ describe('virtualMachineSettings:', () => {
                     let processedParam = virtualMachineSettings.process({ settings: linuxSettings, buildingBlockSettings });
                     expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.osProfile.adminPassword).toEqual(null);
                     expect(processedParam.parameters.virtualMachines[0].virtualMachines[1].properties.osProfile.adminPassword).toEqual(null);
-                });
-            });
-            describe('block validations:', () => {
-
-                it('availability set cannot have a different resource group', () => {
-                    let settings = _.cloneDeep(testSettings);
-                    settings.availabilitySet.resourceGroupName = 'diffResourceGroup';
-                    expect(() => virtualMachineSettings.process({ settings, buildingBlockSettings })).toThrowError(Error);
-                });
-                it('availability set cannot have a different location', () => {
-                    let settings = _.cloneDeep(testSettings);
-                    settings.availabilitySet.location = 'centralus';
-                    expect(() => virtualMachineSettings.process({ settings, buildingBlockSettings })).toThrowError(Error);
-                });
-                it('availability set cannot have a different subscription', () => {
-                    let settings = _.cloneDeep(testSettings);
-                    settings.availabilitySet.subscriptionId = '00000000-0000-1000-8000-000000000000';
-                    expect(() => virtualMachineSettings.process({ settings, buildingBlockSettings })).toThrowError(Error);
-                });
-
-                it('virtual network cannot have a different location', () => {
-                    let settings = _.cloneDeep(testSettings);
-                    settings.virtualNetwork.location = 'centralus';
-                    expect(() => virtualMachineSettings.process({ settings, buildingBlockSettings })).toThrowError(Error);
-                });
-
-                it('storage cannot have a different location', () => {
-                    let settings = _.cloneDeep(testSettings);
-                    settings.storageAccounts.location = 'centralus';
-                    expect(() => virtualMachineSettings.process({ settings, buildingBlockSettings })).toThrowError(Error);
-                });
-                it('storage cannot have a different subscription', () => {
-                    let settings = _.cloneDeep(testSettings);
-                    settings.storageAccounts.subscriptionId = '00000000-0000-1000-8000-000000000000';
-                    expect(() => virtualMachineSettings.process({ settings, buildingBlockSettings })).toThrowError(Error);
-                });
-
-                it('diagnostic storage cannot have a different location', () => {
-                    let settings = _.cloneDeep(testSettings);
-                    settings.storageAccounts.location = 'centralus';
-                    expect(() => virtualMachineSettings.process({ settings, buildingBlockSettings })).toThrowError(Error);
-                });
-                it('diagnostic storage cannot have a different subscription', () => {
-                    let settings = _.cloneDeep(testSettings);
-                    settings.diagnosticStorageAccounts.subscriptionId = '00000000-0000-1000-8000-000000000000';
-                    expect(() => virtualMachineSettings.process({ settings, buildingBlockSettings })).toThrowError(Error);
-                });
-
-                it('network interfaces cannot have a different location', () => {
-                    let settings = _.cloneDeep(testSettings);
-                    settings.nics[0].location = 'centralus';
-                    expect(() => virtualMachineSettings.process({ settings, buildingBlockSettings })).toThrowError(Error);
-                });
-                it('network interfaces cannot have a different subscription', () => {
-                    let settings = _.cloneDeep(testSettings);
-                    settings.nics[1].subscriptionId = '00000000-0000-1000-8000-000000000000';
-                    expect(() => virtualMachineSettings.process({ settings, buildingBlockSettings })).toThrowError(Error);
-                });
-
-                it('load balancer cannot have a different subscription', () => {
-                    let settings = _.cloneDeep(testSettings);
-                    settings.loadBalancerSettings = {
-                        name: 'lbtest004',
-                        loadBalancerType: 'Public',
-                        domainNameLabel: 'lbtest004',
-                        publicIPAddressVersion: 'IPv'
-                    };
-                    settings.loadBalancerSettings.subscriptionId = '00000000-0000-1000-8000-000000000000';
-                    expect(() => virtualMachineSettings.process({ settings, buildingBlockSettings })).toThrowError(Error);
-                });
-
-                it('scale set cannot have a different location than vnet', () => {
-                    let settings = _.cloneDeep(testSettings);
-                    settings.scaleSetSettings = {};
-                    settings.virtualNetwork.location = 'centralus';
-                    expect(() => virtualMachineSettings.process({ settings, buildingBlockSettings })).toThrowError(Error);
-                });
-                it('scale set cannot have a different subscription than vnet', () => {
-                    let settings = _.cloneDeep(testSettings);
-                    settings.scaleSetSettings = {};
-                    settings.virtualNetwork.subscriptionId = '00000000-0000-1000-8000-000000000000';
-                    expect(() => virtualMachineSettings.process({ settings, buildingBlockSettings })).toThrowError(Error);
-                });
-
-                it('nic can have a different location than scale set', () => {
-                    let settings = _.cloneDeep(testSettings);
-                    settings.scaleSetSettings = {};
-                    settings.nics[0].location = 'centralus';
-                    let result = virtualMachineSettings.process({ settings, buildingBlockSettings });
-                    expect(_.isNull(result)).toEqual(false);
-                });
-                it('scale set can have a different location than nic', () => {
-                    let settings = _.cloneDeep(testSettings);
-                    settings.scaleSetSettings = {
-                        location: 'centralus'
-                    };
-                    settings.virtualNetwork.location = 'centralus'; // otherwise it fails because of vnet
-                    let result = virtualMachineSettings.process({ settings, buildingBlockSettings });
-                    expect(_.isNull(result)).toEqual(false);
-                });
-                it('scale set cannot have a different subscription than nic', () => {
-                    let settings = _.cloneDeep(testSettings);
-                    settings.scaleSetSettings = {
-                        subscriptionId: '00000000-0000-1000-8000-000000000000'
-                    };
-                    expect(() => virtualMachineSettings.process({ settings, buildingBlockSettings })).toThrowError(Error);
-                });
-                it('nic cannot have a different subscription than scale set', () => {
-                    let settings = _.cloneDeep(testSettings);
-                    settings.scaleSetSettings = {};
-                    settings.nics[0].subscriptionId = '00000000-0000-1000-8000-000000000000';
-                    expect(() => virtualMachineSettings.process({ settings, buildingBlockSettings })).toThrowError(Error);
-                });
-
-                it('scale set can have a different location than load balancer', () => {
-                    let settings = _.cloneDeep(testSettings);
-                    settings.scaleSetSettings = {
-                        location: 'centralus'
-                    };
-                    settings.virtualNetwork.location = 'centralus'; // otherwise it fails because of vnet
-                    settings.loadBalancerSettings = {
-                        name: 'lbtest004',
-                        loadBalancerType: 'Public',
-                        domainNameLabel: 'lbtest004',
-                        publicIPAddressVersion: 'IPv'
-                    };
-                    let result = virtualMachineSettings.process({ settings, buildingBlockSettings });
-                    expect(_.isNull(result)).toEqual(false);
-                });
-                it('load balancer can have a different location than scale set', () => {
-                    let settings = _.cloneDeep(testSettings);
-                    settings.scaleSetSettings = {};
-                    settings.loadBalancerSettings = {
-                        name: 'lbtest004',
-                        loadBalancerType: 'Public',
-                        domainNameLabel: 'lbtest004',
-                        publicIPAddressVersion: 'IPv',
-                        location: 'centralus'
-                    };
-                    let result = virtualMachineSettings.process({ settings, buildingBlockSettings });
-                    expect(_.isNull(result)).toEqual(false);
-                });
-                it('scale set cannot have a different subscription than load balancer', () => {
-                    let settings = _.cloneDeep(testSettings);
-                    settings.scaleSetSettings = {
-                        subscriptionId: '00000000-0000-1000-8000-000000000000'
-                    };
-                    settings.loadBalancerSettings = {
-                        name: 'lbtest004',
-                        loadBalancerType: 'Public',
-                        domainNameLabel: 'lbtest004',
-                        publicIPAddressVersion: 'IPv'
-                    };
-                    expect(() => virtualMachineSettings.process({ settings, buildingBlockSettings })).toThrowError(Error);
-                });
-                it('load balancer cannot have a different subscription than scale set', () => {
-                    let settings = _.cloneDeep(testSettings);
-                    settings.scaleSetSettings = {};
-                    settings.loadBalancerSettings = {
-                        name: 'lbtest004',
-                        loadBalancerType: 'Public',
-                        domainNameLabel: 'lbtest004',
-                        publicIPAddressVersion: 'IPv',
-                        subscriptionId: '00000000-0000-1000-8000-000000000000'
-                    };
-                    expect(() => virtualMachineSettings.process({ settings, buildingBlockSettings })).toThrowError(Error);
-                });
-
-                it('inboundNatRules idleTimeoutInMinutes specified', () => {
-                    let settings = _.cloneDeep(testSettings);
-                    settings.loadBalancerSettings = {
-                        name: 'lbtest004',
-                        loadBalancerType: 'Public',
-                        domainNameLabel: 'lbtest004',
-                        publicIPAddressVersion: 'IPv'
-                    };
-                    settings.loadBalancerSettings.frontendIPConfigurations = [
-                        {
-                            name: 'feConfig1',
-                            loadBalancerType: 'Public'
-                        }
-                    ];
-                    settings.loadBalancerSettings.inboundNatRules = [
-                        {
-                            name: 'natP1',
-                            frontendIPConfigurationName: 'feConfig1',
-                            startingFrontendPort: 60001,
-                            frontendPortRangeEnd: 60020,
-                            backendPort: 3389,
-                            protocol: 'Tcp',
-                            idleTimeoutInMinutes: 5
-                        }
-                    ];
-                    let result = virtualMachineSettings.process({
-                        settings: settings,
-                        buildingBlockSettings: buildingBlockSettings
-                    });
-                    expect(result.parameters.virtualMachines[0].loadBalancer[0].properties.inboundNatRules[0].properties.idleTimeoutInMinutes).toEqual(5);
-                });
-                it('inboundNatRules idleTimeoutInMinutes not specified', () => {
-                    let settings = _.cloneDeep(testSettings);
-                    settings.loadBalancerSettings = {
-                        name: 'lbtest004',
-                        loadBalancerType: 'Public',
-                        domainNameLabel: 'lbtest004',
-                        publicIPAddressVersion: 'IPv'
-                    };
-                    settings.loadBalancerSettings.frontendIPConfigurations = [
-                        {
-                            name: 'feConfig1',
-                            loadBalancerType: 'Public'
-                        }
-                    ];
-                    settings.loadBalancerSettings.inboundNatRules = [
-                        {
-                            name: 'natP1',
-                            frontendIPConfigurationName: 'feConfig1',
-                            startingFrontendPort: 60001,
-                            frontendPortRangeEnd: 60020,
-                            backendPort: 3389,
-                            protocol: 'Tcp'
-                        }
-                    ];
-                    let result = virtualMachineSettings.process({
-                        settings: settings,
-                        buildingBlockSettings: buildingBlockSettings
-                    });
-                    expect(result.parameters.virtualMachines[0].loadBalancer[0].properties.inboundNatRules[0].properties.hasOwnProperty('idleTimeoutInMinutes')).toEqual(false);
                 });
             });
         });

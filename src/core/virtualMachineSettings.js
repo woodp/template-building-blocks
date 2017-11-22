@@ -140,9 +140,9 @@ function NormalizeProperties(settings) {
     let updatedSettings = _.cloneDeep(settings);
 
     // computerNamePrefix
-    // if computerNamePrefix is not specified, use namePrefix
-    if (v.utilities.isNullOrWhitespace(updatedSettings.computerNamePrefix) && !v.utilities.isNullOrWhitespace(updatedSettings.namePrefix)) {
-        updatedSettings.computerNamePrefix = updatedSettings.namePrefix;
+    // if computerNamePrefix is not specified, assign an empty string
+    if (v.utilities.isNullOrWhitespace(updatedSettings.computerNamePrefix)) {
+        updatedSettings.computerNamePrefix = '';
     }
 
     // loadBalancerSettings
@@ -280,10 +280,52 @@ let virtualMachineValidations = {
         };
     },
     namePrefix: v.validationUtilities.isNotNullOrWhitespace,
-    computerNamePrefix: (value) => {
+    computerNamePrefix: (value, parent) => {
+        if (!_.isNil(parent.scaleSetSettings)) {
+            if (v.utilities.isNullOrWhitespace(value)) {
+                if (v.utilities.isNullOrWhitespace(parent.namePrefix)) {
+                    return {
+                        result: false,
+                        message: 'If computerNamePrefix is not specified, then .namePrefix must be provided'
+                    };
+                } else if ((parent.namePrefix.length + '000000'.length) > 15) {
+                    return {
+                        result: false,
+                        message: `Computer name length cannot be greater than 15. If computerNamePrefix value is not specified, then computer name is computed using namePrefix: ${parent.namePrefix}000000`
+                    };
+                }
+            } else {
+                if ((value.length + '000000'.length) > 15) {
+                    return {
+                        result: false,
+                        message: `Computer name length cannot be greater than 15. Computer name is computed using computerNamePrefix: ${value}000000`
+                    };
+                }
+            }
+        } else {
+            if (v.utilities.isNullOrWhitespace(value)) {
+                if (v.utilities.isNullOrWhitespace(parent.namePrefix)) {
+                    return {
+                        result: false,
+                        message: 'If computerNamePrefix is not specified, then .namePrefix must be provided'
+                    };
+                } else if ((parent.namePrefix.length + '-vm'.length + _.toString(parent.vmCount).length) > 15) {
+                    return {
+                        result: false,
+                        message: `Computer name length cannot be greater than 15. If computerNamePrefix value is not specified, then computer name is computed using namePrefix: ${parent.namePrefix}-vm${parent.vmCount}`
+                    };
+                }
+            } else {
+                if ((value.length + _.toString(parent.vmCount).length) > 15) {
+                    return {
+                        result: false,
+                        message: `Computer name length cannot be greater than 15. Computer name is computed using computerNamePrefix: ${value}${parent.vmCount}`
+                    };
+                }
+            }
+        }
         return {
-            result: (!v.utilities.isNullOrWhitespace(value)) && (value.length < 11),
-            message: 'Value cannot be longer than 10 characters'
+            result: true
         };
     },
     size: v.validationUtilities.isNotNullOrWhitespace,
@@ -703,7 +745,8 @@ let virtualMachineValidations = {
                     result: false,
                     message: 'Virtual machine must have only 1 primary NetworkInterface.'
                 };
-            } else if (!_.isNil(parent.loadBalancerSettings)) {
+            }
+            if (!_.isNil(parent.loadBalancerSettings)) {
                 let errorMsg = '';
                 value.forEach((nic, index) => {
                     nic.backendPoolNames.forEach((bep) => {
@@ -728,21 +771,19 @@ let virtualMachineValidations = {
                         message: errorMsg
                     };
                 }
-
             }
-            else if (_.isNil(parent.scaleSetSettings)) {
-                let errorMsg = '';
-                value.forEach((nic, index) => {
-                    if (nic.location !== parent.location || nic.subscriptionId !== parent.subscriptionId) {
-                        errorMsg += `Virtual Machine must be in the same location and subscription than network interface: nic[${index}]`;
-                    }
-                });
-                if (!v.utilities.isNullOrWhitespace(errorMsg)) {
+            if (!_.isNil(parent.scaleSetSettings)) {
+                if ((_.filter(value, (o) => { return (o.location !== parent.scaleSetSettings.location || o.subscriptionId !== parent.scaleSetSettings.subscriptionId); })).length > 0) {
                     return {
                         result: false,
-                        message: errorMsg
+                        message: 'Network interfaces must be in the same location & subscription as virtual machines scale sets.'
                     };
                 }
+            } else if ((_.filter(value, (o) => { return (o.location !== parent.location || o.subscriptionId !== parent.subscriptionId); })).length > 0) {
+                return {
+                    result: false,
+                    message: 'Network interfaces must be in the same location & subscription as virtual machines.'
+                };
             }
         } else {
             return {
@@ -777,11 +818,20 @@ let virtualMachineValidations = {
                 message: '.loadBalancerSettings.inboundNatPools can only be specified with scalesets'
             };
         }
-        if (value.subscriptionId !== parent.subscriptionId) {
-            return {
-                result: false,
-                message: 'Virtual Machine must be in the same subscription than Load Balancer'
-            };
+        if (!_.isNil(parent.scaleSetSettings)) {
+            if (value.subscriptionId !== parent.scaleSetSettings.subscriptionId) {
+                return {
+                    result: false,
+                    message: 'Virtual Machine scale set must be in the same subscription than Load Balancer'
+                };
+            }
+        } else {
+            if (value.subscriptionId !== parent.subscriptionId) {
+                return {
+                    result: false,
+                    message: 'Virtual Machine must be in the same subscription than Load Balancer'
+                };
+            }
         }
         return {
             validations: lbSettings.validations
@@ -828,18 +878,6 @@ let virtualMachineValidations = {
                 message: 'Scale set must be in the same location and subscription than virtual network'
             };
         }
-        let errorMsg = '';
-        parent.nics.forEach((nic, index) => {
-            if (value.subscriptionId !== nic.subscriptionId) {
-                errorMsg += 'Scale set must be in the same subscription than nic[' + index + ']';
-            }
-        });
-        if (!v.utilities.isNullOrWhitespace(errorMsg)) {
-            return {
-                result: false,
-                message: errorMsg
-            };
-        }
 
         return {
             validations: scaleSetSettings.validations
@@ -862,7 +900,6 @@ let virtualMachineValidations = {
             validations: vmExtensions.validations
         };
     }
-
 };
 
 let processorProperties = {
@@ -1117,10 +1154,16 @@ let processorProperties = {
             }
         };
     },
-    computerNamePrefix: (value, key, index) => {
+    computerNamePrefix: (value, key, index, parent) => {
+        let cn;
+        if (!_.isNil(parent.scaleSetSettings)) {
+            cn = v.utilities.isNullOrWhitespace(value) ? parent.namePrefix : value;
+        } else {
+            cn = v.utilities.isNullOrWhitespace(value) ? `${parent.namePrefix}-vm${index + 1}` : value.concat(index + 1);
+        }
         return {
             osProfile: {
-                computerName: value.concat(index + 1)
+                computerName: cn
             }
         };
     },
@@ -1178,8 +1221,6 @@ function processVMStamps(param) {
         let stamp = _.cloneDeep(param);
         stamp.name = param.namePrefix.concat('-vm', i + 1);
 
-        // delete namePrefix property since we wont need it anymore
-        delete stamp.namePrefix;
         result.push(stamp);
     }
     return result;
@@ -1256,10 +1297,11 @@ function transform(settings, buildingBlockSettings) {
         accumulator.scaleSet = ssParam.scaleSet;
         accumulator.autoScaleSettings = ssParam.autoScaleSettings;
 
-        // For scaleset, we dont need to create nics, availabilitySet & VMs. Remove from accumulator
+        // For scaleset, we dont need to create nics, availabilitySet, pips & VMs. Remove from accumulator
         accumulator.virtualMachines = [];
         accumulator.networkInterfaces = [];
         accumulator.availabilitySet = [];
+        accumulator.publicIpAddresses = [];
     }
 
     // Process secrets.  We need to put them into a shape that can be assigned to a secureString parameter.

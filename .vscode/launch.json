@@ -13,12 +13,12 @@
                 "RUN_TRANSFORM=true",
                 "node",
                 "--nolazy",
-                "--debug-brk=5858",
+                "--inspect-brk=5858",
                 "${workspaceRoot}/node_modules/jasmine/bin/jasmine.js",
                 "--config=${workspaceRoot}/jasmine.json"
             ],
             "console": "integratedTerminal",
-            "protocol": "legacy",
+            "protocol": "inspector",
             "port": 5858
         },
         {
