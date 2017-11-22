@@ -99,7 +99,7 @@ function transform(param, resources) {
 
     // OS PROFILE: use osProfile from VM to build osProfile for scale set virtualMachineProfile
     let osProfile = _.cloneDeep(vm.properties.osProfile);
-    osProfile.computerNamePrefix = _.trimEnd(osProfile.computerName, '-vm1');
+    osProfile.computerNamePrefix = osProfile.computerName;
     delete osProfile.computerName;
 
     // STORAGE PROFILE: use storageProfile from VM to build storageProfile for scale set virtualMachineProfile
@@ -151,21 +151,6 @@ function transform(param, resources) {
                     loadBalancerInboundNatPools: nic.loadBalancerInboundNatPools
                 }
             };
-
-            if (!_.isNil(ipc.properties.publicIPAddress)) {
-                let pip = _.find(resources.publicIpAddresses, (o) => {
-                    return (o.name === _.last(_.split(ipc.properties.publicIPAddress.id, '/')));
-                });
-
-                config.properties.publicIPAddressConfiguration = { properties: {} };
-                config.properties.publicIPAddressConfiguration.name = pip.name;
-                if (!_.isNil(pip.properties.idleTimeoutInMinutes)) {
-                    config.properties.publicIPAddressConfiguration.properties.idleTimeoutInMinutes = pip.properties.idleTimeoutInMinutes;
-                }
-                if (!_.isNil(pip.properties.dnsSettings)) {
-                    config.properties.publicIPAddressConfiguration.properties.dnsSettings = pip.properties.dnsSettings;
-                }
-            }
 
             return config;
         });
