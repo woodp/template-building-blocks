@@ -458,6 +458,9 @@
                         },
                         "applicationGatewaySettings": {
                             "$ref": "applicationGatewaySettings.json#/definitions/settings"
+                        },
+                        "extensions": {
+                            "$ref": "virtualMachineExtensionsSettings.json#/definitions/extensions"
                         }
                     },
                     "required": [
