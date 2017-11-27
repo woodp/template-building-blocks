@@ -9,6 +9,8 @@
 
 ![Build status](https://travis-ci.org/mspnp/template-building-blocks.svg?branch=master)
 
+![NOTE] Version 2.0.3 was published 11/27/2017 to address a few minor bugs, and implement a more robust versioning scheme. Customers using earlier versions will see breaking changes in our next releases. To avoid future breaking changes, upgrade to v2.0.3 now. Follow the steps in Getting Started below to upgrade to v2.0.3.
+
 # Azure Building Blocks: Simplifying Resource Deployment
 
 The Azure Building Blocks project is a command line tool and set of Azure Resource Manager templates designed to simplify deployment of Azure resources. Users author a set of simplified parameters to specify settings for Azure resources, and the command line tool merges these parameters with best practice defaults to produce a set of final parameter files that can be deployed with the Azure Resource Manager templates.
@@ -19,6 +21,11 @@ Install the Azure Building Blocks using npm:
 
 ```
 npm install -g @mspnp/azure-building-blocks
+```
+Verify the version of azure building blocks you are running using the command below. Make sure you are running version 2.0.3 or later.
+
+```
+azbb -V
 ```
 
 Then, [author an Azure Building Blocks parameter file](https://github.com/mspnp/template-building-blocks/wiki/create-a-template-building-blocks-parameter-file) and [run the `azbb` command line tool](https://github.com/mspnp/template-building-blocks/wiki/command-line-reference).
