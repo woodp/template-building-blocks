@@ -9,7 +9,7 @@
 
 ![Build status](https://travis-ci.org/mspnp/template-building-blocks.svg?branch=master)
 
-> Version 2.0.3 was published 11/27/2017 to address a few minor bugs, and implement a more robust versioning scheme. Customers using earlier versions will see breaking changes in our next releases. To avoid future breaking changes, upgrade to v2.0.3 now. Follow the steps in Getting Started below to upgrade to v2.0.3.
+> Version 2.0.4 was published 11/27/2017 to address a few minor bugs, and implement a more robust versioning scheme. Customers using earlier versions will see breaking changes in our next releases. To avoid future breaking changes, upgrade to v2.0.4 now. Follow the steps in Getting Started below to upgrade to v2.0.4.
 
 # Azure Building Blocks: Simplifying Resource Deployment
 
@@ -23,7 +23,7 @@ Install the Azure Building Blocks using npm:
 npm install -g @mspnp/azure-building-blocks
 ```
 
-Verify the version of azure building blocks you are running using the command below. Make sure you are running version 2.0.3 or later.
+Verify the version of azure building blocks you are running using the command below. Make sure you are running version 2.0.4 or later.
 
 ```
 azbb -V
