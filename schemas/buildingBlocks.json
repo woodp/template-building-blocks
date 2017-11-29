@@ -208,6 +208,34 @@
                                 "type",
                                 "settings"
                             ]
+                        },
+                        {
+                            "properties": {
+                                "type": {
+                                    "type": "string",
+                                    "enum": [
+                                        "LoadBalancer"
+                                    ]
+                                },
+                                "settings": {
+                                    "oneOf": [
+                                        {
+                                            "$ref": "loadBalancerSettings.json#/definitions/settings"
+                                        },
+                                        {
+                                            "type": "array",
+                                            "minItems": 1,
+                                            "items": {
+                                                "$ref": "loadBalancerSettings.json#/definitions/settings"
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            "required": [
+                                "type",
+                                "settings"
+                            ]
                         }
                     ]
                 }

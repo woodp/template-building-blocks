@@ -33,24 +33,47 @@ const LOADBALANCER_SETTINGS_DEFAULTS = {
 function merge({ settings, buildingBlockSettings, defaultSettings }) {
 
     let defaults = (defaultSettings) ? [LOADBALANCER_SETTINGS_DEFAULTS, defaultSettings] : LOADBALANCER_SETTINGS_DEFAULTS;
-    let mergedSettings = v.merge(settings, defaults, defaultsCustomizer);
-
-    mergedSettings.frontendIPConfigurations = _.map(mergedSettings.frontendIPConfigurations, (config) => {
-        // If needed, we need to build up a publicIpAddress from the information we have here so it can be merged and validated.
-        if (config.loadBalancerType === 'Public') {
-            let publicIpAddress = {
-                name: `${settings.name}-${config.name}-pip`,
-                publicIPAllocationMethod: 'Static',
-                domainNameLabel: config.domainNameLabel,
-                publicIPAddressVersion: config.publicIPAddressVersion,
-                resourceGroupName: mergedSettings.resourceGroupName,
-                subscriptionId: mergedSettings.subscriptionId,
-                location: mergedSettings.location
-            };
-            config.publicIpAddress = publicIpAddressSettings.merge({ settings: publicIpAddress });
-        }
-        return config;
+    let mergedSettings = resources.setupResources(settings, buildingBlockSettings, (parentKey) => {
+        return ((parentKey === null) || (parentKey === 'virtualNetwork'));
     });
+    
+    mergedSettings = v.merge(mergedSettings, defaults, defaultsCustomizer);
+
+    mergedSettings = _.map(mergedSettings, (setting) => {
+        setting.frontendIPConfigurations = _.map(setting.frontendIPConfigurations, (config) => {
+            if (config.loadBalancerType === 'Public') {
+                let publicIpAddress = {
+                    name: `${setting.name}-${config.name}-pip`,
+                    publicIPAllocationMethod: 'Static',
+                    domainNameLabel: config.domainNameLabel,
+                    publicIPAddressVersion: config.publicIPAddressVersion,
+                    resourceGroupName: setting.resourceGroupName,
+                    subscriptionId: setting.subscriptionId,
+                    location: setting.location
+                };
+                config.publicIpAddress = publicIpAddressSettings.merge({ settings: publicIpAddress });
+            }
+            return config;
+        });
+
+        return setting;
+    });
+    // mergedSettings.frontendIPConfigurations = _.map(mergedSettings.frontendIPConfigurations, (config) => {
+    //     // If needed, we need to build up a publicIpAddress from the information we have here so it can be merged and validated.
+    //     if (config.loadBalancerType === 'Public') {
+    //         let publicIpAddress = {
+    //             name: `${settings.name}-${config.name}-pip`,
+    //             publicIPAllocationMethod: 'Static',
+    //             domainNameLabel: config.domainNameLabel,
+    //             publicIPAddressVersion: config.publicIPAddressVersion,
+    //             resourceGroupName: mergedSettings.resourceGroupName,
+    //             subscriptionId: mergedSettings.subscriptionId,
+    //             location: mergedSettings.location
+    //         };
+    //         config.publicIpAddress = publicIpAddressSettings.merge({ settings: publicIpAddress });
+    //     }
+    //     return config;
+    // });
 
     return mergedSettings;
 }
@@ -177,6 +200,7 @@ let probeValidations = {
 };
 
 let loadBalancerValidations = {
+    name: v.validationUtilities.isNotNullOrWhitespace,
     frontendIPConfigurations: () => {
         return {
             validations: frontendIPConfigurationValidations
@@ -516,9 +540,8 @@ function transform(param) {
             return publicIpAddressSettings.transform(config.publicIpAddress).publicIpAddresses;
         }
     });
-    if (pips.length > 0) {
-        accumulator['publicIpAddresses'] = pips;
-    }
+
+    accumulator['publicIpAddresses'] = pips;
 
     // transform all properties of the loadbalancerSettings in RP shape
     let lbProperties = _.transform(param, (properties, value, key, obj) => {
@@ -539,6 +562,69 @@ function transform(param) {
     return accumulator;
 }
 
+let validate = (settings) => {
+    let errors = v.validate({
+        settings: settings,
+        validations: loadBalancerValidations
+    });
+
+    return errors;
+};
+
+function process ({ settings, buildingBlockSettings, defaultSettings }) {
+    settings = _.castArray(settings);
+
+    let buildingBlockErrors = v.validate({
+        settings: buildingBlockSettings,
+        validations: {
+            subscriptionId: v.validationUtilities.isGuid,
+            resourceGroupName: v.validationUtilities.isNotNullOrWhitespace,
+        }
+    });
+
+    if (buildingBlockErrors.length > 0) {
+        throw new Error(JSON.stringify(buildingBlockErrors));
+    }
+
+    let results = merge({
+        settings: settings,
+        buildingBlockSettings: buildingBlockSettings,
+        defaultSettings: defaultSettings
+    });
+
+    let errors = validate(results);
+
+    if (errors.length > 0) {
+        throw new Error(JSON.stringify(errors));
+    }
+
+    results = _.transform(results, (result, setting) => {
+        let transformed = transform(setting);
+        result.loadBalancers = result.loadBalancers.concat(transformed.loadBalancer);
+        result.publicIpAddresses = result.publicIpAddresses.concat(transformed.publicIpAddresses);
+    }, {
+        loadBalancers: [],
+        publicIpAddresses: []
+    });
+
+    // results = _.transform(results, (result, setting) => {
+    //     result.loadBalancers.push(transform(setting));
+    // }, {
+    //     loadBalancers: []
+    // });
+
+    // Get needed resource groups information.
+    let resourceGroups = resources.extractResourceGroups(
+        results.loadBalancers,
+        results.publicIpAddresses
+    );
+    return {
+        resourceGroups: resourceGroups,
+        parameters: results
+    };
+}
+
+exports.process = process;
 exports.merge = merge;
 exports.validations = loadBalancerValidations;
 exports.transform = transform;

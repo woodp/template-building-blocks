@@ -178,16 +178,17 @@ describe('loadBalancerSettings', () => {
                     publicIPAddressVersion: 'IPv4'
                 }
             ],
+            name: 'test-lb',
             subscriptionId: '00000000-0000-1000-8000-000000000000',
             resourceGroupName: 'test-rg',
             location: 'westus'
         };
 
         it('merge', () => {
-            let merged = loadBalancerSettings.merge({ settings: settings });
-            expect(merged.frontendIPConfigurations[0].publicIpAddress.publicIPAllocationMethod).toEqual('Static');
-            expect(merged.frontendIPConfigurations[0].publicIpAddress.domainNameLabel).toEqual('test');
-            expect(merged.frontendIPConfigurations[0].publicIpAddress.publicIPAddressVersion).toEqual('IPv4');
+            let merged = loadBalancerSettings.merge({ settings: _.castArray(settings) });
+            expect(merged[0].frontendIPConfigurations[0].publicIpAddress.publicIPAllocationMethod).toEqual('Static');
+            expect(merged[0].frontendIPConfigurations[0].publicIpAddress.domainNameLabel).toEqual('test');
+            expect(merged[0].frontendIPConfigurations[0].publicIpAddress.publicIPAddressVersion).toEqual('IPv4');
         });
 
         it('userDefaults', () => {
@@ -203,17 +204,17 @@ describe('loadBalancerSettings', () => {
             };
 
             let merged = loadBalancerSettings.merge({
-                settings: settings,
+                settings: _.castArray(settings),
                 defaultSettings: defaults
             });
 
-            expect(merged.frontendIPConfigurations[0].publicIpAddress.publicIPAllocationMethod).toEqual('Static');
-            expect(merged.frontendIPConfigurations[0].publicIpAddress.domainNameLabel).toEqual('test');
-            expect(merged.frontendIPConfigurations[0].publicIpAddress.publicIPAddressVersion).toEqual('IPv4');
+            expect(merged[0].frontendIPConfigurations[0].publicIpAddress.publicIPAllocationMethod).toEqual('Static');
+            expect(merged[0].frontendIPConfigurations[0].publicIpAddress.domainNameLabel).toEqual('test');
+            expect(merged[0].frontendIPConfigurations[0].publicIpAddress.publicIPAddressVersion).toEqual('IPv4');
         });
 
         it('validations', () => {
-            let merged = loadBalancerSettings.merge({ settings: settings });
+            let merged = loadBalancerSettings.merge({ settings: _.castArray(settings) });
             let validations = validation.validate({
                 settings: merged,
                 validations: loadBalancerSettings.validations
@@ -234,7 +235,7 @@ describe('loadBalancerSettings', () => {
             };
 
             let merged = loadBalancerSettings.merge({
-                settings: settings,
+                settings: _.castArray(settings),
                 defaultSettings: defaults
             });
 
@@ -246,8 +247,8 @@ describe('loadBalancerSettings', () => {
         });
 
         it('transform', () => {
-            let merged = loadBalancerSettings.merge({ settings: settings});
-            let transformed = loadBalancerSettings.transform(merged);
+            let merged = loadBalancerSettings.merge({ settings: _.castArray(settings)});
+            let transformed = loadBalancerSettings.transform(merged[0]);
             expect(transformed.loadBalancer[0].properties.frontendIPConfigurations[0].properties.publicIpAddress).not.toEqual(null);
         });
     });
@@ -261,6 +262,7 @@ describe('loadBalancerSettings', () => {
                     publicIPAddressVersion: 'IPv4'
                 }
             ],
+            name: 'test-lb',
             subscriptionId: '00000000-0000-1000-8000-000000000000',
             resourceGroupName: 'test-rg',
             location: 'westus'
@@ -271,26 +273,26 @@ describe('loadBalancerSettings', () => {
         });
         it('internalLoadBalancerSettings cannot be set when loadBalancerType is public', () => {
             testSettings.frontendIPConfigurations[0].internalLoadBalancerSettings = {};
-            let merged = loadBalancerSettings.merge({ settings: testSettings });
+            let merged = loadBalancerSettings.merge({ settings: _.castArray(testSettings) });
             let validations = validation.validate({
                 settings: merged,
                 validations: loadBalancerSettings.validations
             });
             expect(validations.length).toEqual(1);
-            expect(validations[0].name).toEqual('.frontendIPConfigurations[0].internalLoadBalancerSettings');
+            expect(validations[0].name).toEqual('[0].frontendIPConfigurations[0].internalLoadBalancerSettings');
         });
         it('internalLoadBalancerSettings subnet name must be set', () => {
             testSettings.frontendIPConfigurations[0].loadBalancerType = 'Internal';
             testSettings.frontendIPConfigurations[0].internalLoadBalancerSettings = {
                 privateIPAddress: '192.168.1.1'
             };
-            let merged = loadBalancerSettings.merge({ settings: testSettings });
+            let merged = loadBalancerSettings.merge({ settings: _.castArray(testSettings) });
             let validations = validation.validate({
                 settings: merged,
                 validations: loadBalancerSettings.validations
             });
             expect(validations.length).toEqual(1);
-            expect(validations[0].name).toEqual('.frontendIPConfigurations[0].internalLoadBalancerSettings.subnetName');
+            expect(validations[0].name).toEqual('[0].frontendIPConfigurations[0].internalLoadBalancerSettings.subnetName');
         });
         it('internalLoadBalancerSettings IP must be valid', () => {
             testSettings.frontendIPConfigurations[0].loadBalancerType = 'Internal';
@@ -298,13 +300,13 @@ describe('loadBalancerSettings', () => {
                 privateIPAddress: 'invalid',
                 subnetName: 'foo'
             };
-            let merged = loadBalancerSettings.merge({ settings: testSettings });
+            let merged = loadBalancerSettings.merge({ settings: _.castArray(testSettings) });
             let validations = validation.validate({
                 settings: merged,
                 validations: loadBalancerSettings.validations
             });
             expect(validations.length).toEqual(1);
-            expect(validations[0].name).toEqual('.frontendIPConfigurations[0].internalLoadBalancerSettings.privateIPAddress');
+            expect(validations[0].name).toEqual('[0].frontendIPConfigurations[0].internalLoadBalancerSettings.privateIPAddress');
         });
         it('valid probes', () => {
             testSettings.probes = [
@@ -322,7 +324,7 @@ describe('loadBalancerSettings', () => {
                 }
             ];
 
-            let merged = loadBalancerSettings.merge({ settings: testSettings });
+            let merged = loadBalancerSettings.merge({ settings: _.castArray(testSettings) });
             let validations = validation.validate({
                 settings: merged,
                 validations: loadBalancerSettings.validations
@@ -338,13 +340,13 @@ describe('loadBalancerSettings', () => {
                 }
             ];
 
-            let merged = loadBalancerSettings.merge({ settings: testSettings });
+            let merged = loadBalancerSettings.merge({ settings: _.castArray(testSettings) });
             let validations = validation.validate({
                 settings: merged,
                 validations: loadBalancerSettings.validations
             });
             expect(validations.length).toEqual(1);
-            expect(validations[0].name).toEqual('.probes[0].requestPath');
+            expect(validations[0].name).toEqual('[0].probes[0].requestPath');
         });
         it('probes when protocol is tcp, requestPath must not be set', () => {
             testSettings.probes = [
@@ -356,13 +358,13 @@ describe('loadBalancerSettings', () => {
                 }
             ];
 
-            let merged = loadBalancerSettings.merge({ settings: testSettings });
+            let merged = loadBalancerSettings.merge({ settings: _.castArray(testSettings) });
             let validations = validation.validate({
                 settings: merged,
                 validations: loadBalancerSettings.validations
             });
             expect(validations.length).toEqual(1);
-            expect(validations[0].name).toEqual('.probes[0].requestPath');
+            expect(validations[0].name).toEqual('[0].probes[0].requestPath');
         });
         it('valid loadBalancingRules', () => {
             testSettings.frontendIPConfigurations = [
@@ -416,7 +418,7 @@ describe('loadBalancerSettings', () => {
                     requestPath: '/'
                 }
             ];
-            let merged = loadBalancerSettings.merge({ settings: testSettings });
+            let merged = loadBalancerSettings.merge({ settings: _.castArray(testSettings) });
             let validations = validation.validate({
                 settings: merged,
                 validations: loadBalancerSettings.validations
@@ -475,13 +477,13 @@ describe('loadBalancerSettings', () => {
                     requestPath: '/'
                 }
             ];
-            let merged = loadBalancerSettings.merge({ settings: testSettings });
+            let merged = loadBalancerSettings.merge({ settings: _.castArray(testSettings) });
             let validations = validation.validate({
                 settings: merged,
                 validations: loadBalancerSettings.validations
             });
             expect(validations.length).toEqual(1);
-            expect(validations[0].name).toEqual('.loadBalancingRules[1].frontendIPConfigurationName');
+            expect(validations[0].name).toEqual('[0].loadBalancingRules[1].frontendIPConfigurationName');
         });
         it('loadBalancingRules invalid backendPoolName', () => {
             testSettings.frontendIPConfigurations = [
@@ -535,13 +537,13 @@ describe('loadBalancerSettings', () => {
                     requestPath: '/'
                 }
             ];
-            let merged = loadBalancerSettings.merge({ settings: testSettings });
+            let merged = loadBalancerSettings.merge({ settings: _.castArray(testSettings) });
             let validations = validation.validate({
                 settings: merged,
                 validations: loadBalancerSettings.validations
             });
             expect(validations.length).toEqual(1);
-            expect(validations[0].name).toEqual('.loadBalancingRules[0].backendPoolName');
+            expect(validations[0].name).toEqual('[0].loadBalancingRules[0].backendPoolName');
         });
         it('loadBalancingRules invalid backendPoolName', () => {
             testSettings.frontendIPConfigurations = [
@@ -595,13 +597,13 @@ describe('loadBalancerSettings', () => {
                     requestPath: '/'
                 }
             ];
-            let merged = loadBalancerSettings.merge({ settings: testSettings });
+            let merged = loadBalancerSettings.merge({ settings: _.castArray(testSettings) });
             let validations = validation.validate({
                 settings: merged,
                 validations: loadBalancerSettings.validations
             });
             expect(validations.length).toEqual(1);
-            expect(validations[0].name).toEqual('.loadBalancingRules[0].probeName');
+            expect(validations[0].name).toEqual('[0].loadBalancingRules[0].probeName');
         });
         it('loadBalancingRules idleTimeoutInMinutes cannot be specified when UDP', () => {
             testSettings.frontendIPConfigurations = [
@@ -656,13 +658,13 @@ describe('loadBalancerSettings', () => {
                     requestPath: '/'
                 }
             ];
-            let merged = loadBalancerSettings.merge({ settings: testSettings });
+            let merged = loadBalancerSettings.merge({ settings: _.castArray(testSettings) });
             let validations = validation.validate({
                 settings: merged,
                 validations: loadBalancerSettings.validations
             });
             expect(validations.length).toEqual(1);
-            expect(validations[0].name).toEqual('.loadBalancingRules[1].idleTimeoutInMinutes');
+            expect(validations[0].name).toEqual('[0].loadBalancingRules[1].idleTimeoutInMinutes');
         });
         it('loadBalancingRules idleTimeoutInMinutes must be between 4 and 30', () => {
             testSettings.frontendIPConfigurations = [
@@ -698,13 +700,13 @@ describe('loadBalancerSettings', () => {
                     requestPath: '/'
                 }
             ];
-            let merged = loadBalancerSettings.merge({ settings: testSettings });
+            let merged = loadBalancerSettings.merge({ settings: _.castArray(testSettings) });
             let validations = validation.validate({
                 settings: merged,
                 validations: loadBalancerSettings.validations
             });
             expect(validations.length).toEqual(1);
-            expect(validations[0].name).toEqual('.loadBalancingRules[0].idleTimeoutInMinutes');
+            expect(validations[0].name).toEqual('[0].loadBalancingRules[0].idleTimeoutInMinutes');
         });
 
         it('valid inboundNatRules', () => {
@@ -732,7 +734,7 @@ describe('loadBalancerSettings', () => {
                     protocol: 'Tcp'
                 }
             ];
-            let merged = loadBalancerSettings.merge({ settings: testSettings });
+            let merged = loadBalancerSettings.merge({ settings: _.castArray(testSettings) });
             let validations = validation.validate({
                 settings: merged,
                 validations: loadBalancerSettings.validations
@@ -764,13 +766,13 @@ describe('loadBalancerSettings', () => {
                     protocol: 'Tcp'
                 }
             ];
-            let merged = loadBalancerSettings.merge({ settings: testSettings });
+            let merged = loadBalancerSettings.merge({ settings: _.castArray(testSettings) });
             let validations = validation.validate({
                 settings: merged,
                 validations: loadBalancerSettings.validations
             });
             expect(validations.length).toEqual(1);
-            expect(validations[0].name).toEqual('.inboundNatRules[1].frontendIPConfigurationName');
+            expect(validations[0].name).toEqual('[0].inboundNatRules[1].frontendIPConfigurationName');
         });
         it('inboundNatRules idleTimeoutInMinutes should not be specified when UDP', () => {
             testSettings.frontendIPConfigurations = [
@@ -790,13 +792,13 @@ describe('loadBalancerSettings', () => {
                     idleTimeoutInMinutes: 5
                 }
             ];
-            let merged = loadBalancerSettings.merge({ settings: testSettings });
+            let merged = loadBalancerSettings.merge({ settings: _.castArray(testSettings) });
             let validations = validation.validate({
                 settings: merged,
                 validations: loadBalancerSettings.validations
             });
             expect(validations.length > 0).toEqual(true);
-            expect(validations[0].name).toEqual('.inboundNatRules[0].idleTimeoutInMinutes');
+            expect(validations[0].name).toEqual('[0].inboundNatRules[0].idleTimeoutInMinutes');
         });
         it('inboundNatRules idleTimeoutInMinutes should be between 4 and 30', () => {
             testSettings.frontendIPConfigurations = [
@@ -816,13 +818,13 @@ describe('loadBalancerSettings', () => {
                     idleTimeoutInMinutes: 55
                 }
             ];
-            let merged = loadBalancerSettings.merge({ settings: testSettings });
+            let merged = loadBalancerSettings.merge({ settings: _.castArray(testSettings) });
             let validations = validation.validate({
                 settings: merged,
                 validations: loadBalancerSettings.validations
             });
             expect(validations.length > 0).toEqual(true);
-            expect(validations[0].name).toEqual('.inboundNatRules[0].idleTimeoutInMinutes');
+            expect(validations[0].name).toEqual('[0].inboundNatRules[0].idleTimeoutInMinutes');
         });
 
         it('valid inboundNatPools', () => {
@@ -850,7 +852,7 @@ describe('loadBalancerSettings', () => {
                     protocol: 'Tcp'
                 }
             ];
-            let merged = loadBalancerSettings.merge({ settings: testSettings });
+            let merged = loadBalancerSettings.merge({ settings: _.castArray(testSettings) });
             let validations = validation.validate({
                 settings: merged,
                 validations: loadBalancerSettings.validations
@@ -882,13 +884,13 @@ describe('loadBalancerSettings', () => {
                     protocol: 'Tcp'
                 }
             ];
-            let merged = loadBalancerSettings.merge({ settings: testSettings });
+            let merged = loadBalancerSettings.merge({ settings: _.castArray(testSettings) });
             let validations = validation.validate({
                 settings: merged,
                 validations: loadBalancerSettings.validations
             });
             expect(validations.length).toEqual(1);
-            expect(validations[0].name).toEqual('.inboundNatPools[1].frontendIPConfigurationName');
+            expect(validations[0].name).toEqual('[0].inboundNatPools[1].frontendIPConfigurationName');
         });
         it('loadDistribution is undefined', () => {
             testSettings.frontendIPConfigurations = [
@@ -923,7 +925,7 @@ describe('loadBalancerSettings', () => {
                     requestPath: '/'
                 }
             ];
-            let merged = loadBalancerSettings.merge({ settings: testSettings });
+            let merged = loadBalancerSettings.merge({ settings: _.castArray(testSettings) });
             merged.loadBalancingRules = _.map(merged.loadBalancingRules, (value) => {
                 delete value.loadDistribution;
                 return value;
@@ -947,6 +949,7 @@ describe('loadBalancerSettings', () => {
                         publicIPAddressVersion: 'IPv4'
                     }
                 ],
+                name: 'test-lb',
                 subscriptionId: '00000000-0000-1000-8000-000000000000',
                 resourceGroupName: 'test-rg',
                 location: 'westus',
@@ -996,13 +999,13 @@ describe('loadBalancerSettings', () => {
                         requestPath: '/'
                     }
                 ];
-                let merged = loadBalancerSettings.merge({ settings: testSettings });
+                let merged = loadBalancerSettings.merge({ settings: _.castArray(testSettings) });
                 let validations = validation.validate({
                     settings: merged,
                     validations: loadBalancerSettings.validations
                 });
                 expect(validations.length).toEqual(0);
-                let result = loadBalancerSettings.transform(merged);
+                let result = loadBalancerSettings.transform(merged[0]);
                 expect(result.loadBalancer[0].properties.loadBalancingRules[0].properties.idleTimeoutInMinutes).toEqual(5);
             });
             it('loadBalancingRules idleTimeoutInMinutes not specified', () => {
@@ -1038,13 +1041,13 @@ describe('loadBalancerSettings', () => {
                         requestPath: '/'
                     }
                 ];
-                let merged = loadBalancerSettings.merge({ settings: testSettings });
+                let merged = loadBalancerSettings.merge({ settings: _.castArray(testSettings) });
                 let validations = validation.validate({
                     settings: merged,
                     validations: loadBalancerSettings.validations
                 });
                 expect(validations.length).toEqual(0);
-                let result = loadBalancerSettings.transform(merged);
+                let result = loadBalancerSettings.transform(merged[0]);
                 expect(result.loadBalancer[0].properties.loadBalancingRules[0].properties.hasOwnProperty('idleTimeoutInMinutes')).toEqual(false);
             });
             it('internal load balancer', () => {
@@ -1085,13 +1088,13 @@ describe('loadBalancerSettings', () => {
                         requestPath: '/'
                     }
                 ];
-                let merged = loadBalancerSettings.merge({ settings: testSettings });
+                let merged = loadBalancerSettings.merge({ settings: _.castArray(testSettings) });
                 let validations = validation.validate({
                     settings: merged,
                     validations: loadBalancerSettings.validations
                 });
                 expect(validations.length).toEqual(0);
-                let result = loadBalancerSettings.transform(merged);
+                let result = loadBalancerSettings.transform(merged[0]);
                 expect(result.loadBalancer[0].properties.loadBalancingRules[0].properties.idleTimeoutInMinutes).toEqual(5);
             });
         });

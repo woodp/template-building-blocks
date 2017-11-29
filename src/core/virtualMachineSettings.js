@@ -92,11 +92,16 @@ function merge({ settings, buildingBlockSettings, defaultSettings }) {
             });
         }
         if (key === 'loadBalancerSettings') {
-            return lbSettings.merge({
-                settings: srcValue,
-                buildingBlockSettings: buildingBlockSettings,
-                defaultSettings: objValue
-            });
+            let merged = lbSettings.merge(
+                {
+                    settings: [srcValue],
+                    buildingBlockSettings: buildingBlockSettings,
+                    defaultSettings: objValue
+                }
+            );
+
+            // Just to be safe
+            return (merged && merged.length === 1) ? merged[0] : {};
         }
         if (key === 'imageReference') {
             if (!_.isEmpty(srcValue)) {
