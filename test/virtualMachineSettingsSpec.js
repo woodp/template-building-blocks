@@ -93,7 +93,8 @@ describe('virtualMachineSettings:', () => {
         virtualNetwork: {
             name: 'test-vnet'
         },
-        tags: {}
+        tags: {},
+        usePlan: false
     };
     let buildingBlockSettings = {
         resourceGroupName: 'test-rg',
@@ -1012,6 +1013,16 @@ describe('virtualMachineSettings:', () => {
             expect(results.virtualNetwork.subnets[1].addressPrefix).toEqual('10.0.2.0/24');
             expect(results.virtualNetwork.virtualNetworkPeerings[0].allowForwardedTraffic).toEqual(true);
         });
+        it('overrides usePlan', () => {
+            userDefaults.usePlan = true;
+            delete settings.usePlan;
+            let results = merge({
+                settings: settings,
+                buildingBlockSettings: buildingBlockSettings,
+                defaultSettings: userDefaults
+            });
+            expect(results.usePlan).toEqual(true);
+        });
         it('when load balancer name is not specified neither at user-params nor user-defaults, should use vm namePrefix.', () => {
             settings.loadBalancerSettings = {};
             let mergedValue = merge({
@@ -1441,6 +1452,19 @@ describe('virtualMachineSettings:', () => {
             result = validate(settings);
             expect(result.length).toEqual(1);
             expect(result[0].name).toEqual('.virtualNetwork.name');
+        });
+        
+        it('validates that usePlan cannot be true for osDisk.createOption != fromImage', () => {
+            settings.usePlan = true;
+            delete settings.imageReference;
+            settings.osDisk.createOption = 'attach';
+            settings.osDisk.images = [
+                "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/resource-group-name/providers/Microsoft.Compute/disks/os-disk1-name",
+                "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/resource-group-name/providers/Microsoft.Compute/disks/os-disk2-name"
+            ];
+            let result = validate(settings);
+            expect(result.length).toEqual(1);
+            expect(result[0].name).toEqual('.usePlan');
         });
         describe('AvailabilitySet:', () => {
             it('validates that no validation errors are thrown if name is not present in avSet', () => {
@@ -3249,6 +3273,15 @@ describe('virtualMachineSettings:', () => {
                 processedParam = virtualMachineSettings.process({ settings, buildingBlockSettings });
 
                 expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.storageProfile.osDisk.diskSizeGB).toEqual(500);
+            });
+            it('validates that plan property is correctly set', () => {
+                let settings = _.cloneDeep(testSettings);
+                settings.usePlan = true;
+
+                let processedParam = virtualMachineSettings.process({ settings, buildingBlockSettings });
+                expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].plan.name).toEqual(testSettings.imageReference.sku);
+                expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].plan.publisher).toEqual(testSettings.imageReference.publisher);
+                expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].plan.product).toEqual(testSettings.imageReference.offer);
             });
             // TODO dataDisk property is computed per the rp schema
             // TODO osDisk property is computed per the rp schema

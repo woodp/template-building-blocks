@@ -46,7 +46,8 @@
                             "location": "[variables('updatedSource')[copyIndex()].location]",
                             "name": "[variables('updatedSource')[copyIndex()].name]",
                             "properties": "[variables('updatedSource')[copyIndex()].properties]",
-                            "tags": "[variables('updatedSource')[copyIndex()].tags]"
+                            "tags": "[variables('updatedSource')[copyIndex()].tags]",
+                            "plan": "[variables('updatedSource')[copyIndex()].plan]"
                         },
                         {
                             "type": "Microsoft.Resources/deployments",

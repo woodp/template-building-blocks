@@ -1226,6 +1226,42 @@ let virtualMachineValidations = {
                 }
             }
         };
+    },
+    usePlan: (value, parent) => {
+        // Value must be specified and must be a boolean
+        let result = v.validationUtilities.isBoolean(value);
+        if (result.result === false) {
+            return result;
+        }
+
+        if ((value) && (parent.osDisk.createOption !== 'fromImage')) {
+            return {
+                result: false,
+                message: 'Value cannot be true if .osDisk.createOption is not fromImage'
+            }
+        }
+
+        // For managed disks, imageReference.id cannot be specified
+        // For managed disks, osDisk.images cannot be a non-zero length array
+        if (parent.storageAccounts.managed) {
+            if ((value) && (parent.imageReference.id)) {
+                return {
+                    result: false,
+                    message: 'Value cannot be true if .imageReference.id is specified'
+                };
+            }
+        } else {
+            if ((value) && (_.isArray(parent.osDisk.images) && (parent.osDisk.images.length > 0))) {
+                return {
+                    result: false,
+                    message: 'Value cannot be true if .osDisk.images has a non-zero length'
+                };
+            }
+        }
+
+        return {
+            result: true
+        };
     }
 };
 
@@ -1638,6 +1674,15 @@ function transform(settings, buildingBlockSettings) {
             delete vmProperties.osProfile;
         }
 
+        let plan = null;
+        if (vmStamp.usePlan) {
+            plan = {
+                name: vmStamp.imageReference.sku,
+                publisher: vmStamp.imageReference.publisher,
+                product: vmStamp.imageReference.offer
+            };
+        }
+
         // process extensions. Transform extensions in VM to shaped required by virtualMachineExtensionsSettings
         let extensionParam = [{
             vms: [vmStamp.name],
@@ -1753,6 +1798,7 @@ function transform(settings, buildingBlockSettings) {
             subscriptionId: vmStamp.subscriptionId,
             location: vmStamp.location,
             tags: vmStamp.tags,
+            plan: plan,
             encryptionSettings: encryptionSettings
         });
 
