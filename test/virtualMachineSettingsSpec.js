@@ -48,7 +48,10 @@ describe('virtualMachineSettings:', () => {
                 dnsServers: [
                     '10.0.1.240',
                     '10.0.1.242'
-                ]
+                ],
+                backendPoolNames: [],
+                inboundNatRulesNames: [],
+                inboundNatPoolNames: []
             },
             {
                 isPublic: false,
@@ -59,7 +62,10 @@ describe('virtualMachineSettings:', () => {
                 startingIPAddress: '',
                 enableIPForwarding: false,
                 domainNameLabelPrefix: '',
-                dnsServers: []
+                dnsServers: [],
+                backendPoolNames: [],
+                inboundNatRulesNames: [],
+                inboundNatPoolNames: []
             }
         ],
         imageReference: {
@@ -996,7 +1002,7 @@ describe('virtualMachineSettings:', () => {
             expect(mergedValue.nics[0].publicIpAddress.publicIPAddressVersion).toEqual('IPv4');
             expect(mergedValue.loadBalancerSettings.frontendIPConfigurations.length).toEqual(1);
             expect(mergedValue.loadBalancerSettings.frontendIPConfigurations[0].name).toEqual('userdefault-feConfig');
-            expect(mergedValue.loadBalancerSettings.frontendIPConfigurations[0].publicIpAddress.name).toEqual('undefined-userdefault-feConfig-pip');
+            //expect(mergedValue.loadBalancerSettings.frontendIPConfigurations[0].publicIpAddress.name).toEqual('undefined-userdefault-feConfig-pip');
             expect(_.isPlainObject(mergedValue.nics[1].publicIpAddress)).toEqual(false);
         });
         describe('AvailabilitySet:', () => {
@@ -1428,6 +1434,206 @@ describe('virtualMachineSettings:', () => {
             });
         });
         describe('nics:', () => {
+            let lbSettings = {
+                loadBalancerSettings: {
+                    frontendIPConfigurations: [
+                        {
+                            name: 'lb-fe-config1',
+                            loadBalancerType: 'Public'
+                        }
+                    ],
+                    loadBalancingRules: [
+                        {
+                            name: 'lbr1',
+                            frontendPort: 80,
+                            backendPort: 80,
+                            protocol: 'Tcp',
+                            backendPoolName: 'bep1',
+                            frontendIPConfigurationName: 'lb-fe-config1',
+                            enableFloatingIP: false,
+                            probeName: 'lbp1'
+                        }
+                    ],
+                    probes: [
+                        {
+                            name: 'lbp1',
+                            port: 80,
+                            protocol: 'Http',
+                            requestPath: '/'
+                        }
+                    ],
+                    backendPools: [
+                        {
+                            name: 'bep1'
+                        },
+                        {
+                            name: 'bep2'
+                        }
+                    ],
+                    inboundNatRules: [
+                        {
+                            name: 'natrule1',
+                            protocol: 'Tcp',
+                            startingFrontendPort: 2000,
+                            backendPort: 3389,
+                            frontendIPConfigurationName: 'lb-fe-config1'
+                        },
+                        {
+                            name: 'natrule2',
+                            protocol: 'Tcp',
+                            startingFrontendPort: 3000,
+                            backendPort: 22,
+                            frontendIPConfigurationName: 'lb-fe-config1'
+                        }
+                    ],
+                    inboundNatPools: [
+                        {
+                            name: 'natpool1',
+                            protocol: 'Tcp',
+                            startingFrontendPort: 2000,
+                            frontendPortRangeEnd: 2010,
+                            backendPort: 3389,
+                            frontendIPConfigurationName: 'lb-fe-config1'
+                        },
+                        {
+                            name: 'natpool2',
+                            protocol: 'Tcp',
+                            startingFrontendPort: 3000,
+                            frontendPortRangeEnd: 3010,
+                            backendPort: 22,
+                            frontendIPConfigurationName: 'lb-fe-config1'
+                        }
+                    ]
+                }
+            };
+
+            let nicSettings = {
+                nics: [
+                    {
+                        isPublic: false,
+                        isPrimary: true,
+                        privateIPAllocationMethod: 'Static',
+                        startingIPAddress: '10.0.2.4',
+                        subnetName: 'subnet1',
+                        backendPoolNames: [
+                            {
+                                name: 'bep1',
+                                loadBalancerName: 'lb1',
+                                resourceGroupName: 'lb1-rg',
+                                subscriptionId: '00000000-0000-1000-AA00-000000000000'
+
+                            },
+                            'bep2'
+                        ],
+                        inboundNatRulesNames: [
+                            {
+                                name: 'natrule1'
+                            },
+                            'natrule2'
+                        ],
+                        inboundNatPoolNames: [
+                            {
+                                name: 'natpool1',
+                                loadBalancerName: 'lb3',
+                                resourceGroupName: 'lb3-rg',
+                                subscriptionId: '00000000-0000-1000-BB00-000000000000'
+                            },
+                            'natpool2'
+                        ]
+                    },
+                    {
+                        isPublic: false,
+                        privateIPAllocationMethod: 'Static',
+                        startingIPAddress: '10.0.2.5',
+                        subnetName: 'subnet1',
+                        backendPoolNames: [
+                            {
+                                name: 'ss-lb-bep1',
+                                loadBalancerName: 'lb4'
+                            }
+                        ],
+                        inboundNatRulesNames: [
+                            {
+                                name: 'natrule1'
+                            }
+                        ],
+                        inboundNatPoolNames: [
+                            {
+                                name: 'natpool1',
+                                loadBalancerName: 'lb6'
+                            }
+                        ]
+                    }
+                ]
+            };
+            it('validates that if loadbalancer is not specified then NatRules cannot be specified', () => {
+                settings.nics[0].inboundNatRulesNames = nicSettings.nics[0].inboundNatRulesNames;
+                let result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.nics');
+                expect(result[0].message).toContain('inboundNatRules cannot be specified');
+            });
+            it('validates that if NOT scaleset then NatPools cannot be specified', () => {
+                settings.nics[0].inboundNatPoolNames = nicSettings.nics[0].inboundNatPoolNames;
+                let result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.nics');
+                expect(result[0].message).toContain('inboundNatPoolNames can only be specified for scalesets');
+            });
+            it('validates that if scaleset then NatPools name in nics matchs the names in loadbalancer', () => {
+                settings.scaleSetSettings = {
+                    name: 'scaleSet-lb',
+                    upgradePolicy: 'Automatic',
+                    overprovision: true,
+                    singlePlacementGroup: true
+                };
+                settings.nics[0].inboundNatPoolNames = ['natpool1'];
+                settings.loadBalancerSettings = _.cloneDeep(lbSettings.loadBalancerSettings);
+                settings.loadBalancerSettings.inboundNatRules = [];
+                let result = validate(settings);
+                expect(result.length).toEqual(0);
+
+                settings.nics[0].inboundNatPoolNames = ['test'];
+                result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.nics');
+                expect(result[0].message).toContain('InboundNatPool test specified in nic[0] is not valid');
+            });
+            it('validates that NatRule names in nics matchs the names in loadbalancer', () => {
+                settings.nics[0].inboundNatRulesNames = ['natrule1'];
+                settings.loadBalancerSettings = _.cloneDeep(lbSettings.loadBalancerSettings);
+                settings.loadBalancerSettings.inboundNatPools = [];
+                let result = validate(settings);
+                expect(result.length).toEqual(0);
+
+                settings.nics[0].inboundNatRulesNames = ['test'];
+                result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.nics');
+                expect(result[0].message).toContain('InboundNatRule test specified in nic[0] is not valid');
+            });
+            it('validates that NatRule names in nics cannot reference existing loadbalancer', () => {
+                settings.nics[0].inboundNatRulesNames = [{name: 'natrule1', loadBalancerName: 'xyz'}];
+                settings.loadBalancerSettings = _.cloneDeep(lbSettings.loadBalancerSettings);
+                settings.loadBalancerSettings.inboundNatPools = [];
+                let result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.nics');
+                expect(result[0].message).toContain('cannot reference an existing loadBalancer');
+            });
+            it('validates that bep name in nics match the names in loadbalancer', () => {
+                settings.nics[0].backendPoolNames = ['bep1'];
+                settings.loadBalancerSettings = _.cloneDeep(lbSettings.loadBalancerSettings);
+                settings.loadBalancerSettings.inboundNatPools = [];
+                let result = validate(settings);
+                expect(result.length).toEqual(0);
+
+                settings.nics[0].backendPoolNames = ['test'];
+                result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.nics');
+                expect(result[0].message).toContain('BackendPool test specified in nic[0] is not valid');
+            });
             it('validates that subnets cannot be null or empty', () => {
                 delete settings.nics;
                 let result = validate(settings);
@@ -1914,7 +2120,7 @@ describe('virtualMachineSettings:', () => {
             it('scale set can have a different location than load balancer', () => {
                 let merge = virtualMachineSettings.__get__('merge');
                 settings.scaleSetSettings = {
-                    
+
                 };
                 settings.nics[0].isPublic = false;
                 settings.loadBalancerSettings = {
@@ -2034,10 +2240,217 @@ describe('virtualMachineSettings:', () => {
     if (jasmine.testConfiguration.runTransform) {
         describe('transform:', () => {
             let settings;
+            let lbSettings = {
+                loadBalancerSettings: {
+                    frontendIPConfigurations: [
+                        {
+                            name: 'lb-fe-config1',
+                            loadBalancerType: 'Public'
+                        }
+                    ],
+                    loadBalancingRules: [
+                        {
+                            name: 'lbr1',
+                            frontendPort: 80,
+                            backendPort: 80,
+                            protocol: 'Tcp',
+                            backendPoolName: 'bep1',
+                            frontendIPConfigurationName: 'lb-fe-config1',
+                            enableFloatingIP: false,
+                            probeName: 'lbp1'
+                        }
+                    ],
+                    probes: [
+                        {
+                            name: 'lbp1',
+                            port: 80,
+                            protocol: 'Http',
+                            requestPath: '/'
+                        }
+                    ],
+                    backendPools: [
+                        {
+                            name: 'bep1'
+                        },
+                        {
+                            name: 'bep2'
+                        }
+                    ],
+                    inboundNatRules: [
+                        {
+                            name: 'natrule1',
+                            protocol: 'Tcp',
+                            startingFrontendPort: 2000,
+                            backendPort: 3389,
+                            frontendIPConfigurationName: 'lb-fe-config1'
+                        },
+                        {
+                            name: 'natrule2',
+                            protocol: 'Tcp',
+                            startingFrontendPort: 3000,
+                            backendPort: 22,
+                            frontendIPConfigurationName: 'lb-fe-config1'
+                        }
+                    ],
+                    inboundNatPools: [
+                        {
+                            name: 'natpool1',
+                            protocol: 'Tcp',
+                            startingFrontendPort: 2000,
+                            frontendPortRangeEnd: 2010,
+                            backendPort: 3389,
+                            frontendIPConfigurationName: 'lb-fe-config1'
+                        },
+                        {
+                            name: 'natpool2',
+                            protocol: 'Tcp',
+                            startingFrontendPort: 3000,
+                            frontendPortRangeEnd: 3010,
+                            backendPort: 22,
+                            frontendIPConfigurationName: 'lb-fe-config1'
+                        }
+                    ]
+                }
+            };
+
+            let nicSettings = {
+                nics: [
+                    {
+                        isPublic: false,
+                        isPrimary: true,
+                        privateIPAllocationMethod: 'Static',
+                        startingIPAddress: '10.0.2.4',
+                        subnetName: 'subnet1',
+                        backendPoolNames: [
+                            {
+                                name: 'bep1',
+                                loadBalancerName: 'lb1',
+                                resourceGroupName: 'lb1-rg',
+                                subscriptionId: '00000000-0000-1000-AA00-000000000000'
+
+                            },
+                            'bep2'
+                        ],
+                        inboundNatRulesNames: [
+                            {
+                                name: 'natrule1'
+                            },
+                            'natrule2'
+                        ],
+                        inboundNatPoolNames: [
+                            {
+                                name: 'natpool1',
+                                loadBalancerName: 'lb3',
+                                resourceGroupName: 'lb3-rg',
+                                subscriptionId: '00000000-0000-1000-BB00-000000000000'
+                            },
+                            'natpool2'
+                        ]
+                    },
+                    {
+                        isPublic: false,
+                        privateIPAllocationMethod: 'Static',
+                        startingIPAddress: '10.0.2.5',
+                        subnetName: 'subnet1',
+                        backendPoolNames: [
+                            {
+                                name: 'bep1',
+                                loadBalancerName: 'lb4'
+                            }
+                        ],
+                        inboundNatRulesNames: [
+                            {
+                                name: 'natrule1'
+                            }
+                        ],
+                        inboundNatPoolNames: [
+                            {
+                                name: 'natpool1',
+                                loadBalancerName: 'lb6'
+                            }
+                        ]
+                    }
+                ]
+            };
+
             beforeEach(() => {
                 settings = _.cloneDeep(testSettings);
             });
 
+            it('validates that networkinterfaces are transformed correctly for VMs', () => {
+                settings.nics = _.cloneDeep(nicSettings.nics);
+                settings.nics[0].inboundNatPoolNames = [];
+                settings.nics[1].inboundNatPoolNames = [];
+                settings.loadBalancerSettings = _.cloneDeep(lbSettings.loadBalancerSettings);
+                settings.loadBalancerSettings.inboundNatPools = [];
+                
+                let processedParam = virtualMachineSettings.process({ settings: settings, buildingBlockSettings });
+                expect(processedParam.parameters.virtualMachines[0].virtualMachines.length).toEqual(2);
+                
+                let nics = processedParam.parameters.virtualMachines[0].networkInterfaces;
+                expect(nics.length).toEqual(4);
+                expect(nics[0].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools.length).toEqual(2);
+                expect(nics[0].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools[0].id).toEqual('/subscriptions/00000000-0000-1000-AA00-000000000000/resourceGroups/lb1-rg/providers/Microsoft.Network/loadBalancers/lb1/backendAddressPools/bep1');
+                expect(nics[0].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools[1].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/loadBalancers/test-lb/backendAddressPools/bep2');
+
+                expect(nics[0].properties.ipConfigurations[0].properties.loadBalancerInboundNatRules.length).toEqual(2);
+                expect(nics[0].properties.ipConfigurations[0].properties.loadBalancerInboundNatRules[0].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/loadBalancers/test-lb/inboundNatRules/natrule1-0');
+                expect(nics[0].properties.ipConfigurations[0].properties.loadBalancerInboundNatRules[1].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/loadBalancers/test-lb/inboundNatRules/natrule2-0');
+
+                expect(nics[1].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools.length).toEqual(1);
+                expect(nics[1].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools[0].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/loadBalancers/lb4/backendAddressPools/bep1');
+
+                expect(nics[1].properties.ipConfigurations[0].properties.loadBalancerInboundNatRules.length).toEqual(1);
+                expect(nics[1].properties.ipConfigurations[0].properties.loadBalancerInboundNatRules[0].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/loadBalancers/test-lb/inboundNatRules/natrule1-0');
+
+                expect(nics[2].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools.length).toEqual(2);
+                expect(nics[2].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools[0].id).toEqual('/subscriptions/00000000-0000-1000-AA00-000000000000/resourceGroups/lb1-rg/providers/Microsoft.Network/loadBalancers/lb1/backendAddressPools/bep1');
+                expect(nics[2].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools[1].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/loadBalancers/test-lb/backendAddressPools/bep2');
+
+                expect(nics[2].properties.ipConfigurations[0].properties.loadBalancerInboundNatRules.length).toEqual(2);
+                expect(nics[2].properties.ipConfigurations[0].properties.loadBalancerInboundNatRules[0].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/loadBalancers/test-lb/inboundNatRules/natrule1-1');
+                expect(nics[2].properties.ipConfigurations[0].properties.loadBalancerInboundNatRules[1].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/loadBalancers/test-lb/inboundNatRules/natrule2-1');
+
+                expect(nics[3].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools.length).toEqual(1);
+                expect(nics[3].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools[0].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/loadBalancers/lb4/backendAddressPools/bep1');
+
+                expect(nics[3].properties.ipConfigurations[0].properties.loadBalancerInboundNatRules.length).toEqual(1);
+                expect(nics[3].properties.ipConfigurations[0].properties.loadBalancerInboundNatRules[0].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/loadBalancers/test-lb/inboundNatRules/natrule1-1');
+
+            });
+            it('validates that networkinterfaces are transformed correctly for Scalesets', () => {
+                settings.scaleSetSettings = {
+                    name: 'scaleSet-lb',
+                    upgradePolicy: 'Automatic',
+                    overprovision: true,
+                    singlePlacementGroup: true
+                };
+                settings.nics = _.cloneDeep(nicSettings.nics);
+                settings.nics[0].inboundNatRulesNames = [];
+                settings.nics[1].inboundNatRulesNames = [];
+                settings.loadBalancerSettings = _.cloneDeep(lbSettings.loadBalancerSettings);
+                settings.loadBalancerSettings.inboundNatRules = [];
+
+                let processedParam = virtualMachineSettings.process({ settings: settings, buildingBlockSettings });
+                expect(processedParam.parameters.virtualMachines[0].virtualMachines.length).toEqual(0);
+
+                let nics = processedParam.parameters.virtualMachines[0].scaleSet[0].properties.virtualMachineProfile.networkProfile.networkInterfaceConfigurations;
+                expect(nics.length).toEqual(2);
+                expect(nics[0].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools.length).toEqual(2);
+                expect(nics[0].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools[0].id).toEqual('/subscriptions/00000000-0000-1000-AA00-000000000000/resourceGroups/lb1-rg/providers/Microsoft.Network/loadBalancers/lb1/backendAddressPools/bep1');
+                expect(nics[0].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools[1].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/loadBalancers/test-lb/backendAddressPools/bep2');
+
+                expect(nics[0].properties.ipConfigurations[0].properties.loadBalancerInboundNatPools.length).toEqual(2);
+                expect(nics[0].properties.ipConfigurations[0].properties.loadBalancerInboundNatPools[0].id).toEqual('/subscriptions/00000000-0000-1000-BB00-000000000000/resourceGroups/lb3-rg/providers/Microsoft.Network/loadBalancers/lb3/inboundNatPools/natpool1');
+                expect(nics[0].properties.ipConfigurations[0].properties.loadBalancerInboundNatPools[1].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/loadBalancers/test-lb/inboundNatPools/natpool2');
+
+                expect(nics[1].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools.length).toEqual(1);
+                expect(nics[1].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools[0].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/loadBalancers/lb4/backendAddressPools/bep1');
+
+                expect(nics[1].properties.ipConfigurations[0].properties.loadBalancerInboundNatPools.length).toEqual(1);
+                expect(nics[1].properties.ipConfigurations[0].properties.loadBalancerInboundNatPools[0].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/loadBalancers/lb6/inboundNatPools/natpool1');
+
+            });
             it('validates that number of stamps created are based on vmcount property', () => {
 
                 let processedParam = virtualMachineSettings.process({ settings: testSettings, buildingBlockSettings });

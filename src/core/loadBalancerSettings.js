@@ -312,7 +312,7 @@ let loadBalancerValidations = {
                     message: `Valid values are ${validProtocols.join(',')}`
                 };
             },
-            startingFrontendPort: (value) => {
+            frontendPort: (value) => {
                 return {
                     result: _.inRange(_.toSafeInteger(value), 1, 65535),
                     message: 'Valid values are from 1 to 65534'
@@ -482,24 +482,22 @@ let processProperties = {
     inboundNatRules: (value, key, parent, properties) => {
         let natRules = [];
         value.forEach((rule) => {
-            for (let i = 0; i < parent.vmCount; i++) {
-                let natRule = {
-                    name: `${rule.name}-${i}`,
-                    properties: {
-                        frontendIPConfiguration: {
-                            id: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/loadBalancers/frontendIPConfigurations', parent.name, rule.frontendIPConfigurationName)
-                        },
-                        protocol: rule.protocol,
-                        enableFloatingIP: rule.enableFloatingIP,
-                        frontendPort: rule.startingFrontendPort + i,
-                        backendPort: rule.backendPort
-                    }
-                };
-                if (!_.isNil(rule.idleTimeoutInMinutes)) {
-                    natRule.properties.idleTimeoutInMinutes = rule.idleTimeoutInMinutes;
+            let natRule = {
+                name: rule.name,
+                properties: {
+                    frontendIPConfiguration: {
+                        id: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/loadBalancers/frontendIPConfigurations', parent.name, rule.frontendIPConfigurationName)
+                    },
+                    protocol: rule.protocol,
+                    enableFloatingIP: rule.enableFloatingIP,
+                    frontendPort: rule.frontendPort,
+                    backendPort: rule.backendPort
                 }
-                natRules.push(natRule);
+            };
+            if (!_.isNil(rule.idleTimeoutInMinutes)) {
+                natRule.properties.idleTimeoutInMinutes = rule.idleTimeoutInMinutes;
             }
+            natRules.push(natRule);
         });
         properties['inboundNatRules'] = natRules;
     },

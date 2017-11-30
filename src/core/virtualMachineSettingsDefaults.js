@@ -31,7 +31,11 @@ const VIRTUALMACHINE_SETTINGS_DEFAULTS_WINDOWS = {
     availabilitySet: {},
     virtualNetwork: {},
     applicationGatewaySettings: {},
-    loadBalancerSettings: {},
+    loadBalancerSettings: {
+        backendPools: [],
+        inboundNatRules: [],
+        inboundNatPools: []
+    },
     scaleSetSettings: {},
     tags: {}
 };
@@ -66,7 +70,11 @@ const VIRTUALMACHINE_SETTINGS_DEFAULTS_LINUX = {
     availabilitySet: {},
     virtualNetwork: {},
     applicationGatewaySettings: {},
-    loadBalancerSettings: {},
+    loadBalancerSettings: {
+        backendPools: [],
+        inboundNatRules: [],
+        inboundNatPools: []
+    },
     scaleSetSettings: {},
     tags: {}
 };
