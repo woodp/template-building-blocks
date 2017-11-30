@@ -84,25 +84,6 @@ function merge({ settings, buildingBlockSettings, defaultSettings }) {
                 defaultSettings: objValue
             });
         }
-        if (key === 'applicationGatewaySettings') {
-            return gatewaySettings.merge({
-                settings: srcValue,
-                buildingBlockSettings: buildingBlockSettings,
-                defaultSettings: objValue
-            });
-        }
-        if (key === 'loadBalancerSettings') {
-            let merged = lbSettings.merge(
-                {
-                    settings: [srcValue],
-                    buildingBlockSettings: buildingBlockSettings,
-                    defaultSettings: objValue
-                }
-            );
-
-            // Just to be safe
-            return (merged && merged.length === 1) ? merged[0] : {};
-        }
         if (key === 'imageReference') {
             if (!_.isEmpty(srcValue)) {
                 return srcValue;
@@ -152,15 +133,13 @@ function NormalizeProperties(settings) {
 
     // loadBalancerSettings
     if (!_.isNil(updatedSettings.loadBalancerSettings)) {
-        // if loadBalancerSettings is specified, add vmCount and virtualNetwork info from vm settings to the LB settings
-        updatedSettings.loadBalancerSettings.vmCount = updatedSettings.vmCount;
+        // if loadBalancerSettings is specified, add virtualNetwork info from vm settings to the LB settings
         updatedSettings.loadBalancerSettings.virtualNetwork = updatedSettings.virtualNetwork;
     }
 
     // applicationGatewaySettings
     if (!_.isNil(updatedSettings.applicationGatewaySettings)) {
-        // if applicationGatewaySettings is specified, add vmCount and virtualNetwork info from vm settings to the gateway settings
-        updatedSettings.applicationGatewaySettings.vmCount = updatedSettings.vmCount;
+        // if applicationGatewaySettings is specified, add virtualNetwork info from vm settings to the gateway settings
         updatedSettings.applicationGatewaySettings.virtualNetwork = updatedSettings.virtualNetwork;
     }
 
@@ -259,6 +238,28 @@ let encryptionSettingsValidations = {
     keyEncryptionKey: {
         keyUrl: v.validationUtilities.isNotNullOrWhitespace,
         sourceVaultName: v.validationUtilities.isNotNullOrWhitespace
+    }
+};
+
+let loadBalancerSettingsValidations = {
+    inboundNatRules: (value) => {
+        if (value.length === 0) {
+            return {
+                result: true
+            };
+        }
+
+        return {
+            validations: {
+                name: v.validationUtilities.isNotNullOrWhitespace,
+                startingFrontendPort: (value) => {
+                    return {
+                        result: _.inRange(_.toSafeInteger(value), 1, 65535),
+                        message: 'Valid values are from 1 to 65534'
+                    };
+                }
+            }
+        };
     }
 };
 
@@ -846,8 +847,10 @@ let virtualMachineValidations = {
         if (_.isNil(value)) {
             return { result: true };
         }
+        
+        // TODO - Add subscription and location validations
         return {
-            validations: gatewaySettings.validations
+            result: true
         };
     },
     scaleSetSettings: (value, parent) => {
@@ -1238,7 +1241,7 @@ function transform(settings, buildingBlockSettings) {
         availabilitySet: [],
         scaleSet: [],
         autoScaleSettings: [],
-        loadBalancer: [],
+        loadBalancers: [],
         applicationGateways: []
     };
 
@@ -1324,20 +1327,33 @@ function transform(settings, buildingBlockSettings) {
 
     // process load balancer if specified
     if (settings.loadBalancerSettings) {
-        let lbResults = lbSettings.transform(settings.loadBalancerSettings, buildingBlockSettings);
-        accumulator.loadBalancer = lbResults.loadBalancer;
-        if (lbResults.publicIpAddresses) {
-            accumulator.publicIpAddresses = _.concat(accumulator.publicIpAddresses, lbResults.publicIpAddresses);
-        }
+        let natRules = [];
+        settings.loadBalancerSettings.inboundNatRules.forEach((rule) => {
+            for (let i = 0; i < settings.vmCount; i++) {
+                let natRule = {
+                    name: `${rule.name}-${i}`,
+                    frontendIPConfigurationName: rule.frontendIPConfigurationName,
+                    protocol: rule.protocol,
+                    enableFloatingIP: rule.enableFloatingIP,
+                    frontendPort: rule.startingFrontendPort + i,
+                    backendPort: rule.backendPort,
+                    idleTimeoutInMinutes: rule.idleTimeoutInMinutes
+                };
+                natRules.push(natRule);
+            }
+        });
+        settings.loadBalancerSettings.inboundNatRules = natRules;
+
+        let lbResults = lbSettings.process({ settings: settings.loadBalancerSettings, buildingBlockSettings: buildingBlockSettings });
+        accumulator.loadBalancers = lbResults.parameters.loadBalancers;
+        accumulator.publicIpAddresses = _.concat(accumulator.publicIpAddresses, lbResults.parameters.publicIpAddresses);
     }
 
     // process applicationGatewaySettings if specified
     if (settings.applicationGatewaySettings) {
-        let gatewayResults = gatewaySettings.transform(settings.applicationGatewaySettings, buildingBlockSettings);
-        accumulator.applicationGateways = gatewayResults.applicationGateway;
-        if (gatewayResults.publicIpAddresses) {
-            accumulator.publicIpAddresses = _.concat(accumulator.publicIpAddresses, gatewayResults.publicIpAddresses);
-        }
+        let gatewayResults = gatewaySettings.process({ settings: settings.applicationGatewaySettings, buildingBlockSettings: buildingBlockSettings});
+        accumulator.applicationGateways = gatewayResults.parameters.applicationGateways;
+        accumulator.publicIpAddresses = _.concat(accumulator.publicIpAddresses, gatewayResults.parameters.publicIpAddresses);
     }
 
     return accumulator;
@@ -1368,7 +1384,7 @@ function process({ settings, buildingBlockSettings, defaultSettings }) {
         let resourceGroups = resources.extractResourceGroups(
             result.availabilitySet,
             result.diagnosticStorageAccounts,
-            result.loadBalancer,
+            result.loadBalancers,
             result.applicationGateways,
             result.scaleSet,
             result.autoScaleSettings,

@@ -56,8 +56,8 @@
           "virtualMachines": {
             "value": "[parameters('virtualMachines')[copyIndex()].virtualMachines]"
           },
-          "loadBalancer": {
-            "value": "[if(contains(parameters('virtualMachines')[copyIndex()], 'loadBalancer'), parameters('virtualMachines')[copyIndex()]['loadBalancer'], json('[]'))]"
+          "loadBalancers": {
+            "value": "[if(contains(parameters('virtualMachines')[copyIndex()], 'loadBalancers'), parameters('virtualMachines')[copyIndex()]['loadBalancers'], json('[]'))]"
           },
           "scaleSet": {
             "value": "[if(contains(parameters('virtualMachines')[copyIndex()], 'scaleSet'), parameters('virtualMachines')[copyIndex()]['scaleSet'], json('[]'))]"

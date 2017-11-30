@@ -85,6 +85,13 @@
                                 "type": "string"
                             }
                         },
+                        "applicationGatewayBackendPoolNames": {
+                            "type": "array",
+                            "default": [],
+                            "items": {
+                                "type": "string"
+                            }
+                        },
                         "inboundNatRulesNames": {
                             "type": "array",
                             "default": [],

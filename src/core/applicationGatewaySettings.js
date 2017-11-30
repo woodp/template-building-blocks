@@ -22,7 +22,12 @@ const APPLICATIONGATEWAY_SETTINGS_DEFAULTS = {
         }
     ],
     frontendPorts: [],
-    backendAddressPools: [],
+    backendAddressPools: [
+        {
+            backendAddresses: [],
+            backendIPConfigurations: []
+        }
+    ],
     backendHttpSettingsCollection: [
         {
             cookieBasedAffinity: 'Disabled',
@@ -59,24 +64,30 @@ const APPLICATIONGATEWAY_SETTINGS_DEFAULTS = {
 
 function merge({ settings, buildingBlockSettings, defaultSettings }) {
     let defaults = (defaultSettings) ? [APPLICATIONGATEWAY_SETTINGS_DEFAULTS, defaultSettings] : APPLICATIONGATEWAY_SETTINGS_DEFAULTS;
-    let mergedSettings = v.merge(settings, defaults, defaultsCustomizer);
 
-    mergedSettings.frontendIPConfigurations = _.map(mergedSettings.frontendIPConfigurations, (config) => {
-        // If needed, we need to build up a publicIpAddress from the information we have here so it can be merged and validated.
-        // TODO: appGatewayFrontendIP of ApplicationGateway can only reference a PublicIPAddress with IpAllocationMethod as dynamic.
-        if (config.applicationGatewayType === 'Public') {
-            let publicIpAddress = {
-                name: `${settings.name}-${config.name}-pip`,
-                publicIPAllocationMethod: 'Dynamic',
-                domainNameLabel: config.domainNameLabel,
-                publicIPAddressVersion: config.publicIPAddressVersion,
-                resourceGroupName: mergedSettings.resourceGroupName,
-                subscriptionId: mergedSettings.subscriptionId,
-                location: mergedSettings.location
-            };
-            config.publicIpAddress = publicIpAddressSettings.merge({ settings: publicIpAddress });
-        }
-        return config;
+    let mergedSettings = resources.setupResources(settings, buildingBlockSettings, (parentKey) => {
+        return ((parentKey === null) || (parentKey === 'virtualNetwork'));
+    });
+    mergedSettings = v.merge(mergedSettings, defaults, defaultsCustomizer);
+
+    mergedSettings = _.map(mergedSettings, (setting) => {
+        setting.frontendIPConfigurations = _.map(setting.frontendIPConfigurations, (config) => {
+            if (config.applicationGatewayType === 'Public') {
+                config.publicIpAddress = {
+                    name: `${setting.name}-${config.name}-pip`,
+                    publicIPAllocationMethod: 'Dynamic',
+                    domainNameLabel: config.domainNameLabel,
+                    publicIPAddressVersion: config.publicIPAddressVersion,
+                    resourceGroupName: setting.resourceGroupName,
+                    subscriptionId: setting.subscriptionId,
+                    location: setting.location
+                };
+            }
+
+            return config;
+        });
+
+        return setting;
     });
 
     return mergedSettings;
@@ -223,11 +234,22 @@ let frontendIPConfigurationValidations = {
             validations: internalApplicationGatewaySettingsValidations
         };
     },
-    publicIpAddress: (value) => {
-        return _.isUndefined(value) ? {
+    publicIpAddress: (value, parent) => {
+        // We need to validate that the publicIPAllocationMethod is Dynamic for ApplicationGateways
+        if ((parent.applicationGatewayType === 'Public') && (_.isNil(value) || value.publicIPAllocationMethod !== 'Dynamic')) {
+            return {
+                result: false,
+                message: 'If applicationGatewayType is Public, publicIpAddress must be specified and the publicIPAllocationMethod must be Dynamic'
+            };
+        } else if ((parent.applicationGatewayType === 'Internal') && (!_.isNil(value))) {
+            return {
+                result: false,
+                message: 'If applicationGatewayType is Internal, publicIpAddress cannot be specified'
+            };
+        }
+        
+        return {
             result: true
-        } : {
-            validations: publicIpAddressSettings.validations
         };
     }
 };
@@ -311,9 +333,44 @@ let disabledRuleGroupsValidations = (value) => {
     };
 };
 
-let backendAddressesValidations = (value) => {
+let backendIPConfigurationsValidations = (value, parent) => {
     if (_.isUndefined(value)) {
         return { result: true };
+    }
+
+    //TODO: ApplicationGatewayBackendAddressPoolAlreadyHasBackendAddresses: nic cannot reference Backend Address Pool because the pool contains
+    // BackendAddresses. A pool can contain only one of these three: IPs in BackendAddresses array, IPConfigurations of standalone Network Interfaces,
+    // IPConfigurations of VM Scale Set Network Interfaces. Also, two VM Scale Sets cannot use the same Backend Address Pool.\\\
+        // TODO: Mixing IP/FQDN and virtual machine types is not allowed.
+        // can have nic but not both
+    if ((value.length > 0) && (parent.backendAddresses.length > 0)) {
+        return {
+            result: false,
+            message: 'Either backendAddresses or backendIPConfigurations can be specified, but not both'
+        };
+    }
+
+    let validations = {
+        id: v.validationUtilities.isNotNullOrWhitespace
+    };
+
+    return { validations: validations };
+}
+let backendAddressesValidations = (value, parent) => {
+    if (_.isUndefined(value)) {
+        return { result: true };
+    }
+
+    //TODO: ApplicationGatewayBackendAddressPoolAlreadyHasBackendAddresses: nic cannot reference Backend Address Pool because the pool contains
+    // BackendAddresses. A pool can contain only one of these three: IPs in BackendAddresses array, IPConfigurations of standalone Network Interfaces,
+    // IPConfigurations of VM Scale Set Network Interfaces. Also, two VM Scale Sets cannot use the same Backend Address Pool.\\\
+        // TODO: Mixing IP/FQDN and virtual machine types is not allowed.
+        // can have nic but not both
+    if ((value.length > 0) && (parent.backendIPConfigurations.length > 0)) {
+        return {
+            result: false,
+            message: 'Either backendAddresses or backendIPConfigurations can be specified, but not both'
+        };
     }
 
     let validations = {
@@ -343,17 +400,13 @@ let backendAddressesValidations = (value) => {
             }
             return { validations: v.validationUtilities.isValidIpAddress };
         }
-        // TODO: Mixing IP/FQDN and virtual machine types is not allowed.
-        // can have nic but not both
     };
     return { validations: validations };
 };
 
 let applicationGatewayValidations = {
     //TODO: ApplicationGatewaySubnetCannotBeUsedByOtherResources\\\
-    //TODO: ApplicationGatewayBackendAddressPoolAlreadyHasBackendAddresses: nic cannot reference Backend Address Pool because the pool contains
-    // BackendAddresses. A pool can contain only one of these three: IPs in BackendAddresses array, IPConfigurations of standalone Network Interfaces,
-    // IPConfigurations of VM Scale Set Network Interfaces. Also, two VM Scale Sets cannot use the same Backend Address Pool.\\\
+    name: v.validationUtilities.isNotNullOrWhitespace,
     sku: () => {
         return { validations: skuValidations };
     },
@@ -412,6 +465,7 @@ let applicationGatewayValidations = {
 
         let backendAddressPoolsValidations = {
             backendAddresses: backendAddressesValidations,
+            backendIPConfigurations: backendIPConfigurationsValidations
         };
 
         return {
@@ -478,7 +532,7 @@ let applicationGatewayValidations = {
                 let matched = _.filter(baseSettings.backendAddressPools, (o) => { return (o.name === value); });
                 return (baseSettings.backendAddressPools.length > 0 && matched.length === 0) ? result : { result: true };
             },
-            defaultbackendHttpSettingsName: (value, parent) => {
+            defaultBackendHttpSettingsName: (value, parent) => {
                 if (parent.defaultRedirectConfigurationName) {
                     if (_.isUndefined(value)) {
                         return {
@@ -493,13 +547,13 @@ let applicationGatewayValidations = {
                 }
                 let result = {
                     result: false,
-                    message: `Invalid defaultbackendHttpSettingsName ${value} in urlPathMaps`
+                    message: `Invalid defaultBackendHttpSettingsName ${value} in urlPathMaps`
                 };
                 let matched = _.filter(baseSettings.backendHttpSettingsCollection, (o) => { return (o.name === value); });
                 return (baseSettings.backendHttpSettingsCollection.length > 0 && matched.length === 0) ? result : { result: true };
             },
             defaultRedirectConfigurationName: (value, parent) => {
-                if ((parent.defaultBackendAddressPoolName) || (parent.defaultbackendHttpSettingsName)) {
+                if ((parent.defaultBackendAddressPoolName) || (parent.defaultBackendHttpSettingsName)) {
                     if (_.isUndefined(value)) {
                         return {
                             result: true
@@ -507,7 +561,7 @@ let applicationGatewayValidations = {
                     } else {
                         return {
                             result: false,
-                            message: 'Value cannot be specified if defaultBackendAddressPoolName or defaultbackendHttpSettingsName is defined'
+                            message: 'Value cannot be specified if defaultBackendAddressPoolName or defaultBackendHttpSettingsName is defined'
                         };
                     }
                 }
@@ -776,7 +830,6 @@ let applicationGatewayValidations = {
                 };
             },
             targetUrl: (value, parent) => {
-                // This canot be specified with targetListenerName
                 if ((!_.isUndefined(value)) && (!_.isUndefined(parent.targetListenerName))) {
                     return {
                         result: false,
@@ -807,7 +860,6 @@ let applicationGatewayValidations = {
                 return v.validationUtilities.isNotNullOrWhitespace(value);
             },
             targetListenerName: (value, parent) => {
-                // This canot be specified with targetUrl
                 if ((!_.isUndefined(value)) && (!_.isUndefined(parent.targetUrl))) {
                     return {
                         result: false,
@@ -987,10 +1039,25 @@ let processProperties = {
         properties['gatewayIPConfigurations'] = gwConfigs;
     },
     sslCertificates: (value, key, parent, properties) => {
-        properties['sslCertificates'] = value;
+        properties['sslCertificates'] = _.map(value, (certificate) => {
+            return {
+                name: certificate.name,
+                properties: {
+                    data: certificate.data,
+                    password: certificate.password
+                }
+            };
+        });
     },
     authenticationCertificates: (value, key, parent, properties) => {
-        properties['authenticationCertificates'] = value;
+        properties['authenticationCertificates'] = _.map(value, (certificate) => {
+            return {
+                name: certificate.name,
+                properties: {
+                    data: certificate.data
+                }
+            };
+        });
     },
     frontendIPConfigurations: (value, key, parent, properties) => {
         let feIpConfigs = _.map(value, (config) => {
@@ -1128,7 +1195,7 @@ let processProperties = {
                     id: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/applicationGateways/backendAddressPools', parent.name, map.defaultBackendAddressPoolName)
                 };
                 result.properties.defaultBackendHttpSettings = {
-                    id: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/applicationGateways/backendHttpSettingsCollection', parent.name, map.defaultbackendHttpSettingsName)
+                    id: resources.resourceId(parent.subscriptionId, parent.resourceGroupName, 'Microsoft.Network/applicationGateways/backendHttpSettingsCollection', parent.name, map.defaultBackendHttpSettingsName)
                 };
             }
 
@@ -1225,18 +1292,6 @@ let processProperties = {
 function transform(param) {
     let accumulator = {};
 
-    // Get all the publicIpAddresses required for the app gateway
-    let publicConfigs = _.filter(param.frontendIPConfigurations, c => { return c.applicationGatewayType === 'Public'; });
-    let pips = _.map(publicConfigs, (config) => {
-        if (config.applicationGatewayType === 'Public') {
-            return publicIpAddressSettings.transform(config.publicIpAddress).publicIpAddresses;
-        }
-    });
-    if (pips.length > 0) {
-        accumulator['publicIpAddresses'] = pips;
-    }
-
-    // transform all properties of the loadbalancerSettings in RP shape
     let gatewayProperties = _.transform(param, (properties, value, key, obj) => {
         if (typeof processProperties[key] === 'function') {
             processProperties[key](value, key, obj, properties);
@@ -1256,6 +1311,73 @@ function transform(param) {
     return accumulator;
 }
 
+let validate = (settings) => {
+    let errors = v.validate({
+        settings: settings,
+        validations: applicationGatewayValidations
+    });
+
+    return errors;
+};
+
+function process ({ settings, buildingBlockSettings, defaultSettings }) {
+    settings = _.castArray(settings);
+
+    let buildingBlockErrors = v.validate({
+        settings: buildingBlockSettings,
+        validations: {
+            subscriptionId: v.validationUtilities.isGuid,
+            resourceGroupName: v.validationUtilities.isNotNullOrWhitespace,
+        }
+    });
+
+    if (buildingBlockErrors.length > 0) {
+        throw new v.ValidationError('ApplicationGateway', buildingBlockErrors);
+    }
+
+    let results = merge({
+        settings: settings,
+        buildingBlockSettings: buildingBlockSettings,
+        defaultSettings: defaultSettings
+    });
+
+    let errors = validate(results);
+
+    if (errors.length > 0) {
+        throw new v.ValidationError('ApplicationGateway', errors);
+    }
+
+    let pips = _.flatMap(results, (setting) => {
+        return _.map(_.filter(setting.frontendIPConfigurations, (config) => { return !_.isNil(config.publicIpAddress); }), (config) => {
+            return config.publicIpAddress;
+        });
+    });
+
+    pips = publicIpAddressSettings.process({
+        settings: pips,
+        buildingBlockSettings: buildingBlockSettings
+    });
+
+    results = _.transform(results, (result, setting) => {
+        let transformed = transform(setting);
+        result.applicationGateways = result.applicationGateways.concat(transformed.applicationGateway);
+    }, {
+        applicationGateways: []
+    });
+
+    results.publicIpAddresses = pips.parameters.publicIpAddresses;
+
+    let resourceGroups = resources.extractResourceGroups(
+        results.applicationGateways,
+        results.publicIpAddresses
+    );
+    return {
+        resourceGroups: resourceGroups,
+        parameters: results
+    };
+}
+
+exports.process = process;
 exports.merge = merge;
 exports.validations = applicationGatewayValidations;
 exports.transform = transform;

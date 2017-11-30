@@ -366,6 +366,20 @@ let isInvalidPassword = (password) => {
     return variationCount < 3;
 };
 
+class ValidationError extends Error {
+    constructor(buildingBlock, errors, ...params) {
+        super(...params);
+        this.name = ValidationError.name;
+        this.buildingBlock = buildingBlock;
+        this.message = `${this.buildingBlock}: ${JSON.stringify(errors)}`;
+        this.errors = errors;
+        if (Error.captureStackTrace) {
+            Error.captureStackTrace(this, this.constructor);
+        }
+    }
+};
+
+exports.ValidationError = ValidationError;
 exports.utilities = utilities;
 exports.validationUtilities = validationUtilities;
 exports.merge = merge;

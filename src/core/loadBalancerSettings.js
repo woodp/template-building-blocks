@@ -42,7 +42,7 @@ function merge({ settings, buildingBlockSettings, defaultSettings }) {
     mergedSettings = _.map(mergedSettings, (setting) => {
         setting.frontendIPConfigurations = _.map(setting.frontendIPConfigurations, (config) => {
             if (config.loadBalancerType === 'Public') {
-                let publicIpAddress = {
+                config.publicIpAddress = {
                     name: `${setting.name}-${config.name}-pip`,
                     publicIPAllocationMethod: 'Static',
                     domainNameLabel: config.domainNameLabel,
@@ -51,29 +51,12 @@ function merge({ settings, buildingBlockSettings, defaultSettings }) {
                     subscriptionId: setting.subscriptionId,
                     location: setting.location
                 };
-                config.publicIpAddress = publicIpAddressSettings.merge({ settings: publicIpAddress });
             }
             return config;
         });
 
         return setting;
     });
-    // mergedSettings.frontendIPConfigurations = _.map(mergedSettings.frontendIPConfigurations, (config) => {
-    //     // If needed, we need to build up a publicIpAddress from the information we have here so it can be merged and validated.
-    //     if (config.loadBalancerType === 'Public') {
-    //         let publicIpAddress = {
-    //             name: `${settings.name}-${config.name}-pip`,
-    //             publicIPAllocationMethod: 'Static',
-    //             domainNameLabel: config.domainNameLabel,
-    //             publicIPAddressVersion: config.publicIPAddressVersion,
-    //             resourceGroupName: mergedSettings.resourceGroupName,
-    //             subscriptionId: mergedSettings.subscriptionId,
-    //             location: mergedSettings.location
-    //         };
-    //         config.publicIpAddress = publicIpAddressSettings.merge({ settings: publicIpAddress });
-    //     }
-    //     return config;
-    // });
 
     return mergedSettings;
 }
@@ -141,11 +124,22 @@ let frontendIPConfigurationValidations = {
             validations: internalLoadBalancerSettingsValidations
         };
     },
-    publicIpAddress: (value) => {
-        return _.isNil(value) ? {
+    publicIpAddress: (value, parent) => {
+        // We need to validate that the publicIPAllocationMethod is Dynamic for ApplicationGateways
+        if ((parent.loadBalancerType === 'Public') && (_.isNil(value) || value.publicIPAllocationMethod !== 'Static')) {
+            return {
+                result: false,
+                message: 'If loadBalancerType is Public, publicIpAddress must be specified and the publicIPAllocationMethod must be Static'
+            };
+        } else if ((parent.loadBalancerType === 'Internal') && (!_.isNil(value))) {
+            return {
+                result: false,
+                message: 'If loadBalancerType is Internal, publicIpAddress cannot be specified'
+            };
+        }
+        
+        return {
             result: true
-        } : {
-            validations: publicIpAddressSettings.validations
         };
     }
 };
@@ -533,17 +527,6 @@ let processProperties = {
 function transform(param) {
     let accumulator = {};
 
-    // Get all the publicIpAddresses required for the load balancer
-    let publicConfigs = _.filter(param.frontendIPConfigurations, c => { return c.loadBalancerType === 'Public'; });
-    let pips = _.map(publicConfigs, (config) => {
-        if (config.loadBalancerType === 'Public') {
-            return publicIpAddressSettings.transform(config.publicIpAddress).publicIpAddresses;
-        }
-    });
-
-    accumulator['publicIpAddresses'] = pips;
-
-    // transform all properties of the loadbalancerSettings in RP shape
     let lbProperties = _.transform(param, (properties, value, key, obj) => {
         if (typeof processProperties[key] === 'function') {
             processProperties[key](value, key, obj, properties);
@@ -551,7 +534,7 @@ function transform(param) {
         return properties;
     }, {});
 
-    accumulator['loadBalancer'] = [{
+    accumulator['loadBalancers'] = [{
         name: param.name,
         resourceGroupName: param.resourceGroupName,
         subscriptionId: param.subscriptionId,
@@ -583,7 +566,7 @@ function process ({ settings, buildingBlockSettings, defaultSettings }) {
     });
 
     if (buildingBlockErrors.length > 0) {
-        throw new Error(JSON.stringify(buildingBlockErrors));
+        throw new v.ValidationError('LoadBalancer', buildingBlockErrors);
     }
 
     let results = merge({
@@ -595,25 +578,29 @@ function process ({ settings, buildingBlockSettings, defaultSettings }) {
     let errors = validate(results);
 
     if (errors.length > 0) {
-        throw new Error(JSON.stringify(errors));
+        throw new v.ValidationError('LoadBalancer', errors);
     }
+
+    let pips = _.flatMap(results, (setting) => {
+        return _.map(_.filter(setting.frontendIPConfigurations, (config) => { return !_.isNil(config.publicIpAddress); }), (config) => {
+            return config.publicIpAddress;
+        });
+    });
+
+    pips = publicIpAddressSettings.process({
+        settings: pips,
+        buildingBlockSettings: buildingBlockSettings
+    });
 
     results = _.transform(results, (result, setting) => {
         let transformed = transform(setting);
-        result.loadBalancers = result.loadBalancers.concat(transformed.loadBalancer);
-        result.publicIpAddresses = result.publicIpAddresses.concat(transformed.publicIpAddresses);
+        result.loadBalancers = result.loadBalancers.concat(transformed.loadBalancers);
     }, {
-        loadBalancers: [],
-        publicIpAddresses: []
+        loadBalancers: []
     });
 
-    // results = _.transform(results, (result, setting) => {
-    //     result.loadBalancers.push(transform(setting));
-    // }, {
-    //     loadBalancers: []
-    // });
+    results.publicIpAddresses = pips.parameters.publicIpAddresses;
 
-    // Get needed resource groups information.
     let resourceGroups = resources.extractResourceGroups(
         results.loadBalancers,
         results.publicIpAddresses

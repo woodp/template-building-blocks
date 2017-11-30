@@ -40,7 +40,7 @@
           "description": "Settings for availability set"
         }
       },
-      "loadBalancer": {
+      "loadBalancers": {
         "type": "array",
         "defaultValue": [],
         "metadata": {
@@ -154,7 +154,7 @@
               "value": "[parameters('networkInterfaces')]"
             },
             "mode": {
-              "value": "[length(parameters('loadBalancer'))]"
+              "value": "[length(parameters('loadBalancers'))]"
             }
           }
         }
@@ -232,7 +232,7 @@
         "type": "Microsoft.Resources/deployments",
         "apiVersion": "2017-05-10",
         "name": "[variables('lbDeploymentName')]",
-        "condition": "[greater(length(parameters('loadBalancer')), 0)]",
+        "condition": "[greater(length(parameters('loadBalancers')), 0)]",
         "dependsOn": [
           "[variables('pipDeploymentName')]"
         ],
@@ -248,8 +248,8 @@
                 "sasToken": "[parameters('deploymentContext').sasToken]"
               }
             },
-            "loadBalancer": {
-              "value": "[parameters('loadBalancer')]"
+            "loadBalancers": {
+              "value": "[parameters('loadBalancers')]"
             }
           }
         }

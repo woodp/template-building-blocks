@@ -5,22 +5,22 @@
         "deploymentContext": {
             "type": "object"
         },
-        "loadBalancer": {
+        "loadBalancers": {
             "type": "array"
         }
     },
     "variables": {
-        "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('loadBalancer'))))]"
+        "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('loadBalancers'))))]"
     },
     "resources": [
         {
             "type": "Microsoft.Resources/deployments",
             "apiVersion": "2017-05-10",
             "name": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-lb-', copyIndex(), '-', variables('templateUniqueString'))]",
-            "resourceGroup": "[parameters('loadBalancer')[copyIndex()].resourceGroupName]",
+            "resourceGroup": "[parameters('loadBalancers')[copyIndex()].resourceGroupName]",
             "copy": {
                 "name": "loadBalancers",
-                "count": "[length(parameters('loadBalancer'))]",
+                "count": "[length(parameters('loadBalancers'))]",
                 "mode": "Parallel"
             },
             "properties": {
@@ -34,9 +34,9 @@
                         {
                             "type": "Microsoft.Network/loadBalancers",
                             "apiVersion": "2017-04-01",
-                            "location": "[parameters('loadBalancer')[copyIndex()].location]",
-                            "name": "[parameters('loadBalancer')[copyIndex()].name]",
-                            "properties": "[parameters('loadBalancer')[copyIndex()].properties]"
+                            "location": "[parameters('loadBalancers')[copyIndex()].location]",
+                            "name": "[parameters('loadBalancers')[copyIndex()].name]",
+                            "properties": "[parameters('loadBalancers')[copyIndex()].properties]"
                         }
                     ],
                     "outputs": {}

@@ -5,7 +5,7 @@
     "deploymentContext": {
       "type": "object"
     },
-    "loadBalancers": {
+    "applicationGateways": {
       "type": "array",
       "defaultValue": []
     },
@@ -16,8 +16,8 @@
   },
   "variables": {
     "pipTemplate": "[concat(uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/publicIPAddresses.json'), parameters('deploymentContext').sasToken)]",
-    "lbTemplate": "[concat(uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/loadBalancer.json'), parameters('deploymentContext').sasToken)]",
-    "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('loadBalancers')), string(parameters('publicIpAddresses'))))]"
+    "agwTemplate": "[concat(uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/applicationGateways.json'), parameters('deploymentContext').sasToken)]",
+    "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('applicationGateways')), string(parameters('publicIpAddresses'))))]"
   },
   "resources": [
     {
@@ -46,25 +46,25 @@
     {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2017-05-10",
-      "name": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployLbs-', variables('templateUniqueString'))]",
-      "condition": "[greater(length(parameters('loadBalancers')), 0)]",
+      "name": "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployAgws-', variables('templateUniqueString'))]",
+      "condition": "[greater(length(parameters('applicationGateways')), 0)]",
       "dependsOn": [
         "[concat(parameters('deploymentContext').parentTemplateUniqueString, '-deployPips-', variables('templateUniqueString'))]"
       ],
       "properties": {
         "mode": "Incremental",
         "templateLink": {
-          "uri": "[variables('lbTemplate')]"
+          "uri": "[variables('agwTemplate')]"
         },
         "parameters": {
           "deploymentContext": {
             "value": {
-              "parentTemplateUniqueString": "[concat(variables('templateUniqueString'), '-deployLbs')]",
+              "parentTemplateUniqueString": "[concat(variables('templateUniqueString'), '-deployAgws')]",
               "sasToken": "[parameters('deploymentContext').sasToken]"
             }
           },
-          "loadBalancers": {
-            "value": "[parameters('loadBalancers')]"
+          "applicationGateways": {
+            "value": "[parameters('applicationGateways')]"
           }
         }
       }

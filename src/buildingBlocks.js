@@ -61,6 +61,13 @@ exports.getBuildingBlocks = ({application, baseUri}) => {
             defaultsFilename: 'loadBalancerSettings.json',
             template: _.join([baseUri, 'buildingBlocks/loadBalancers/loadBalancers.json'], '/'),
             deploymentName: 'lb'
+        },
+        {
+            type: 'ApplicationGateway',
+            process: application.require('./core/applicationGatewaySettings').process,
+            defaultsFilename: 'applicationGatewaySettings.json',
+            template: _.join([baseUri, 'buildingBlocks/applicationGateways/applicationGateways.json'], '/'),
+            deploymentName: 'ag'
         }
     ];
 };
