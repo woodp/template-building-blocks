@@ -3051,7 +3051,7 @@ describe('virtualMachineSettings:', () => {
                 let processedParam = virtualMachineSettings.process({ settings: settings, buildingBlockSettings });
                 expect(processedParam.parameters.virtualMachines[0].virtualMachines.length).toEqual(0);
 
-                let nics = processedParam.parameters.virtualMachines[0].scaleSet[0].properties.virtualMachineProfile.networkProfile.networkInterfaceConfigurations;
+                let nics = processedParam.parameters.virtualMachines[0].scaleSets[0].properties.virtualMachineProfile.networkProfile.networkInterfaceConfigurations;
                 expect(nics.length).toEqual(2);
                 expect(nics[0].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools.length).toEqual(2);
                 expect(nics[0].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools[0].id).toEqual('/subscriptions/00000000-0000-1000-AA00-000000000000/resourceGroups/lb1-rg/providers/Microsoft.Network/loadBalancers/lb1/backendAddressPools/bep1');
@@ -3148,7 +3148,7 @@ describe('virtualMachineSettings:', () => {
                 let processedParam = virtualMachineSettings.process({ settings: settings, buildingBlockSettings });
                 expect(processedParam.parameters.virtualMachines[0].virtualMachines.length).toEqual(0);
 
-                let nics = processedParam.parameters.virtualMachines[0].scaleSet[0].properties.virtualMachineProfile.networkProfile.networkInterfaceConfigurations;
+                let nics = processedParam.parameters.virtualMachines[0].scaleSets[0].properties.virtualMachineProfile.networkProfile.networkInterfaceConfigurations;
                 expect(nics.length).toEqual(2);
                 expect(nics[0].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools.length).toEqual(2);
                 expect(nics[0].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools[0].id).toEqual('/subscriptions/00000000-0000-1000-AA00-000000000000/resourceGroups/gw1-rg/providers/Microsoft.Network/applicationGateways/gw1/backendAddressPools/gwbep1');
