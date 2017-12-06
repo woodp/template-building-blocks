@@ -247,13 +247,23 @@ let encryptionSettingsValidations = {
 };
 
 let loadBalancerSettingsValidations = {
-    inboundNatRules: {
-        name: v.validationUtilities.isNotNullOrWhitespace,
-        startingFrontendPort: (value) => {
+    inboundNatRules: (value) => {
+        if (value.length === 0) {
             return {
-                result: _.inRange(_.toSafeInteger(value), 1, 65535),
-                message: 'Valid values are from 1 to 65534'
+                result: true
             };
+        }
+
+        return {
+            validations: {
+                name: v.validationUtilities.isNotNullOrWhitespace,
+                startingFrontendPort: (value) => {
+                    return {
+                        result: _.inRange(_.toSafeInteger(value), 1, 65535),
+                        message: 'Valid values are from 1 to 65534'
+                    };
+                }
+            }
         }
     }
 };
@@ -477,16 +487,16 @@ let virtualMachineValidations = {
                 return _.isNil(value) ? {
                     result: true
                 } : {
-                        result: ((_.isFinite(value)) && value > 0),
-                        message: 'Value must be greater than 0'
-                    };
+                    result: ((_.isFinite(value)) && value > 0),
+                    message: 'Value must be greater than 0'
+                };
             },
             encryptionSettings: (value) => {
                 return _.isNil(value) ? {
                     result: true
                 } : {
-                        validations: encryptionSettingsValidations
-                    };
+                    validations: encryptionSettingsValidations
+                };
             }
         };
 
@@ -750,6 +760,19 @@ let virtualMachineValidations = {
 
             let errorMsg = '';
             value.forEach((nic, index) => {
+                nic.applicationGatewayBackendPoolNames.forEach((applicationGatewayBackendPoolName) => {
+                    let gwBep = _.isString(applicationGatewayBackendPoolName) ? {name: applicationGatewayBackendPoolName} : applicationGatewayBackendPoolName;
+                    if (v.utilities.isNullOrWhitespace(gwBep.name)) {
+                        errorMsg += `ApplicationGateway BackendPool specified in nic[${index}] must have name.${os.EOL}`;
+                    } else if (v.utilities.isNullOrWhitespace(gwBep.applicationGatewayName)) {
+                        if (!v.utilities.isNullOrWhitespace(gwBep.resourceGroupName) || !v.utilities.isNullOrWhitespace(gwBep.subscriptionId) || !v.utilities.isNullOrWhitespace(gwBep.location)) {
+                            errorMsg += `ApplicationGatewayBackendPool ${gwBep.name} specified in nic[${index}] doesnt specify applicationGatewayName, therefore resourceGroupName, subscriptionId & location cannot be specified.${os.EOL}`;
+                        }
+                        if (_.isNil(parent.applicationGatewaySettings)) {
+                            errorMsg += `If applicationGatewaySettings is not specified, then applicationGatewayBackendPool specified in nic[${index}] must provide both name and applicationGatewayName.${os.EOL}`;
+                        }
+                    }
+                });
                 nic.backendPoolNames.forEach((backendPoolName) => {
                     let bep = _.isString(backendPoolName) ? {name: backendPoolName} : backendPoolName;
                     if (v.utilities.isNullOrWhitespace(bep.name)) {
@@ -1444,11 +1467,11 @@ function process({ settings, buildingBlockSettings, defaultSettings }) {
         delete value.parameters.secret;
         result.virtualMachineParameters.push(value.parameters);
     }, {
-            virtualMachineParameters: [],
-            secrets: {
-                secrets: []
-            }
-        });
+        virtualMachineParameters: [],
+        secrets: {
+            secrets: []
+        }
+    });
 
     return {
         resourceGroups: uniqueResourceGroups,

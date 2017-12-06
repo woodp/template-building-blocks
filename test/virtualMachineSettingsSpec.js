@@ -49,6 +49,7 @@ describe('virtualMachineSettings:', () => {
                     '10.0.1.240',
                     '10.0.1.242'
                 ],
+                applicationGatewayBackendPoolNames: [],
                 backendPoolNames: [],
                 inboundNatRulesNames: [],
                 inboundNatPoolNames: []
@@ -63,6 +64,7 @@ describe('virtualMachineSettings:', () => {
                 enableIPForwarding: false,
                 domainNameLabelPrefix: '',
                 dnsServers: [],
+                applicationGatewayBackendPoolNames: [],
                 backendPoolNames: [],
                 inboundNatRulesNames: [],
                 inboundNatPoolNames: []
@@ -2321,6 +2323,16 @@ describe('virtualMachineSettings:', () => {
                         privateIPAllocationMethod: 'Static',
                         startingIPAddress: '10.0.2.4',
                         subnetName: 'subnet1',
+                        applicationGatewayBackendPoolNames: [
+                            {
+                                name: 'gwbep1',
+                                applicationGatewayName: 'gw1',
+                                resourceGroupName: 'gw1-rg',
+                                subscriptionId: '00000000-0000-1000-AA00-000000000000'
+
+                            },
+                            'gwbep2'
+                        ],
                         backendPoolNames: [
                             {
                                 name: 'bep1',
@@ -2352,6 +2364,12 @@ describe('virtualMachineSettings:', () => {
                         privateIPAllocationMethod: 'Static',
                         startingIPAddress: '10.0.2.5',
                         subnetName: 'subnet1',
+                        applicationGatewayBackendPoolNames: [
+                            {
+                                name: 'gwbep1',
+                                applicationGatewayName: 'gw2'
+                            }
+                        ],
                         backendPoolNames: [
                             {
                                 name: 'bep1',
@@ -2373,12 +2391,98 @@ describe('virtualMachineSettings:', () => {
                 ]
             };
 
+            let gwSettings = {
+                name: 'test-agw',
+                sku: {
+                    tier: 'Standard',
+                    size: 'Small',
+                    capacity: 2
+                },
+                frontendIPConfigurations: [
+                    {
+                        name: 'appGatewayFrontendIP',
+                        applicationGatewayType: 'Public'
+                    }
+                ],
+                httpListeners: [
+                    {
+                        name: 'appGatewayHttpListener',
+                        frontendIPConfigurationName: 'appGatewayFrontendIP',
+                        frontendPortName: 'appGatewayFrontendPort',
+                        protocol: 'Http',
+                        requireServerNameIndication: false
+                    }
+                ],
+                backendHttpSettingsCollection: [
+                    {
+                        name: 'appGatewayBackendHttpSettings',
+                        port: 80,
+                        protocol: 'Https',
+                        cookieBasedAffinity: 'Disabled',
+                        pickHostNameFromBackendAddress: false,
+                        probeEnabled: true,
+                        requestTimeout: 30,
+                        probeName: 'p1'
+                    }
+                ],
+                backendAddressPools: [
+                    {
+                        name: 'gwbep1',
+                        backendAddresses: [
+                            {
+                                fqdn: 'www.contoso.com'
+                            }
+                        ]
+                    },
+                    {
+                        name: 'gwbep2',
+                        backendAddresses: [
+                            {
+                                fqdn: 'www.contoso2.com'
+                            }
+                        ]
+                    }
+                ],
+                urlPathMaps: [
+                    {
+                        name: 'pb-rule1',
+                        defaultBackendAddressPoolName: 'gwbep1',
+                        defaultBackendHttpSettingsName: 'appGatewayBackendHttpSettings',
+                        pathRules: [
+                            {
+                                name: 'p2',
+                                paths: ['/path'],
+                                backendAddressPoolName: 'gwbep1',
+                                backendHttpSettingsName: 'appGatewayBackendHttpSettings'
+                            }
+                        ]
+                    }
+                ],
+                requestRoutingRules: [
+                    {
+                        name: 'rule1',
+                        ruleType: 'Basic',
+                        httpListenerName: 'appGatewayHttpListener',
+                        backendAddressPoolName: 'gwbep1',
+                        backendHttpSettingsName: 'appGatewayBackendHttpSettings'
+                    }
+                ],
+                frontendPorts: [
+                    {
+                        name: 'appGatewayFrontendPort',
+                        port: 80
+                    }
+                ]
+            };
+
             beforeEach(() => {
                 settings = _.cloneDeep(testSettings);
             });
 
-            it('validates that networkinterfaces are transformed correctly for VMs', () => {
+            it('LB: validates that networkinterfaces are transformed correctly for VMs', () => {
                 settings.nics = _.cloneDeep(nicSettings.nics);
+                settings.nics[0].applicationGatewayBackendPoolNames = [];
+                settings.nics[1].applicationGatewayBackendPoolNames = [];
                 settings.nics[0].inboundNatPoolNames = [];
                 settings.nics[1].inboundNatPoolNames = [];
                 settings.loadBalancerSettings = _.cloneDeep(lbSettings.loadBalancerSettings);
@@ -2418,7 +2522,51 @@ describe('virtualMachineSettings:', () => {
                 expect(nics[3].properties.ipConfigurations[0].properties.loadBalancerInboundNatRules[0].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/loadBalancers/test-lb/inboundNatRules/natrule1-1');
 
             });
-            it('validates that networkinterfaces are transformed correctly for Scalesets', () => {
+            it('LB: validates that networkinterfaces are transformed correctly for VMs when lbSettings specify different resource group', () => {
+                settings.nics = _.cloneDeep(nicSettings.nics);
+                settings.nics[0].applicationGatewayBackendPoolNames = [];
+                settings.nics[1].applicationGatewayBackendPoolNames = [];
+                settings.nics[0].inboundNatPoolNames = [];
+                settings.nics[1].inboundNatPoolNames = [];
+                settings.loadBalancerSettings = _.cloneDeep(lbSettings.loadBalancerSettings);
+                settings.loadBalancerSettings.resourceGroupName = 'different-rg';
+                settings.loadBalancerSettings.inboundNatPools = [];
+                
+                let processedParam = virtualMachineSettings.process({ settings: settings, buildingBlockSettings });
+                expect(processedParam.parameters.virtualMachines[0].virtualMachines.length).toEqual(2);
+                
+                let nics = processedParam.parameters.virtualMachines[0].networkInterfaces;
+                expect(nics.length).toEqual(4);
+                expect(nics[0].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools.length).toEqual(2);
+                expect(nics[0].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools[0].id).toEqual('/subscriptions/00000000-0000-1000-AA00-000000000000/resourceGroups/lb1-rg/providers/Microsoft.Network/loadBalancers/lb1/backendAddressPools/bep1');
+                expect(nics[0].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools[1].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/different-rg/providers/Microsoft.Network/loadBalancers/test-lb/backendAddressPools/bep2');
+
+                expect(nics[0].properties.ipConfigurations[0].properties.loadBalancerInboundNatRules.length).toEqual(2);
+                expect(nics[0].properties.ipConfigurations[0].properties.loadBalancerInboundNatRules[0].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/different-rg/providers/Microsoft.Network/loadBalancers/test-lb/inboundNatRules/natrule1-0');
+                expect(nics[0].properties.ipConfigurations[0].properties.loadBalancerInboundNatRules[1].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/different-rg/providers/Microsoft.Network/loadBalancers/test-lb/inboundNatRules/natrule2-0');
+
+                expect(nics[1].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools.length).toEqual(1);
+                expect(nics[1].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools[0].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/loadBalancers/lb4/backendAddressPools/bep1');
+
+                expect(nics[1].properties.ipConfigurations[0].properties.loadBalancerInboundNatRules.length).toEqual(1);
+                expect(nics[1].properties.ipConfigurations[0].properties.loadBalancerInboundNatRules[0].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/different-rg/providers/Microsoft.Network/loadBalancers/test-lb/inboundNatRules/natrule1-0');
+
+                expect(nics[2].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools.length).toEqual(2);
+                expect(nics[2].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools[0].id).toEqual('/subscriptions/00000000-0000-1000-AA00-000000000000/resourceGroups/lb1-rg/providers/Microsoft.Network/loadBalancers/lb1/backendAddressPools/bep1');
+                expect(nics[2].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools[1].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/different-rg/providers/Microsoft.Network/loadBalancers/test-lb/backendAddressPools/bep2');
+
+                expect(nics[2].properties.ipConfigurations[0].properties.loadBalancerInboundNatRules.length).toEqual(2);
+                expect(nics[2].properties.ipConfigurations[0].properties.loadBalancerInboundNatRules[0].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/different-rg/providers/Microsoft.Network/loadBalancers/test-lb/inboundNatRules/natrule1-1');
+                expect(nics[2].properties.ipConfigurations[0].properties.loadBalancerInboundNatRules[1].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/different-rg/providers/Microsoft.Network/loadBalancers/test-lb/inboundNatRules/natrule2-1');
+
+                expect(nics[3].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools.length).toEqual(1);
+                expect(nics[3].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools[0].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/loadBalancers/lb4/backendAddressPools/bep1');
+
+                expect(nics[3].properties.ipConfigurations[0].properties.loadBalancerInboundNatRules.length).toEqual(1);
+                expect(nics[3].properties.ipConfigurations[0].properties.loadBalancerInboundNatRules[0].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/different-rg/providers/Microsoft.Network/loadBalancers/test-lb/inboundNatRules/natrule1-1');
+
+            });
+            it('LB: validates that networkinterfaces are transformed correctly for Scalesets', () => {
                 settings.scaleSetSettings = {
                     name: 'scaleSet-lb',
                     upgradePolicy: 'Automatic',
@@ -2426,6 +2574,8 @@ describe('virtualMachineSettings:', () => {
                     singlePlacementGroup: true
                 };
                 settings.nics = _.cloneDeep(nicSettings.nics);
+                settings.nics[0].applicationGatewayBackendPoolNames = [];
+                settings.nics[1].applicationGatewayBackendPoolNames = [];
                 settings.nics[0].inboundNatRulesNames = [];
                 settings.nics[1].inboundNatRulesNames = [];
                 settings.loadBalancerSettings = _.cloneDeep(lbSettings.loadBalancerSettings);
@@ -2450,6 +2600,95 @@ describe('virtualMachineSettings:', () => {
                 expect(nics[1].properties.ipConfigurations[0].properties.loadBalancerInboundNatPools.length).toEqual(1);
                 expect(nics[1].properties.ipConfigurations[0].properties.loadBalancerInboundNatPools[0].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/loadBalancers/lb6/inboundNatPools/natpool1');
 
+            });
+            it('AGW: validates that networkinterfaces are transformed correctly for VMs', () => {
+                settings.nics = _.cloneDeep(nicSettings.nics);
+                settings.nics[0].backendPoolNames = [];
+                settings.nics[1].backendPoolNames = [];
+                settings.nics[0].inboundNatRulesNames = [];
+                settings.nics[1].inboundNatRulesNames = [];
+                settings.nics[0].inboundNatPoolNames = [];
+                settings.nics[1].inboundNatPoolNames = [];
+                settings.applicationGatewaySettings = _.cloneDeep(gwSettings);
+                
+                let processedParam = virtualMachineSettings.process({ settings: settings, buildingBlockSettings });
+                expect(processedParam.parameters.virtualMachines[0].virtualMachines.length).toEqual(2);
+                
+                let nics = processedParam.parameters.virtualMachines[0].networkInterfaces;
+                expect(nics.length).toEqual(4);
+                expect(nics[0].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools.length).toEqual(2);
+                expect(nics[0].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools[0].id).toEqual('/subscriptions/00000000-0000-1000-AA00-000000000000/resourceGroups/gw1-rg/providers/Microsoft.Network/applicationGateways/gw1/backendAddressPools/gwbep1');
+                expect(nics[0].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools[1].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/applicationGateways/test-agw/backendAddressPools/gwbep2');
+
+                expect(nics[1].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools.length).toEqual(1);
+                expect(nics[1].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools[0].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/applicationGateways/gw2/backendAddressPools/gwbep1');
+
+                expect(nics[2].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools.length).toEqual(2);
+                expect(nics[2].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools[0].id).toEqual('/subscriptions/00000000-0000-1000-AA00-000000000000/resourceGroups/gw1-rg/providers/Microsoft.Network/applicationGateways/gw1/backendAddressPools/gwbep1');
+                expect(nics[2].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools[1].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/applicationGateways/test-agw/backendAddressPools/gwbep2');
+
+                expect(nics[3].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools.length).toEqual(1);
+                expect(nics[3].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools[0].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/applicationGateways/gw2/backendAddressPools/gwbep1');
+
+            });
+            it('AGW: validates that networkinterfaces are transformed correctly for VMs when gwSettings specify different resource group', () => {
+                settings.nics = _.cloneDeep(nicSettings.nics);
+                settings.nics[0].backendPoolNames = [];
+                settings.nics[1].backendPoolNames = [];
+                settings.nics[0].inboundNatRulesNames = [];
+                settings.nics[1].inboundNatRulesNames = [];
+                settings.nics[0].inboundNatPoolNames = [];
+                settings.nics[1].inboundNatPoolNames = [];
+                settings.applicationGatewaySettings = _.cloneDeep(gwSettings);
+                settings.applicationGatewaySettings.resourceGroupName = 'different-rg';
+                
+                let processedParam = virtualMachineSettings.process({ settings: settings, buildingBlockSettings });
+                expect(processedParam.parameters.virtualMachines[0].virtualMachines.length).toEqual(2);
+                
+                let nics = processedParam.parameters.virtualMachines[0].networkInterfaces;
+                expect(nics.length).toEqual(4);
+                expect(nics[0].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools.length).toEqual(2);
+                expect(nics[0].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools[0].id).toEqual('/subscriptions/00000000-0000-1000-AA00-000000000000/resourceGroups/gw1-rg/providers/Microsoft.Network/applicationGateways/gw1/backendAddressPools/gwbep1');
+                expect(nics[0].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools[1].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/different-rg/providers/Microsoft.Network/applicationGateways/test-agw/backendAddressPools/gwbep2');
+
+                expect(nics[1].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools.length).toEqual(1);
+                expect(nics[1].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools[0].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/applicationGateways/gw2/backendAddressPools/gwbep1');
+
+                expect(nics[2].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools.length).toEqual(2);
+                expect(nics[2].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools[0].id).toEqual('/subscriptions/00000000-0000-1000-AA00-000000000000/resourceGroups/gw1-rg/providers/Microsoft.Network/applicationGateways/gw1/backendAddressPools/gwbep1');
+                expect(nics[2].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools[1].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/different-rg/providers/Microsoft.Network/applicationGateways/test-agw/backendAddressPools/gwbep2');
+
+                expect(nics[3].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools.length).toEqual(1);
+                expect(nics[3].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools[0].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/applicationGateways/gw2/backendAddressPools/gwbep1');
+
+            });
+            it('AGW: validates that networkinterfaces are transformed correctly for Scalesets', () => {
+                settings.scaleSetSettings = {
+                    name: 'scaleSet-lb',
+                    upgradePolicy: 'Automatic',
+                    overprovision: true,
+                    singlePlacementGroup: true
+                };
+                settings.nics = _.cloneDeep(nicSettings.nics);
+                settings.nics[0].backendPoolNames = [];
+                settings.nics[1].backendPoolNames = [];
+                settings.nics[0].inboundNatRulesNames = [];
+                settings.nics[1].inboundNatRulesNames = [];
+                settings.nics[0].inboundNatPoolNames = [];
+                settings.nics[1].inboundNatPoolNames = [];
+                settings.applicationGatewaySettings = _.cloneDeep(gwSettings);
+
+                let processedParam = virtualMachineSettings.process({ settings: settings, buildingBlockSettings });
+                expect(processedParam.parameters.virtualMachines[0].virtualMachines.length).toEqual(0);
+
+                let nics = processedParam.parameters.virtualMachines[0].scaleSet[0].properties.virtualMachineProfile.networkProfile.networkInterfaceConfigurations;
+                expect(nics.length).toEqual(2);
+                expect(nics[0].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools.length).toEqual(2);
+                expect(nics[0].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools[0].id).toEqual('/subscriptions/00000000-0000-1000-AA00-000000000000/resourceGroups/gw1-rg/providers/Microsoft.Network/applicationGateways/gw1/backendAddressPools/gwbep1');
+                expect(nics[0].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools[1].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/applicationGateways/test-agw/backendAddressPools/gwbep2');
+
+                expect(nics[1].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools.length).toEqual(1);
+                expect(nics[1].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools[0].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/applicationGateways/gw2/backendAddressPools/gwbep1');
             });
             it('validates that number of stamps created are based on vmcount property', () => {
 

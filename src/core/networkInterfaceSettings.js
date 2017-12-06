@@ -176,18 +176,28 @@ function transform(settings, parent, vmIndex) {
             }
         };
 
-        if (parent.applicationGatewaySettings) {
+        if (!_.isNil(nic.applicationGatewayBackendPoolNames)) {
             nic.applicationGatewayBackendPoolNames.forEach((pool, index) => {
                 if (index === 0) {
                     instance.properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools = [];
                 }
-                instance.properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools.push({
-                    id: resources.resourceId(parent.applicationGatewaySettings.subscriptionId,
-                        parent.applicationGatewaySettings.resourceGroupName,
-                        'Microsoft.Network/applicationGateways/backendAddressPools',
-                        parent.applicationGatewaySettings.name,
-                        pool)
-                });
+                if (_.isObject(pool) && !v.utilities.isNullOrWhitespace(pool.applicationGatewayName)) {
+                    instance.properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools.push({
+                        id: resources.resourceId(pool.subscriptionId || nic.subscriptionId,
+                            pool.resourceGroupName || nic.resourceGroupName,
+                            'Microsoft.Network/applicationGateways/backendAddressPools',
+                            pool.applicationGatewayName,
+                            pool.name)
+                    });
+                } else {
+                    instance.properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools.push({
+                        id: resources.resourceId(parent.applicationGatewaySettings.subscriptionId,
+                            parent.applicationGatewaySettings.resourceGroupName,
+                            'Microsoft.Network/applicationGateways/backendAddressPools',
+                            parent.applicationGatewaySettings.name,
+                            _.isObject(pool) ? pool.name : pool)
+                    });
+                }
             });
         }
 
@@ -196,12 +206,12 @@ function transform(settings, parent, vmIndex) {
                 if (index === 0) {
                     instance.properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools = [];
                 }
-                if (_.isObject(pool)) {
+                if (_.isObject(pool) && !v.utilities.isNullOrWhitespace(pool.loadBalancerName)) {
                     instance.properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools.push({
                         id: resources.resourceId(pool.subscriptionId || nic.subscriptionId,
                             pool.resourceGroupName || nic.resourceGroupName,
                             'Microsoft.Network/loadBalancers/backendAddressPools',
-                            pool.loadBalancerName || parent.loadBalancerSettings.name,
+                            pool.loadBalancerName,
                             pool.name)
                     });
                 } else {
@@ -210,7 +220,7 @@ function transform(settings, parent, vmIndex) {
                             parent.loadBalancerSettings.resourceGroupName,
                             'Microsoft.Network/loadBalancers/backendAddressPools',
                             parent.loadBalancerSettings.name,
-                            pool)
+                            _.isObject(pool) ? pool.name : pool)
                     });
                 }
             });
@@ -237,12 +247,12 @@ function transform(settings, parent, vmIndex) {
                 if (index === 0) {
                     instance.loadBalancerInboundNatPools = [];
                 }
-                if (_.isObject(natPoolName)) {
+                if (_.isObject(natPoolName) && !v.utilities.isNullOrWhitespace(natPoolName.loadBalancerName)) {
                     instance.loadBalancerInboundNatPools.push({
                         id: resources.resourceId(natPoolName.subscriptionId || nic.subscriptionId,
                             natPoolName.resourceGroupName || nic.resourceGroupName,
                             'Microsoft.Network/loadBalancers/inboundNatPools',
-                            natPoolName.loadBalancerName || parent.loadBalancerSettings.name,
+                            natPoolName.loadBalancerName,
                             natPoolName.name)
                     });
                 } else {
@@ -251,7 +261,7 @@ function transform(settings, parent, vmIndex) {
                             parent.loadBalancerSettings.resourceGroupName,
                             'Microsoft.Network/loadBalancers/inboundNatPools',
                             parent.loadBalancerSettings.name,
-                            natPoolName)
+                            _.isObject(natPoolName) ? natPoolName.name : natPoolName)
                     });
                 }
             });
