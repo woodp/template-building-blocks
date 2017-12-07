@@ -247,7 +247,7 @@ let frontendIPConfigurationValidations = {
                 message: 'If applicationGatewayType is Internal, publicIpAddress cannot be specified'
             };
         }
-        
+
         return {
             result: true
         };
@@ -355,7 +355,8 @@ let backendIPConfigurationsValidations = (value, parent) => {
     };
 
     return { validations: validations };
-}
+};
+
 let backendAddressesValidations = (value, parent) => {
     if (_.isUndefined(value)) {
         return { result: true };

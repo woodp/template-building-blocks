@@ -394,7 +394,7 @@ class ValidationError extends Error {
             Error.captureStackTrace(this, this.constructor);
         }
     }
-};
+}
 
 exports.ValidationError = ValidationError;
 exports.utilities = utilities;

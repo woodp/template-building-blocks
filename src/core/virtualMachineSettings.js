@@ -273,7 +273,7 @@ let loadBalancerSettingsValidations = {
                     };
                 }
             }
-        }
+        };
     }
 };
 
@@ -1088,7 +1088,7 @@ let virtualMachineValidations = {
         if (_.isNil(value)) {
             return { result: true };
         }
-        
+
         // TODO - Add subscription and location validations
         return {
             result: true
@@ -1238,7 +1238,7 @@ let virtualMachineValidations = {
             return {
                 result: false,
                 message: 'Value cannot be true if .osDisk.createOption is not fromImage'
-            }
+            };
         }
 
         // For managed disks, imageReference.id cannot be specified

@@ -36,7 +36,7 @@ function merge({ settings, buildingBlockSettings, defaultSettings }) {
     let mergedSettings = resources.setupResources(settings, buildingBlockSettings, (parentKey) => {
         return ((parentKey === null) || (parentKey === 'virtualNetwork'));
     });
-    
+
     mergedSettings = v.merge(mergedSettings, defaults, defaultsCustomizer);
 
     mergedSettings = _.map(mergedSettings, (setting) => {
@@ -137,7 +137,7 @@ let frontendIPConfigurationValidations = {
                 message: 'If loadBalancerType is Internal, publicIpAddress cannot be specified'
             };
         }
-        
+
         return {
             result: true
         };

@@ -28,7 +28,7 @@ let getDefaultOptions = () => {
     }
 
     return defaultOptions;
-}
+};
 
 let padInteger = (number, mask) => {
     if ((!_.isSafeInteger(number)) || (number < 0)) {

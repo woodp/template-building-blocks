@@ -1453,14 +1453,14 @@ describe('virtualMachineSettings:', () => {
             expect(result.length).toEqual(1);
             expect(result[0].name).toEqual('.virtualNetwork.name');
         });
-        
+
         it('validates that usePlan cannot be true for osDisk.createOption != fromImage', () => {
             settings.usePlan = true;
             delete settings.imageReference;
             settings.osDisk.createOption = 'attach';
             settings.osDisk.images = [
-                "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/resource-group-name/providers/Microsoft.Compute/disks/os-disk1-name",
-                "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/resource-group-name/providers/Microsoft.Compute/disks/os-disk2-name"
+                '/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/resource-group-name/providers/Microsoft.Compute/disks/os-disk1-name',
+                '/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/resource-group-name/providers/Microsoft.Compute/disks/os-disk2-name'
             ];
             let result = validate(settings);
             expect(result.length).toEqual(1);
@@ -2954,10 +2954,10 @@ describe('virtualMachineSettings:', () => {
                 settings.nics[1].inboundNatPoolNames = [];
                 settings.loadBalancerSettings = _.cloneDeep(lbSettings.loadBalancerSettings);
                 settings.loadBalancerSettings.inboundNatPools = [];
-                
+
                 let processedParam = virtualMachineSettings.process({ settings: settings, buildingBlockSettings });
                 expect(processedParam.parameters.virtualMachines[0].virtualMachines.length).toEqual(2);
-                
+
                 let nics = processedParam.parameters.virtualMachines[0].networkInterfaces;
                 expect(nics.length).toEqual(4);
                 expect(nics[0].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools.length).toEqual(2);
@@ -2998,10 +2998,10 @@ describe('virtualMachineSettings:', () => {
                 settings.loadBalancerSettings = _.cloneDeep(lbSettings.loadBalancerSettings);
                 settings.loadBalancerSettings.resourceGroupName = 'different-rg';
                 settings.loadBalancerSettings.inboundNatPools = [];
-                
+
                 let processedParam = virtualMachineSettings.process({ settings: settings, buildingBlockSettings });
                 expect(processedParam.parameters.virtualMachines[0].virtualMachines.length).toEqual(2);
-                
+
                 let nics = processedParam.parameters.virtualMachines[0].networkInterfaces;
                 expect(nics.length).toEqual(4);
                 expect(nics[0].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools.length).toEqual(2);
@@ -3077,10 +3077,10 @@ describe('virtualMachineSettings:', () => {
                 settings.nics[0].inboundNatPoolNames = [];
                 settings.nics[1].inboundNatPoolNames = [];
                 settings.applicationGatewaySettings = _.cloneDeep(gwSettings);
-                
+
                 let processedParam = virtualMachineSettings.process({ settings: settings, buildingBlockSettings });
                 expect(processedParam.parameters.virtualMachines[0].virtualMachines.length).toEqual(2);
-                
+
                 let nics = processedParam.parameters.virtualMachines[0].networkInterfaces;
                 expect(nics.length).toEqual(4);
                 expect(nics[0].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools.length).toEqual(2);
@@ -3108,10 +3108,10 @@ describe('virtualMachineSettings:', () => {
                 settings.nics[1].inboundNatPoolNames = [];
                 settings.applicationGatewaySettings = _.cloneDeep(gwSettings);
                 settings.applicationGatewaySettings.resourceGroupName = 'different-rg';
-                
+
                 let processedParam = virtualMachineSettings.process({ settings: settings, buildingBlockSettings });
                 expect(processedParam.parameters.virtualMachines[0].virtualMachines.length).toEqual(2);
-                
+
                 let nics = processedParam.parameters.virtualMachines[0].networkInterfaces;
                 expect(nics.length).toEqual(4);
                 expect(nics[0].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools.length).toEqual(2);
