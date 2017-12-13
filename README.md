@@ -9,7 +9,7 @@
 
 ![Build status](https://travis-ci.org/mspnp/template-building-blocks.svg?branch=master)
 
-> __Important Note__: Version 2.1.0 of Azure Building Blocks introduced breaking changes to versions earlier than 2.0.4. Versions earlier than 2.0.4 will no longer function. Please upgrade to version 2.0.4 or greater to continue using Azure Building Blocks. 
+> __Important Note__: Version 2.1.1 of Azure Building Blocks introduced breaking changes to versions earlier than 2.0.4. Versions earlier than 2.0.4 will no longer function. Please upgrade to version 2.0.4 or greater to continue using Azure Building Blocks. 
 
 # Azure Building Blocks: Simplifying Resource Deployment
 
@@ -86,7 +86,7 @@ The list below shows changes introduced with the latest versions.
 - Fixed minor bugs
 - Introduced a more rigorous versioning scheme
 
-## 2.1.0
+## 2.1.1
 
 - Introduced breaking changes to versions less than 2.0.4
 - Added standalone load balancer building block

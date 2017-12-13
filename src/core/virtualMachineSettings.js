@@ -243,18 +243,6 @@ function validate(settings) {
     });
 }
 
-let encryptionSettingsValidations = {
-    enabled: _.isBoolean,
-    diskEncryptionKey: {
-        secretUrl: v.validationUtilities.isNotNullOrWhitespace,
-        sourceVaultName: v.validationUtilities.isNotNullOrWhitespace
-    },
-    keyEncryptionKey: {
-        keyUrl: v.validationUtilities.isNotNullOrWhitespace,
-        sourceVaultName: v.validationUtilities.isNotNullOrWhitespace
-    }
-};
-
 let loadBalancerSettingsValidations = {
     inboundNatRules: (value) => {
         if (value.length === 0) {
