@@ -98,6 +98,15 @@ let merge = ({ settings, buildingBlockSettings, defaultSettings }) => {
     return merged;
 };
 
+let validate = (settings) => {
+    let errors = v.validate({
+        settings: settings,
+        validations: publicIpAddressValidations
+    });
+
+    return errors;
+};
+
 exports.transform = function (settings) {
     let results = (_.isArray(settings)) ? _.map(settings, (setting) => { return transform(setting); }) : transform(settings);
 
@@ -106,5 +115,48 @@ exports.transform = function (settings) {
     };
 };
 
+function process ({ settings, buildingBlockSettings, defaultSettings }) {
+    settings = _.castArray(settings);
+
+    let buildingBlockErrors = v.validate({
+        settings: buildingBlockSettings,
+        validations: {
+            subscriptionId: v.validationUtilities.isGuid,
+            resourceGroupName: v.validationUtilities.isNotNullOrWhitespace,
+        }
+    });
+
+    if (buildingBlockErrors.length > 0) {
+        throw new Error(JSON.stringify(buildingBlockErrors));
+    }
+
+    let results = merge({
+        settings: settings,
+        buildingBlockSettings: buildingBlockSettings,
+        defaultSettings: defaultSettings
+    });
+
+    let errors = validate(results);
+
+    if (errors.length > 0) {
+        throw new Error(JSON.stringify(errors));
+    }
+
+    results = _.transform(results, (result, setting) => {
+        result.publicIpAddresses.push(transform(setting));
+    }, {
+        publicIpAddresses: []
+    });
+
+    let resourceGroups = r.extractResourceGroups(
+        results.publicIpAddresses
+    );
+    return {
+        resourceGroups: resourceGroups,
+        parameters: results
+    };
+}
+
+exports.process = process;
 exports.merge = merge;
 exports.validations = publicIpAddressValidations;

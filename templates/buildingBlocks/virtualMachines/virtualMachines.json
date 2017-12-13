@@ -56,11 +56,11 @@
           "virtualMachines": {
             "value": "[parameters('virtualMachines')[copyIndex()].virtualMachines]"
           },
-          "loadBalancer": {
-            "value": "[if(contains(parameters('virtualMachines')[copyIndex()], 'loadBalancer'), parameters('virtualMachines')[copyIndex()]['loadBalancer'], json('[]'))]"
+          "loadBalancers": {
+            "value": "[if(contains(parameters('virtualMachines')[copyIndex()], 'loadBalancers'), parameters('virtualMachines')[copyIndex()]['loadBalancers'], json('[]'))]"
           },
-          "scaleSet": {
-            "value": "[if(contains(parameters('virtualMachines')[copyIndex()], 'scaleSet'), parameters('virtualMachines')[copyIndex()]['scaleSet'], json('[]'))]"
+          "scaleSets": {
+            "value": "[if(contains(parameters('virtualMachines')[copyIndex()], 'scaleSets'), parameters('virtualMachines')[copyIndex()]['scaleSets'], json('[]'))]"
           },
           "autoScaleSettings": {
             "value": "[if(contains(parameters('virtualMachines')[copyIndex()], 'autoScaleSettings'), parameters('virtualMachines')[copyIndex()]['autoScaleSettings'], json('[]'))]"
@@ -68,7 +68,9 @@
           "applicationGateways": {
             "value": "[if(contains(parameters('virtualMachines')[copyIndex()], 'applicationGateways'), parameters('virtualMachines')[copyIndex()]['applicationGateways'], json('[]'))]"
           },
-          "secret": "[parameters('secrets').secrets[copyIndex()]]"
+          "secrets": {
+            "value": "[parameters('secrets').secrets[copyIndex()]]"
+          }
         }
       }
     }

@@ -18,6 +18,7 @@ describe('applicationGatewaySettings:', () => {
     };
 
     let testSettings = {
+        name: 'test-agw',
         sku: {
             tier: 'Standard',
             size: 'Small',
@@ -40,7 +41,7 @@ describe('applicationGatewaySettings:', () => {
         ],
         backendHttpSettingsCollection: [
             {
-                name: 'appGatewaybackendHttpSettings',
+                name: 'appGatewayBackendHttpSettings',
                 port: 80,
                 protocol: 'Https',
                 cookieBasedAffinity: 'Disabled',
@@ -64,13 +65,13 @@ describe('applicationGatewaySettings:', () => {
             {
                 name: 'pb-rule1',
                 defaultBackendAddressPoolName: 'appGatewayBackendPool',
-                defaultbackendHttpSettingsName: 'appGatewaybackendHttpSettings',
+                defaultBackendHttpSettingsName: 'appGatewayBackendHttpSettings',
                 pathRules: [
                     {
                         name: 'p2',
                         paths: ['/path'],
                         backendAddressPoolName: 'appGatewayBackendPool',
-                        backendHttpSettingsName: 'appGatewaybackendHttpSettings'
+                        backendHttpSettingsName: 'appGatewayBackendHttpSettings'
                     }
                 ]
             }
@@ -81,7 +82,7 @@ describe('applicationGatewaySettings:', () => {
                 ruleType: 'Basic',
                 httpListenerName: 'appGatewayHttpListener',
                 backendAddressPoolName: 'appGatewayBackendPool',
-                backendHttpSettingsName: 'appGatewaybackendHttpSettings'
+                backendHttpSettingsName: 'appGatewayBackendHttpSettings'
             }
         ],
         frontendPorts: [
@@ -95,11 +96,14 @@ describe('applicationGatewaySettings:', () => {
     describe('valid validations:', () => {
         it('validate valid defaults are applied.', () => {
             let merged = applicationGatewaySettings.merge({
-                settings: {},
+                settings: [{
+                    name: 'test-agw'
+                }],
                 buildingBlockSettings: buildingBlockSettings
             });
 
-            fixBlockSettingsAfterMerge(merged);
+            //fixBlockSettingsAfterMerge(merged);
+
 
             let result = v.validate({
                 settings: merged,
@@ -133,7 +137,7 @@ describe('applicationGatewaySettings:', () => {
                 buildingBlockSettings: buildingBlockSettings
             });
             //TO DO: would be set by VM or scaleSet, must be fixed if appGateway makes it to a stand alone (root) object
-            fixBlockSettingsAfterMerge(merged);
+            //fixBlockSettingsAfterMerge(merged);
             return v.validate({
                 settings: merged,
                 validations: applicationGatewaySettings.validations
@@ -157,23 +161,23 @@ describe('applicationGatewaySettings:', () => {
         it('sku WAF valid size', () => {
             settings.sku.tier = 'WAF';
             settings.sku.size = 'Medium';
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(0);
         });
 
         it('sku WAF invalid size', () => {
             settings.sku.tier = 'WAF';
             settings.sku.size = 'invalid';
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.sku.size');
+            expect(result[0].name).toEqual('[0].sku.size');
         });
 
         it('gatewayIPConfigurations subnet must be provided', () => {
             settings.gatewayIPConfigurations = [ { name: 'appGatewayIpConfig' } ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.gatewayIPConfigurations[0].subnetName');
+            expect(result[0].name).toEqual('[0].gatewayIPConfigurations[0].subnetName');
         });
         it('frontendIPConfigurations cannot have 2 internal', () => {
             settings.frontendIPConfigurations = [
@@ -190,7 +194,7 @@ describe('applicationGatewaySettings:', () => {
                 }
             ];
             let merged = applicationGatewaySettings.merge({
-                settings: settings,
+                settings: [settings],
                 buildingBlockSettings: buildingBlockSettings
             });
             let result = v.validate({
@@ -198,7 +202,7 @@ describe('applicationGatewaySettings:', () => {
                 validations: applicationGatewaySettings.validations
             });
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.frontendIPConfigurations');
+            expect(result[0].name).toEqual('[0].frontendIPConfigurations');
         });
         it('frontendIPConfigurations cannot have 2 public', () => {
             settings.frontendIPConfigurations = [
@@ -211,9 +215,9 @@ describe('applicationGatewaySettings:', () => {
                     applicationGatewayType: 'Public'
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.frontendIPConfigurations');
+            expect(result[0].name).toEqual('[0].frontendIPConfigurations');
         });
         it('frontendIPConfigurations cannot have more than 2', () => {
             settings.frontendIPConfigurations = [
@@ -233,9 +237,9 @@ describe('applicationGatewaySettings:', () => {
                     applicationGatewayType: 'Public'
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.frontendIPConfigurations');
+            expect(result[0].name).toEqual('[0].frontendIPConfigurations');
         });
         it('valid frontendIPConfigurations', () => {
             settings.frontendIPConfigurations = [
@@ -251,7 +255,7 @@ describe('applicationGatewaySettings:', () => {
                     }
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(0);
         });
         it('frontendIPConfigurations can have only one internal', () => {
@@ -265,7 +269,7 @@ describe('applicationGatewaySettings:', () => {
                 }
             ];
             let merged = applicationGatewaySettings.merge({
-                settings: settings,
+                settings: [settings],
                 buildingBlockSettings: buildingBlockSettings
             });
             let result = v.validate({
@@ -281,7 +285,7 @@ describe('applicationGatewaySettings:', () => {
                     applicationGatewayType: 'Public'
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(0);
         });
         it('frontendIPConfigurations internalApplicationGatewaySettings cannot be specified if type is not Internal', () => {
@@ -294,9 +298,9 @@ describe('applicationGatewaySettings:', () => {
                     }
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.frontendIPConfigurations[0].internalApplicationGatewaySettings');
+            expect(result[0].name).toEqual('[0].frontendIPConfigurations[0].internalApplicationGatewaySettings');
         });
         it('frontendIPConfigurations internalApplicationGatewaySettings must be specified if type is Internal', () => {
             settings.frontendIPConfigurations = [
@@ -306,7 +310,7 @@ describe('applicationGatewaySettings:', () => {
                 }
             ];
             let merged = applicationGatewaySettings.merge({
-                settings: settings,
+                settings: [settings],
                 buildingBlockSettings: buildingBlockSettings
             });
             let result = v.validate({
@@ -314,7 +318,7 @@ describe('applicationGatewaySettings:', () => {
                 validations: applicationGatewaySettings.validations
             });
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.frontendIPConfigurations[0].internalApplicationGatewaySettings');
+            expect(result[0].name).toEqual('[0].frontendIPConfigurations[0].internalApplicationGatewaySettings');
         });
 
         it('valid frontendPorts', () => {
@@ -328,7 +332,7 @@ describe('applicationGatewaySettings:', () => {
                     port: 81
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(0);
         });
         it('frontendPorts port must be between 0 and 65535', () => {
@@ -338,14 +342,14 @@ describe('applicationGatewaySettings:', () => {
                     port: 187569
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.frontendPorts[0].port');
+            expect(result[0].name).toEqual('[0].frontendPorts[0].port');
         });
         it('valid backendHttpSettingsCollection port must be between 0 and 65535', () => {
             settings.backendHttpSettingsCollection = [
                 {
-                    name: 'appGatewaybackendHttpSettings',
+                    name: 'appGatewayBackendHttpSettings',
                     port: 80,
                     protocol: 'Http',
                     cookieBasedAffinity: 'Disabled',
@@ -366,13 +370,13 @@ describe('applicationGatewaySettings:', () => {
                 }
             ];
 
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(0);
         });
         it('backendHttpSettingsCollection port must be between 0 and 65535', () => {
             settings.backendHttpSettingsCollection = [
                 {
-                    name: 'appGatewaybackendHttpSettings',
+                    name: 'appGatewayBackendHttpSettings',
                     port: 800234,
                     protocol: 'Http',
                     cookieBasedAffinity: 'Disabled',
@@ -383,14 +387,14 @@ describe('applicationGatewaySettings:', () => {
                 }
             ];
 
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.backendHttpSettingsCollection[0].port');
+            expect(result[0].name).toEqual('[0].backendHttpSettingsCollection[0].port');
         });
         it('backendHttpSettingsCollection protocol must be Http or Https', () => {
             settings.backendHttpSettingsCollection = [
                 {
-                    name: 'appGatewaybackendHttpSettings',
+                    name: 'appGatewayBackendHttpSettings',
                     port: 80,
                     protocol: 'invalid',
                     cookieBasedAffinity: 'Disabled',
@@ -401,14 +405,14 @@ describe('applicationGatewaySettings:', () => {
                 }
             ];
 
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.backendHttpSettingsCollection[0].protocol');
+            expect(result[0].name).toEqual('[0].backendHttpSettingsCollection[0].protocol');
         });
         it('backendHttpSettingsCollection probeEnabled must be boolean', () => {
             settings.backendHttpSettingsCollection = [
                 {
-                    name: 'appGatewaybackendHttpSettings',
+                    name: 'appGatewayBackendHttpSettings',
                     port: 80,
                     protocol: 'Https',
                     cookieBasedAffinity: 'Disabled',
@@ -419,14 +423,14 @@ describe('applicationGatewaySettings:', () => {
                 }
             ];
 
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.backendHttpSettingsCollection[0].probeEnabled');
+            expect(result[0].name).toEqual('[0].backendHttpSettingsCollection[0].probeEnabled');
         });
         it('backendHttpSettingsCollection probeEnabled must be boolean', () => {
             settings.backendHttpSettingsCollection = [
                 {
-                    name: 'appGatewaybackendHttpSettings',
+                    name: 'appGatewayBackendHttpSettings',
                     port: 80,
                     protocol: 'Https',
                     cookieBasedAffinity: 'Disabled',
@@ -437,14 +441,14 @@ describe('applicationGatewaySettings:', () => {
                 }
             ];
 
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.backendHttpSettingsCollection[0].pickHostNameFromBackendAddress');
+            expect(result[0].name).toEqual('[0].backendHttpSettingsCollection[0].pickHostNameFromBackendAddress');
         });
         it('backendHttpSettingsCollection cookieBasedAffinity must be enabled or disabled', () => {
             settings.backendHttpSettingsCollection = [
                 {
-                    name: 'appGatewaybackendHttpSettings',
+                    name: 'appGatewayBackendHttpSettings',
                     port: 80,
                     protocol: 'Https',
                     cookieBasedAffinity: 'invalid',
@@ -455,9 +459,9 @@ describe('applicationGatewaySettings:', () => {
                 }
             ];
 
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.backendHttpSettingsCollection[0].cookieBasedAffinity');
+            expect(result[0].name).toEqual('[0].backendHttpSettingsCollection[0].cookieBasedAffinity');
         });
 
         it('valid httpListeners', () => {
@@ -471,7 +475,7 @@ describe('applicationGatewaySettings:', () => {
                 }
             ];
 
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(0);
         });
         it('httpListeners frontendIPConfigurationName must match one in frontendIPConfigurations', () => {
@@ -491,9 +495,9 @@ describe('applicationGatewaySettings:', () => {
                 }
             ];
 
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.httpListeners[0].frontendIPConfigurationName');
+            expect(result[0].name).toEqual('[0].httpListeners[0].frontendIPConfigurationName');
         });
         it('httpListeners frontendPortName must match one in frontendPorts', () => {
             settings.httpListeners = [
@@ -506,9 +510,9 @@ describe('applicationGatewaySettings:', () => {
                 }
             ];
 
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.httpListeners[0].frontendPortName');
+            expect(result[0].name).toEqual('[0].httpListeners[0].frontendPortName');
         });
         it('httpListeners requireServerNameIndication must be boolean', () => {
             settings.httpListeners = [
@@ -521,9 +525,9 @@ describe('applicationGatewaySettings:', () => {
                 }
             ];
 
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.httpListeners[0].requireServerNameIndication');
+            expect(result[0].name).toEqual('[0].httpListeners[0].requireServerNameIndication');
         });
         it('httpListeners protocol must be Http or Https', () => {
             settings.httpListeners = [
@@ -536,9 +540,9 @@ describe('applicationGatewaySettings:', () => {
                 }
             ];
 
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.httpListeners[0].protocol');
+            expect(result[0].name).toEqual('[0].httpListeners[0].protocol');
         });
 
         it('urlPathMaps valid settings', () => {
@@ -546,7 +550,7 @@ describe('applicationGatewaySettings:', () => {
                 {
                     name: 'pb-rule1',
                     defaultBackendAddressPoolName: 'appGatewayBackendPool',
-                    defaultbackendHttpSettingsName: 'appGatewaybackendHttpSettings',
+                    defaultBackendHttpSettingsName: 'appGatewayBackendHttpSettings',
                     pathRules: [
                         {
                             name: 'p2',
@@ -554,13 +558,13 @@ describe('applicationGatewaySettings:', () => {
                                 '/bar'
                             ],
                             backendAddressPoolName: 'appGatewayBackendPool',
-                            backendHttpSettingsName: 'appGatewaybackendHttpSettings'
+                            backendHttpSettingsName: 'appGatewayBackendHttpSettings'
                         }
                     ]
                 }
             ];
 
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(0);
         });
         it('urlPathMaps invalid defaultBackendAddressPoolName', () => {
@@ -568,7 +572,7 @@ describe('applicationGatewaySettings:', () => {
                 {
                     name: 'pb-rule1',
                     defaultBackendAddressPoolName: 'invalid',
-                    defaultbackendHttpSettingsName: 'appGatewaybackendHttpSettings',
+                    defaultBackendHttpSettingsName: 'appGatewayBackendHttpSettings',
                     pathRules: [
                         {
                             name: 'p2',
@@ -576,22 +580,22 @@ describe('applicationGatewaySettings:', () => {
                                 '/bar'
                             ],
                             backendAddressPoolName: 'appGatewayBackendPool',
-                            backendHttpSettingsName: 'appGatewaybackendHttpSettings'
+                            backendHttpSettingsName: 'appGatewayBackendHttpSettings'
                         }
                     ]
                 }
             ];
 
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.urlPathMaps[0].defaultBackendAddressPoolName');
+            expect(result[0].name).toEqual('[0].urlPathMaps[0].defaultBackendAddressPoolName');
         });
-        it('urlPathMaps invalid defaultbackendHttpSettingsName', () => {
+        it('urlPathMaps invalid defaultBackendHttpSettingsName', () => {
             settings.urlPathMaps = [
                 {
                     name: 'pb-rule1',
                     defaultBackendAddressPoolName: 'appGatewayBackendPool',
-                    defaultbackendHttpSettingsName: 'invalid',
+                    defaultBackendHttpSettingsName: 'invalid',
                     pathRules: [
                         {
                             name: 'p2',
@@ -599,22 +603,22 @@ describe('applicationGatewaySettings:', () => {
                                 '/bar'
                             ],
                             backendAddressPoolName: 'appGatewayBackendPool',
-                            backendHttpSettingsName: 'appGatewaybackendHttpSettings'
+                            backendHttpSettingsName: 'appGatewayBackendHttpSettings'
                         }
                     ]
                 }
             ];
 
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.urlPathMaps[0].defaultbackendHttpSettingsName');
+            expect(result[0].name).toEqual('[0].urlPathMaps[0].defaultBackendHttpSettingsName');
         });
         it('urlPathMaps invalid backendAddressPoolName', () => {
             settings.urlPathMaps = [
                 {
                     name: 'pb-rule1',
                     defaultBackendAddressPoolName: 'appGatewayBackendPool',
-                    defaultbackendHttpSettingsName: 'appGatewaybackendHttpSettings',
+                    defaultBackendHttpSettingsName: 'appGatewayBackendHttpSettings',
                     pathRules: [
                         {
                             name: 'p2',
@@ -622,22 +626,22 @@ describe('applicationGatewaySettings:', () => {
                                 '/bar'
                             ],
                             backendAddressPoolName: 'invalid',
-                            backendHttpSettingsName: 'appGatewaybackendHttpSettings'
+                            backendHttpSettingsName: 'appGatewayBackendHttpSettings'
                         }
                     ]
                 }
             ];
 
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.urlPathMaps[0].pathRules[0].backendAddressPoolName');
+            expect(result[0].name).toEqual('[0].urlPathMaps[0].pathRules[0].backendAddressPoolName');
         });
         it('urlPathMaps invalid backendHttpSettingsName', () => {
             settings.urlPathMaps = [
                 {
                     name: 'pb-rule1',
                     defaultBackendAddressPoolName: 'appGatewayBackendPool',
-                    defaultbackendHttpSettingsName: 'appGatewaybackendHttpSettings',
+                    defaultBackendHttpSettingsName: 'appGatewayBackendHttpSettings',
                     pathRules: [
                         {
                             name: 'p2',
@@ -651,77 +655,77 @@ describe('applicationGatewaySettings:', () => {
                 }
             ];
 
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.urlPathMaps[0].pathRules[0].backendHttpSettingsName');
+            expect(result[0].name).toEqual('[0].urlPathMaps[0].pathRules[0].backendHttpSettingsName');
         });
         it('urlPathMaps pathRules cannot be undefined', () => {
             settings.urlPathMaps = [
                 {
                     name: 'pb-rule1',
                     defaultBackendAddressPoolName: 'appGatewayBackendPool',
-                    defaultbackendHttpSettingsName: 'appGatewaybackendHttpSettings'
+                    defaultBackendHttpSettingsName: 'appGatewayBackendHttpSettings'
                 }
             ];
 
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.urlPathMaps[0].pathRules');
+            expect(result[0].name).toEqual('[0].urlPathMaps[0].pathRules');
         });
         it('urlPathMaps pathRules cannot be empty', () => {
             settings.urlPathMaps = [
                 {
                     name: 'pb-rule1',
                     defaultBackendAddressPoolName: 'appGatewayBackendPool',
-                    defaultbackendHttpSettingsName: 'appGatewaybackendHttpSettings',
+                    defaultBackendHttpSettingsName: 'appGatewayBackendHttpSettings',
                     pathRules: []
                 }
             ];
 
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.urlPathMaps[0].pathRules');
+            expect(result[0].name).toEqual('[0].urlPathMaps[0].pathRules');
         });
         it('urlPathMaps paths cannot be undefined', () => {
             settings.urlPathMaps = [
                 {
                     name: 'pb-rule1',
                     defaultBackendAddressPoolName: 'appGatewayBackendPool',
-                    defaultbackendHttpSettingsName: 'appGatewaybackendHttpSettings',
+                    defaultBackendHttpSettingsName: 'appGatewayBackendHttpSettings',
                     pathRules: [
                         {
                             name: 'p2',
                             backendAddressPoolName: 'appGatewayBackendPool',
-                            backendHttpSettingsName: 'appGatewaybackendHttpSettings'
+                            backendHttpSettingsName: 'appGatewayBackendHttpSettings'
                         }
                     ]
                 }
             ];
 
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.urlPathMaps[0].pathRules');
+            expect(result[0].name).toEqual('[0].urlPathMaps[0].pathRules');
         });
         it('urlPathMaps at leas one path must be specified', () => {
             settings.urlPathMaps = [
                 {
                     name: 'pb-rule1',
                     defaultBackendAddressPoolName: 'appGatewayBackendPool',
-                    defaultbackendHttpSettingsName: 'appGatewaybackendHttpSettings',
+                    defaultBackendHttpSettingsName: 'appGatewayBackendHttpSettings',
                     pathRules: [
                         {
                             name: 'p2',
                             paths: [],
                             backendAddressPoolName: 'appGatewayBackendPool',
-                            backendHttpSettingsName: 'appGatewaybackendHttpSettings'
+                            backendHttpSettingsName: 'appGatewayBackendHttpSettings'
                         }
                     ]
                 }
             ];
 
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.urlPathMaps[0].pathRules');
+            expect(result[0].name).toEqual('[0].urlPathMaps[0].pathRules');
         });
         it('valid requestRoutingRules', () => {
             settings.requestRoutingRules = [
@@ -730,10 +734,10 @@ describe('applicationGatewaySettings:', () => {
                     ruleType: 'Basic',
                     httpListenerName: 'appGatewayHttpListener',
                     backendAddressPoolName: 'appGatewayBackendPool',
-                    backendHttpSettingsName: 'appGatewaybackendHttpSettings'
+                    backendHttpSettingsName: 'appGatewayBackendHttpSettings'
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(0);
         });
         it('valid redirect requestRoutingRules', () => {
@@ -753,7 +757,7 @@ describe('applicationGatewaySettings:', () => {
                     httpListenerName: 'appGatewayHttpListener'
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(0);
         });
         it('requestRoutingRules name must be specified', () => {
@@ -762,12 +766,12 @@ describe('applicationGatewaySettings:', () => {
                     ruleType: 'Basic',
                     httpListenerName: 'appGatewayHttpListener',
                     backendAddressPoolName: 'appGatewayBackendPool',
-                    backendHttpSettingsName: 'appGatewaybackendHttpSettings'
+                    backendHttpSettingsName: 'appGatewayBackendHttpSettings'
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.requestRoutingRules[0].name');
+            expect(result[0].name).toEqual('[0].requestRoutingRules[0].name');
         });
         it('requestRoutingRules a valid httpListenerName must be specified', () => {
             settings.requestRoutingRules = [
@@ -776,12 +780,12 @@ describe('applicationGatewaySettings:', () => {
                     ruleType: 'Basic',
                     httpListenerName: 'invalid',
                     backendAddressPoolName: 'appGatewayBackendPool',
-                    backendHttpSettingsName: 'appGatewaybackendHttpSettings'
+                    backendHttpSettingsName: 'appGatewayBackendHttpSettings'
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.requestRoutingRules[0].httpListenerName');
+            expect(result[0].name).toEqual('[0].requestRoutingRules[0].httpListenerName');
         });
         it('requestRoutingRules a valid backendAddressPoolName must be specified when type is Basic', () => {
             settings.requestRoutingRules = [
@@ -790,12 +794,12 @@ describe('applicationGatewaySettings:', () => {
                     ruleType: 'Basic',
                     httpListenerName: 'appGatewayHttpListener',
                     backendAddressPoolName: 'invalid',
-                    backendHttpSettingsName: 'appGatewaybackendHttpSettings'
+                    backendHttpSettingsName: 'appGatewayBackendHttpSettings'
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.requestRoutingRules[0].backendAddressPoolName');
+            expect(result[0].name).toEqual('[0].requestRoutingRules[0].backendAddressPoolName');
         });
         it('requestRoutingRules a valid backendHttpSettingsName must be specified when type is Basic', () => {
             settings.requestRoutingRules = [
@@ -807,9 +811,9 @@ describe('applicationGatewaySettings:', () => {
                     backendHttpSettingsName: 'invalid'
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.requestRoutingRules[0].backendHttpSettingsName');
+            expect(result[0].name).toEqual('[0].requestRoutingRules[0].backendHttpSettingsName');
         });
         it('requestRoutingRules ruleType must be Basic or PathBasedRouting', () => {
             settings.requestRoutingRules = [
@@ -818,12 +822,12 @@ describe('applicationGatewaySettings:', () => {
                     ruleType: 'invalid',
                     httpListenerName: 'appGatewayHttpListener',
                     backendAddressPoolName: 'appGatewayBackendPool',
-                    backendHttpSettingsName: 'appGatewaybackendHttpSettings'
+                    backendHttpSettingsName: 'appGatewayBackendHttpSettings'
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.requestRoutingRules[0].ruleType');
+            expect(result[0].name).toEqual('[0].requestRoutingRules[0].ruleType');
         });
         it('requestRoutingRules when ruleType is PathBasedRouting urlPathMapName must be specified', () => {
             settings.requestRoutingRules = [
@@ -833,9 +837,9 @@ describe('applicationGatewaySettings:', () => {
                     httpListenerName: 'appGatewayHttpListener'
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.requestRoutingRules[0].urlPathMapName');
+            expect(result[0].name).toEqual('[0].requestRoutingRules[0].urlPathMapName');
         });
 
         it('requestRoutingRules when ruleType is PathBasedRouting urlPathMaps must be specified', () => {
@@ -848,9 +852,9 @@ describe('applicationGatewaySettings:', () => {
                 }
             ];
             delete settings.urlPathMaps;
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(2);
-            expect(result[0].name).toEqual('.requestRoutingRules[0].ruleType');
+            expect(result[0].name).toEqual('[0].requestRoutingRules[0].ruleType');
         });
         it('requestRoutingRules when ruleType is PathBasedRouting urlPathMaps must be at least one', () => {
             settings.requestRoutingRules = [
@@ -862,9 +866,9 @@ describe('applicationGatewaySettings:', () => {
                 }
             ];
             settings.urlPathMaps = [];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(2);
-            expect(result[0].name).toEqual('.requestRoutingRules[0].ruleType');
+            expect(result[0].name).toEqual('[0].requestRoutingRules[0].ruleType');
         });
         it('requestRoutingRules when ruleType is PathBasedRouting backendAddressPoolName cannot be specified', () => {
             settings.requestRoutingRules = [
@@ -876,9 +880,9 @@ describe('applicationGatewaySettings:', () => {
                     backendAddressPoolName: 'appGatewayBackendPool'
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.requestRoutingRules[0].backendAddressPoolName');
+            expect(result[0].name).toEqual('[0].requestRoutingRules[0].backendAddressPoolName');
         });
         it('requestRoutingRules when ruleType is PathBasedRouting backendHttpSettingsName cannot be specified', () => {
             settings.requestRoutingRules = [
@@ -887,12 +891,12 @@ describe('applicationGatewaySettings:', () => {
                     ruleType: 'PathBasedRouting',
                     httpListenerName: 'appGatewayHttpListener',
                     urlPathMapName: 'pb-rule1',
-                    backendHttpSettingsName: 'appGatewaybackendHttpSettings'
+                    backendHttpSettingsName: 'appGatewayBackendHttpSettings'
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.requestRoutingRules[0].backendHttpSettingsName');
+            expect(result[0].name).toEqual('[0].requestRoutingRules[0].backendHttpSettingsName');
         });
         it('requestRoutingRules invalid redirectConfigurationName', () => {
             settings.redirectConfigurations = [
@@ -911,9 +915,9 @@ describe('applicationGatewaySettings:', () => {
                     httpListenerName: 'appGatewayHttpListener'
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.requestRoutingRules[0].redirectConfigurationName');
+            expect(result[0].name).toEqual('[0].requestRoutingRules[0].redirectConfigurationName');
         });
         it('requestRoutingRules backendAddressPoolName and redirectConfigurationName cannot be both specified', () => {
             settings.redirectConfigurations = [
@@ -933,9 +937,9 @@ describe('applicationGatewaySettings:', () => {
                     backendAddressPoolName: 'appGatewayBackendPool'
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.requestRoutingRules[0].backendAddressPoolName');
+            expect(result[0].name).toEqual('[0].requestRoutingRules[0].backendAddressPoolName');
         });
         it('requestRoutingRules backendHttpSettingsName and redirectConfigurationName cannot be both specified', () => {
             settings.redirectConfigurations = [
@@ -952,12 +956,12 @@ describe('applicationGatewaySettings:', () => {
                     ruleType: 'Basic',
                     redirectConfigurationName: 'appGatewayRedirect',
                     httpListenerName: 'appGatewayHttpListener',
-                    backendHttpSettingsName: 'appGatewaybackendHttpSettings'
+                    backendHttpSettingsName: 'appGatewayBackendHttpSettings'
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.requestRoutingRules[0].backendHttpSettingsName');
+            expect(result[0].name).toEqual('[0].requestRoutingRules[0].backendHttpSettingsName');
         });
 
         it('valid probes', () => {
@@ -970,13 +974,13 @@ describe('applicationGatewaySettings:', () => {
                     interval: 30,
                     timeout: 30,
                     unhealthyThreshold: 3,
-                    pickHostNameFrombackendHttpSettings: false,
+                    pickHostNameFromBackendHttpSettings: false,
                     match: {
                         statusCodes: ['200', '200-339']
                     }
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(0);
         });
         it('valid probes without match', () => {
@@ -989,10 +993,10 @@ describe('applicationGatewaySettings:', () => {
                     interval: 30,
                     timeout: 30,
                     unhealthyThreshold: 3,
-                    pickHostNameFrombackendHttpSettings: false
+                    pickHostNameFromBackendHttpSettings: false
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(0);
         });
         it('probes must have a name', () => {
@@ -1004,12 +1008,12 @@ describe('applicationGatewaySettings:', () => {
                     interval: 30,
                     timeout: 30,
                     unhealthyThreshold: 3,
-                    pickHostNameFrombackendHttpSettings: false
+                    pickHostNameFromBackendHttpSettings: false
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.probes[0].name');
+            expect(result[0].name).toEqual('[0].probes[0].name');
         });
         it('probes protocol must be Http or Https', () => {
             settings.probes = [
@@ -1023,9 +1027,9 @@ describe('applicationGatewaySettings:', () => {
                     unhealthyThreshold: 3
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.probes[0].protocol');
+            expect(result[0].name).toEqual('[0].probes[0].protocol');
         });
         it('probes path must start with /', () => {
             settings.probes = [
@@ -1039,9 +1043,9 @@ describe('applicationGatewaySettings:', () => {
                     unhealthyThreshold: 3
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.probes[0].path');
+            expect(result[0].name).toEqual('[0].probes[0].path');
         });
         it('probes interval must be between 1 and 86400', () => {
             settings.probes = [
@@ -1055,9 +1059,9 @@ describe('applicationGatewaySettings:', () => {
                     unhealthyThreshold: 3
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.probes[0].interval');
+            expect(result[0].name).toEqual('[0].probes[0].interval');
         });
         it('probes timeout must be between 1 and 86400', () => {
             settings.probes = [
@@ -1071,9 +1075,9 @@ describe('applicationGatewaySettings:', () => {
                     unhealthyThreshold: 3
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.probes[0].timeout');
+            expect(result[0].name).toEqual('[0].probes[0].timeout');
         });
         it('probes unhealthyThreshold must be between 1 and 20', () => {
             settings.probes = [
@@ -1087,9 +1091,9 @@ describe('applicationGatewaySettings:', () => {
                     unhealthyThreshold: 21
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.probes[0].unhealthyThreshold');
+            expect(result[0].name).toEqual('[0].probes[0].unhealthyThreshold');
         });
         it('probes match statusCodes must be a valid status code or range', () => {
             settings.probes = [
@@ -1106,9 +1110,9 @@ describe('applicationGatewaySettings:', () => {
                     }
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.probes[0].match.statusCodes');
+            expect(result[0].name).toEqual('[0].probes[0].match.statusCodes');
         });
         it('probes minServers cannot be NaN', () => {
             settings.probes = [
@@ -1123,9 +1127,9 @@ describe('applicationGatewaySettings:', () => {
                     minServers: 1/0
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.probes[0].minServers');
+            expect(result[0].name).toEqual('[0].probes[0].minServers');
         });
         it('probes minServers must be equal or greater than 0', () => {
             settings.probes = [
@@ -1140,9 +1144,9 @@ describe('applicationGatewaySettings:', () => {
                     minServers: -1
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.probes[0].minServers');
+            expect(result[0].name).toEqual('[0].probes[0].minServers');
         });
 
         it('valid webApplicationFirewallConfiguration', () => {
@@ -1155,7 +1159,7 @@ describe('applicationGatewaySettings:', () => {
                     disabledRuleGroups: []
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(0);
         });
         it('webApplicationFirewallConfiguration enabled must be boolean', () => {
@@ -1168,9 +1172,9 @@ describe('applicationGatewaySettings:', () => {
                     disabledRuleGroups: []
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.webApplicationFirewallConfiguration[0].enabled');
+            expect(result[0].name).toEqual('[0].webApplicationFirewallConfiguration[0].enabled');
         });
         it('webApplicationFirewallConfiguration firewallMode must be Detection or Prevention', () => {
             settings.webApplicationFirewallConfiguration = [
@@ -1182,9 +1186,9 @@ describe('applicationGatewaySettings:', () => {
                     disabledRuleGroups: []
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.webApplicationFirewallConfiguration[0].firewallMode');
+            expect(result[0].name).toEqual('[0].webApplicationFirewallConfiguration[0].firewallMode');
         });
         it('webApplicationFirewallConfiguration ruleSetType must be OWASP', () => {
             settings.webApplicationFirewallConfiguration = [
@@ -1195,9 +1199,9 @@ describe('applicationGatewaySettings:', () => {
                     ruleSetVersion: '3.0'
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.webApplicationFirewallConfiguration[0].ruleSetType');
+            expect(result[0].name).toEqual('[0].webApplicationFirewallConfiguration[0].ruleSetType');
         });
         it('webApplicationFirewallConfiguration ruleSetVersion takes default when not specified', () => {
             settings.webApplicationFirewallConfiguration = [
@@ -1208,7 +1212,7 @@ describe('applicationGatewaySettings:', () => {
                     disabledRuleGroups: []
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(0);
         });
         it('valid webApplicationFirewallConfiguration disabledRuleGroups', () => {
@@ -1225,7 +1229,7 @@ describe('applicationGatewaySettings:', () => {
                     ]
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(0);
         });
         it('webApplicationFirewallConfiguration disabledRuleGroups rules can be undefined', () => {
@@ -1241,7 +1245,7 @@ describe('applicationGatewaySettings:', () => {
                     ]
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(0);
         });
         it('webApplicationFirewallConfiguration disabledRuleGroups rules can be empty', () => {
@@ -1258,7 +1262,7 @@ describe('applicationGatewaySettings:', () => {
                     ]
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(0);
         });
         it('webApplicationFirewallConfiguration disabledRuleGroups ruleGroupName must be specified', () => {
@@ -1274,9 +1278,9 @@ describe('applicationGatewaySettings:', () => {
                     ]
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.webApplicationFirewallConfiguration[0].disabledRuleGroups');
+            expect(result[0].name).toEqual('[0].webApplicationFirewallConfiguration[0].disabledRuleGroups');
         });
 
         it('valid Predefined sslPolicy', () => {
@@ -1284,7 +1288,7 @@ describe('applicationGatewaySettings:', () => {
                 policyType: 'Predefined',
                 policyName: 'AppGwSslPolicy20150501'
             };
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(0);
         });
         it('valid Custom sslPolicy', () => {
@@ -1293,7 +1297,7 @@ describe('applicationGatewaySettings:', () => {
                 cipherSuites: ['TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384', 'TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256', 'TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA'],
                 minProtocolVersion: 'TLSv1_1'
             };
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(0);
         });
         it('sslPolicy type must be Predefined or Custom', () => {
@@ -1302,9 +1306,9 @@ describe('applicationGatewaySettings:', () => {
                 cipherSuites: ['TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384', 'TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256', 'TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA'],
                 minProtocolVersion: 'TLSv1_1'
             };
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length > 0).toEqual(true);
-            expect(result[0].name).toEqual('.sslPolicy.policyType');
+            expect(result[0].name).toEqual('[0].sslPolicy.policyType');
         });
         it('sslPolicy cipherSuites must be valid', () => {
             settings.sslPolicy = {
@@ -1312,9 +1316,9 @@ describe('applicationGatewaySettings:', () => {
                 cipherSuites: ['invalid', 'TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256', 'TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA'],
                 minProtocolVersion: 'TLSv1_1'
             };
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.sslPolicy.cipherSuites');
+            expect(result[0].name).toEqual('[0].sslPolicy.cipherSuites');
         });
         it('sslPolicy minProtocolVersion must be any of TLSv1_0, TLSv1_1 or TLSv1_2', () => {
             settings.sslPolicy = {
@@ -1322,27 +1326,27 @@ describe('applicationGatewaySettings:', () => {
                 cipherSuites: ['TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256', 'TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA'],
                 minProtocolVersion: 'invalid'
             };
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.sslPolicy.minProtocolVersion');
+            expect(result[0].name).toEqual('[0].sslPolicy.minProtocolVersion');
         });
         it('sslPolicy cipherSuites cannot be undefined when type is custom', () => {
             settings.sslPolicy = {
                 policyType: 'Custom',
                 minProtocolVersion: 'TLSv1_1'
             };
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.sslPolicy.cipherSuites');
+            expect(result[0].name).toEqual('[0].sslPolicy.cipherSuites');
         });
         it('sslPolicy minProtocolVersion cannot be undefined when type is custom', () => {
             settings.sslPolicy = {
                 policyType: 'Custom',
                 cipherSuites: ['TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256', 'TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA']
             };
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.sslPolicy.minProtocolVersion');
+            expect(result[0].name).toEqual('[0].sslPolicy.minProtocolVersion');
         });
         it('sslPolicy policyName cannot be specified when type is Custom', () => {
             settings.sslPolicy = {
@@ -1351,26 +1355,26 @@ describe('applicationGatewaySettings:', () => {
                 cipherSuites: ['TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256', 'TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA'],
                 minProtocolVersion: 'TLSv1_1'
             };
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.sslPolicy.policyName');
+            expect(result[0].name).toEqual('[0].sslPolicy.policyName');
         });
         it('sslPolicy policyName cannot be undefined when type is Predefined', () => {
             settings.sslPolicy = {
                 policyType: 'Predefined'
             };
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.sslPolicy.policyName');
+            expect(result[0].name).toEqual('[0].sslPolicy.policyName');
         });
         it('sslPolicy policyName must be valid', () => {
             settings.sslPolicy = {
                 policyType: 'Predefined',
                 policyName: 'invalid'
             };
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.sslPolicy.policyName');
+            expect(result[0].name).toEqual('[0].sslPolicy.policyName');
         });
         it('sslPolicy cipherSuites and minProtocolVersion cannot be specified when type is Predefined', () => {
             settings.sslPolicy = {
@@ -1379,14 +1383,14 @@ describe('applicationGatewaySettings:', () => {
                 cipherSuites: ['TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256', 'TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA'],
                 minProtocolVersion: 'TLSv1_1'
             };
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(2);
-            expect(result[0].name).toEqual('.sslPolicy.cipherSuites');
-            expect(result[1].name).toEqual('.sslPolicy.minProtocolVersion');
+            expect(result[0].name).toEqual('[0].sslPolicy.cipherSuites');
+            expect(result[1].name).toEqual('[0].sslPolicy.minProtocolVersion');
         });
 
         it('backendAddressPools valid backendAddresses', () => {
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(0);
         });
         it('backendAddressPools backendAddresses cannot specify both fqdn and ipAddress', () => {
@@ -1396,9 +1400,9 @@ describe('applicationGatewaySettings:', () => {
                     ipAddress: '200.10.1.1'
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(2);
-            expect(result[0].name).toEqual('.backendAddressPools[0].backendAddresses[0].fqdn');
+            expect(result[0].name).toEqual('[0].backendAddressPools[0].backendAddresses[0].fqdn');
         });
         it('backendAddressPools backendAddresses fqdn cannot be empty', () => {
             settings.backendAddressPools[0].backendAddresses = [
@@ -1406,9 +1410,9 @@ describe('applicationGatewaySettings:', () => {
                     fqdn: ' '
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.backendAddressPools[0].backendAddresses[0].fqdn');
+            expect(result[0].name).toEqual('[0].backendAddressPools[0].backendAddresses[0].fqdn');
         });
         it('backendAddressPools backendAddresses ipAddress cannot be empty', () => {
             settings.backendAddressPools[0].backendAddresses = [
@@ -1416,19 +1420,19 @@ describe('applicationGatewaySettings:', () => {
                     ipAddress: ' '
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.backendAddressPools[0].backendAddresses[0].ipAddress');
+            expect(result[0].name).toEqual('[0].backendAddressPools[0].backendAddresses[0].ipAddress');
         });
         it('backendAddressPools backendAddresses must specify fqdn or ipAddress', () => {
             settings.backendAddressPools[0].backendAddresses = [
                 {
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(2);
-            expect(result[0].name).toEqual('.backendAddressPools[0].backendAddresses[0].fqdn');
-            expect(result[1].name).toEqual('.backendAddressPools[0].backendAddresses[0].ipAddress');
+            expect(result[0].name).toEqual('[0].backendAddressPools[0].backendAddresses[0].fqdn');
+            expect(result[1].name).toEqual('[0].backendAddressPools[0].backendAddresses[0].ipAddress');
         });
 
         it('sslCertificates name must be provided', () => {
@@ -1438,9 +1442,9 @@ describe('applicationGatewaySettings:', () => {
                     password: 'dfsf34tghdgSDFdsf*'
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.sslCertificates[0].name');
+            expect(result[0].name).toEqual('[0].sslCertificates[0].name');
         });
         it('sslCertificates data must be provided', () => {
             settings.sslCertificates = [
@@ -1449,9 +1453,9 @@ describe('applicationGatewaySettings:', () => {
                     password: 'dfsf34tghdgSDFdsf*'
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.sslCertificates[0].data');
+            expect(result[0].name).toEqual('[0].sslCertificates[0].data');
         });
         it('sslCertificates password must be provided', () => {
             settings.sslCertificates = [
@@ -1460,9 +1464,9 @@ describe('applicationGatewaySettings:', () => {
                     data: 'dfsf34tghdgSDFdsf*'
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.sslCertificates[0].password');
+            expect(result[0].name).toEqual('[0].sslCertificates[0].password');
         });
         it('valid sslCertificates', () => {
             settings.sslCertificates = [
@@ -1472,7 +1476,7 @@ describe('applicationGatewaySettings:', () => {
                     password: 'asdasdsa43534534SDSFDSD*'
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(0);
         });
 
@@ -1482,9 +1486,9 @@ describe('applicationGatewaySettings:', () => {
                     data: 'asadasdsad'
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.authenticationCertificates[0].name');
+            expect(result[0].name).toEqual('[0].authenticationCertificates[0].name');
         });
         it('authenticationCertificates data must be provided', () => {
             settings.authenticationCertificates = [
@@ -1492,9 +1496,9 @@ describe('applicationGatewaySettings:', () => {
                     name: 'asadasdsad'
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.authenticationCertificates[0].data');
+            expect(result[0].name).toEqual('[0].authenticationCertificates[0].data');
         });
         it('valid authenticationCertificates', () => {
             settings.authenticationCertificates = [
@@ -1503,7 +1507,7 @@ describe('applicationGatewaySettings:', () => {
                     data: 'adsadsadasdas23434jhbtihi34'
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(0);
         });
 
@@ -1516,7 +1520,7 @@ describe('applicationGatewaySettings:', () => {
                     includeQueryString: true
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(0);
         });
         it('valid redirectConfigurations with targetListenerName', () => {
@@ -1529,7 +1533,7 @@ describe('applicationGatewaySettings:', () => {
                     includeQueryString: false
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(0);
         });
         it('redirectConfigurations targetUrl and targetListenerName cannot be both specified', () => {
@@ -1542,9 +1546,9 @@ describe('applicationGatewaySettings:', () => {
                     includeQueryString: true
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(2);
-            expect(result[0].name).toEqual('.redirectConfigurations[0].targetUrl');
+            expect(result[0].name).toEqual('[0].redirectConfigurations[0].targetUrl');
         });
         it('redirectConfigurations targetUrl or targetListenerName must be specified', () => {
             settings.redirectConfigurations = [
@@ -1554,9 +1558,9 @@ describe('applicationGatewaySettings:', () => {
                     includeQueryString: true
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(2);
-            expect(result[0].name).toEqual('.redirectConfigurations[0].targetUrl');
+            expect(result[0].name).toEqual('[0].redirectConfigurations[0].targetUrl');
         });
         it('redirectConfigurations includePath cannot be specified with targetUrl', () => {
             settings.redirectConfigurations = [
@@ -1568,9 +1572,9 @@ describe('applicationGatewaySettings:', () => {
                     includeQueryString: true
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(2);
-            expect(result[1].name).toEqual('.redirectConfigurations[0].includePath');
+            expect(result[1].name).toEqual('[0].redirectConfigurations[0].includePath');
         });
         it('redirectConfigurations invalid redirect type', () => {
             settings.redirectConfigurations = [
@@ -1582,9 +1586,9 @@ describe('applicationGatewaySettings:', () => {
                     includeQueryString: true
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(3);
-            expect(result[0].name).toEqual('.redirectConfigurations[0].redirectType');
+            expect(result[0].name).toEqual('[0].redirectConfigurations[0].redirectType');
         });
         it('redirectConfigurations name must be specified', () => {
             settings.redirectConfigurations = [
@@ -1595,9 +1599,9 @@ describe('applicationGatewaySettings:', () => {
                     includeQueryString: true
                 }
             ];
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(3);
-            expect(result[0].name).toEqual('.redirectConfigurations[0].name');
+            expect(result[0].name).toEqual('[0].redirectConfigurations[0].name');
         });
         it('urlPathMaps invalid defaultRedirectConfigurationName', () => {
             settings.redirectConfigurations = [
@@ -1624,9 +1628,9 @@ describe('applicationGatewaySettings:', () => {
                 }
             ];
 
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.urlPathMaps[0].defaultRedirectConfigurationName');
+            expect(result[0].name).toEqual('[0].urlPathMaps[0].defaultRedirectConfigurationName');
         });
         it('urlPathMaps defaultRedirectConfigurationName and defaultBackendAddressPoolName cannot be both specified', () => {
             settings.urlPathMaps = [
@@ -1646,15 +1650,15 @@ describe('applicationGatewaySettings:', () => {
                 }
             ];
 
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(2);
-            expect(result[1].name).toEqual('.urlPathMaps[0].defaultRedirectConfigurationName');
+            expect(result[1].name).toEqual('[0].urlPathMaps[0].defaultRedirectConfigurationName');
         });
-        it('urlPathMaps defaultRedirectConfigurationName and defaultbackendHttpSettingsName cannot be both specified', () => {
+        it('urlPathMaps defaultRedirectConfigurationName and defaultBackendHttpSettingsName cannot be both specified', () => {
             settings.urlPathMaps = [
                 {
                     name: 'pb-rule1',
-                    defaultbackendHttpSettingsName: 'appGatewaybackendHttpSettings',
+                    defaultBackendHttpSettingsName: 'appGatewayBackendHttpSettings',
                     defaultRedirectConfigurationName: 'appGatewayRedirect',
                     pathRules: [
                         {
@@ -1668,9 +1672,9 @@ describe('applicationGatewaySettings:', () => {
                 }
             ];
 
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(2);
-            expect(result[1].name).toEqual('.urlPathMaps[0].defaultRedirectConfigurationName');
+            expect(result[1].name).toEqual('[0].urlPathMaps[0].defaultRedirectConfigurationName');
         });
         it('urlPathMaps invalid redirectConfigurationName', () => {
             settings.redirectConfigurations = [
@@ -1697,9 +1701,9 @@ describe('applicationGatewaySettings:', () => {
                 }
             ];
 
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(1);
-            expect(result[0].name).toEqual('.urlPathMaps[0].pathRules[0].redirectConfigurationName');
+            expect(result[0].name).toEqual('[0].urlPathMaps[0].pathRules[0].redirectConfigurationName');
         });
         it('urlPathMaps redirectConfigurationName and backendAddressPoolName cannot be both specified', () => {
             settings.urlPathMaps = [
@@ -1719,9 +1723,9 @@ describe('applicationGatewaySettings:', () => {
                 }
             ];
 
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(2);
-            expect(result[1].name).toEqual('.urlPathMaps[0].pathRules[0].redirectConfigurationName');
+            expect(result[1].name).toEqual('[0].urlPathMaps[0].pathRules[0].redirectConfigurationName');
         });
         it('urlPathMaps defaultRedirectConfigurationName and backendHttpSettingsName cannot be both specified', () => {
             settings.urlPathMaps = [
@@ -1735,15 +1739,15 @@ describe('applicationGatewaySettings:', () => {
                                 '/bar'
                             ],
                             redirectConfigurationName: 'appGatewayRedirect',
-                            backendHttpSettingsName: 'appGatewaybackendHttpSettings'
+                            backendHttpSettingsName: 'appGatewayBackendHttpSettings'
                         }
                     ]
                 }
             ];
 
-            let result = mergeAndValidate(settings, buildingBlockSettings);
+            let result = mergeAndValidate([settings], buildingBlockSettings);
             expect(result.length).toEqual(2);
-            expect(result[1].name).toEqual('.urlPathMaps[0].pathRules[0].redirectConfigurationName');
+            expect(result[1].name).toEqual('[0].urlPathMaps[0].pathRules[0].redirectConfigurationName');
         });
 
     });
@@ -1790,10 +1794,10 @@ describe('applicationGatewaySettings:', () => {
             ];
             it('valid process', () => {
                 let merged = applicationGatewaySettings.merge({
-                    settings: settings,
+                    settings: [settings],
                     buildingBlockSettings: buildingBlockSettings
                 });
-                fixBlockSettingsAfterMerge(merged);
+                //fixBlockSettingsAfterMerge(merged);
                 let result = applicationGatewaySettings.transform(merged);
                 expect(result !== null).toEqual(true);
             });

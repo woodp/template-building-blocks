@@ -7,7 +7,10 @@ const VIRTUALMACHINE_SETTINGS_DEFAULTS_WINDOWS = {
     osType: 'windows',
     osDisk: {
         caching: 'ReadWrite',
-        createOption: 'fromImage'
+        createOption: 'fromImage',
+        encryptionSettings: {
+            volumeType: 'All'
+        }
     },
     adminUsername: 'adminUser',
     storageAccounts: {},
@@ -31,9 +34,21 @@ const VIRTUALMACHINE_SETTINGS_DEFAULTS_WINDOWS = {
     availabilitySet: {},
     virtualNetwork: {},
     applicationGatewaySettings: {},
-    loadBalancerSettings: {},
+    loadBalancerSettings: {
+        backendPools: [],
+        inboundNatRules: [],
+        inboundNatPools: []
+    },
     scaleSetSettings: {},
-    tags: {}
+    tags: {},
+    secrets: [
+        {
+            certificates: {
+                certificateStore: 'My'
+            }
+        }
+    ],
+    usePlan: false
 };
 
 const VIRTUALMACHINE_SETTINGS_DEFAULTS_LINUX = {
@@ -66,9 +81,15 @@ const VIRTUALMACHINE_SETTINGS_DEFAULTS_LINUX = {
     availabilitySet: {},
     virtualNetwork: {},
     applicationGatewaySettings: {},
-    loadBalancerSettings: {},
+    loadBalancerSettings: {
+        backendPools: [],
+        inboundNatRules: [],
+        inboundNatPools: []
+    },
     scaleSetSettings: {},
-    tags: {}
+    tags: {},
+    secrets: [],
+    usePlan: false
 };
 
 exports.defaultWindowsSettings = VIRTUALMACHINE_SETTINGS_DEFAULTS_WINDOWS;

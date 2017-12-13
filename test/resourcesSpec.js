@@ -14,25 +14,25 @@ describe('resources', () => {
             it('null subscriptionId', () => {
                 expect(() => {
                     resources.resourceId(null, null, null, null, null);
-                }).toThrow(new Error(`subscriptionId: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`));
+                }).toThrow(new Error(`[resources:resourceId()] subscriptionId: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`));
             });
 
             it('empty subscriptionId', () => {
                 expect(() => {
                     resources.resourceId('', null, null, null, null);
-                }).toThrow(new Error(`subscriptionId: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`));
+                }).toThrow(new Error(`[resources:resourceId()] subscriptionId: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`));
             });
 
             it('whitespace subscriptionId', () => {
                 expect(() => {
                     resources.resourceId(' ', null, null, null, null);
-                }).toThrow(new Error(`subscriptionId: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`));
+                }).toThrow(new Error(`[resources:resourceId()] subscriptionId: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`));
             });
 
             it('invalid subscriptionId', () => {
                 expect(() => {
                     resources.resourceId('NOT_VALID', null, null, null, null);
-                }).toThrow(new Error(`subscriptionId: ${validationMessages.StringIsNotAValidGuid}`));
+                }).toThrow(new Error(`[resources:resourceId()] subscriptionId: ${validationMessages.StringIsNotAValidGuid}`));
             });
         });
 
@@ -40,19 +40,19 @@ describe('resources', () => {
             it('null resourceGroupName', () => {
                 expect(() => {
                     resources.resourceId(subscriptionId, null, null, null, null);
-                }).toThrow(new Error(`resourceGroupName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`));
+                }).toThrow(new Error(`[resources:resourceId()] resourceGroupName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`));
             });
 
             it('empty resourceGroupName', () => {
                 expect(() => {
                     resources.resourceId(subscriptionId, '', null, null, null);
-                }).toThrow(new Error(`resourceGroupName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`));
+                }).toThrow(new Error(`[resources:resourceId()] resourceGroupName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`));
             });
 
             it('whitespace resourceGroupName', () => {
                 expect(() => {
                     resources.resourceId(subscriptionId, ' ', null, null, null);
-                }).toThrow(new Error(`resourceGroupName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`));
+                }).toThrow(new Error(`[resources:resourceId()] resourceGroupName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`));
             });
         });
 
@@ -60,31 +60,31 @@ describe('resources', () => {
             it('null resourceType', () => {
                 expect(() => {
                     resources.resourceId(subscriptionId, resourceGroupName, null, null, null);
-                }).toThrow(new Error(`resourceType: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`));
+                }).toThrow(new Error(`[resources:resourceId()] resourceType: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`));
             });
 
             it('empty resourceType', () => {
                 expect(() => {
                     resources.resourceId(subscriptionId, resourceGroupName, '', null, null);
-                }).toThrow(new Error(`resourceType: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`));
+                }).toThrow(new Error(`[resources:resourceId()] resourceType: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`));
             });
 
             it('whitespace resourceType', () => {
                 expect(() => {
                     resources.resourceId(subscriptionId, resourceGroupName, ' ', null, null);
-                }).toThrow(new Error(`resourceType: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`));
+                }).toThrow(new Error(`[resources:resourceId()] resourceType: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`));
             });
 
             it('resourceType parts less than 2', () => {
                 expect(() => {
                     resources.resourceId(subscriptionId, resourceGroupName, 'Microsoft.Network', null, null);
-                }).toThrow(new Error('resourceType: Invalid length 1'));
+                }).toThrow(new Error('[resources:resourceId()] resourceType: Invalid length 1'));
             });
 
             it('resourceType parts greater than 3', () => {
                 expect(() => {
                     resources.resourceId(subscriptionId, resourceGroupName, 'Microsoft.Network/virtualNetworks/subnets/extra', null, null);
-                }).toThrow(new Error('resourceType: Invalid length 4'));
+                }).toThrow(new Error('[resources:resourceId()] resourceType: Invalid length 4'));
             });
         });
 
@@ -92,19 +92,19 @@ describe('resources', () => {
             it('null resourceName', () => {
                 expect(() => {
                     resources.resourceId(subscriptionId, resourceGroupName, virtualNetworksResourceType, null, null);
-                }).toThrow(new Error(`resourceName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`));
+                }).toThrow(new Error(`[resources:resourceId()] resourceName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`));
             });
 
             it('empty resourceName', () => {
                 expect(() => {
                     resources.resourceId(subscriptionId, resourceGroupName, virtualNetworksResourceType, '', null);
-                }).toThrow(new Error(`resourceName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`));
+                }).toThrow(new Error(`[resources:resourceId()] resourceName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`));
             });
 
             it('whitespace resourceName', () => {
                 expect(() => {
                     resources.resourceId(subscriptionId, resourceGroupName, virtualNetworksResourceType, ' ', null);
-                }).toThrow(new Error(`resourceName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`));
+                }).toThrow(new Error(`[resources:resourceId()] resourceName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`));
             });
         });
 
@@ -112,25 +112,25 @@ describe('resources', () => {
             it('null subresourceName', () => {
                 expect(() => {
                     resources.resourceId(subscriptionId, resourceGroupName, subnetsResourceType, resourceName, null);
-                }).toThrow(new Error(`subresourceName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`));
+                }).toThrow(new Error(`[resources:resourceId()] subresourceName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`));
             });
 
             it('empty subresourceName', () => {
                 expect(() => {
                     resources.resourceId(subscriptionId, resourceGroupName, subnetsResourceType, resourceName, '');
-                }).toThrow(new Error(`subresourceName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`));
+                }).toThrow(new Error(`[resources:resourceId()] subresourceName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`));
             });
 
             it('whitespace subresourceName', () => {
                 expect(() => {
                     resources.resourceId(subscriptionId, resourceGroupName, subnetsResourceType, resourceName, ' ');
-                }).toThrow(new Error(`subresourceName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`));
+                }).toThrow(new Error(`[resources:resourceId()] subresourceName: ${validationMessages.StringCannotBeNullUndefinedEmptyOrOnlyWhitespace}`));
             });
 
             it('invalid resource type for subresourceName', () => {
                 expect(() => {
                     resources.resourceId(subscriptionId, resourceGroupName, virtualNetworksResourceType, resourceName, subresourceName);
-                }).toThrow(new Error(`subresourceName: ${validationMessages.resources.SubresourceNameShouldNotBeSpecifiedForTopLevelResourceType}`));
+                }).toThrow(new Error(`[resources:resourceId()] subresourceName: ${validationMessages.resources.SubresourceNameShouldNotBeSpecifiedForTopLevelResourceType}`));
             });
         });
 

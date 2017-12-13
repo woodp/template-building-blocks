@@ -33,6 +33,11 @@ let spawnAz = ({args, spawnOptions, azOptions}) => {
         throw new Error(error);
     }
 
+    if ((azOptions.debug) && (spawnOptions.stdio === 'pipe')) {
+        // The spawn was successful, but we are debugging, so we need to write the stderr, but only if stdio === 'pipe'
+        console.error(child.stderr.toString().trim());
+    }
+
     return child;
 };
 

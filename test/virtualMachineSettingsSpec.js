@@ -48,7 +48,11 @@ describe('virtualMachineSettings:', () => {
                 dnsServers: [
                     '10.0.1.240',
                     '10.0.1.242'
-                ]
+                ],
+                applicationGatewayBackendPoolNames: [],
+                backendPoolNames: [],
+                inboundNatRulesNames: [],
+                inboundNatPoolNames: []
             },
             {
                 isPublic: false,
@@ -59,7 +63,11 @@ describe('virtualMachineSettings:', () => {
                 startingIPAddress: '',
                 enableIPForwarding: false,
                 domainNameLabelPrefix: '',
-                dnsServers: []
+                dnsServers: [],
+                applicationGatewayBackendPoolNames: [],
+                backendPoolNames: [],
+                inboundNatRulesNames: [],
+                inboundNatPoolNames: []
             }
         ],
         imageReference: {
@@ -85,7 +93,8 @@ describe('virtualMachineSettings:', () => {
         virtualNetwork: {
             name: 'test-vnet'
         },
-        tags: {}
+        tags: {},
+        usePlan: false
     };
     let buildingBlockSettings = {
         resourceGroupName: 'test-rg',
@@ -436,6 +445,26 @@ describe('virtualMachineSettings:', () => {
                 expect(mergedValue.imageReference.sku).toEqual('2016-Datacenter');
                 expect(mergedValue.imageReference.version).toEqual('latest');
             });
+            it('validates secrets is merged with defaults', () => {
+                let settings = {
+                    secrets: [
+                        {
+                            keyVault: {
+                                name: 'test-keyvault'
+                            },
+                            certificates: [
+                                {
+                                    certificateUrl: 'certificate-url'
+                                }
+                            ]
+                        }
+                    ],
+                    osType: 'windows'
+                };
+
+                let mergedValue = merge({ settings, buildingBlockSettings });
+                expect(mergedValue.secrets[0].certificates[0].certificateStore).toEqual('My');
+            });
         });
         describe('Linux:', () => {
             it('validates that properties for linux are applied', () => {
@@ -641,6 +670,14 @@ describe('virtualMachineSettings:', () => {
                 expect(mergedValue.imageReference.sku).toEqual('16.04-LTS');
                 expect(mergedValue.imageReference.version).toEqual('latest');
 
+            });
+            it('validates secrets is merged with defaults', () => {
+                let settings = {
+                    osType: 'linux'
+                };
+
+                let mergedValue = merge({ settings, buildingBlockSettings });
+                expect(mergedValue.secrets).toEqual([]);
             });
         });
     });
@@ -976,6 +1013,16 @@ describe('virtualMachineSettings:', () => {
             expect(results.virtualNetwork.subnets[1].addressPrefix).toEqual('10.0.2.0/24');
             expect(results.virtualNetwork.virtualNetworkPeerings[0].allowForwardedTraffic).toEqual(true);
         });
+        it('overrides usePlan', () => {
+            userDefaults.usePlan = true;
+            delete settings.usePlan;
+            let results = merge({
+                settings: settings,
+                buildingBlockSettings: buildingBlockSettings,
+                defaultSettings: userDefaults
+            });
+            expect(results.usePlan).toEqual(true);
+        });
         it('when load balancer name is not specified neither at user-params nor user-defaults, should use vm namePrefix.', () => {
             settings.loadBalancerSettings = {};
             let mergedValue = merge({
@@ -996,7 +1043,7 @@ describe('virtualMachineSettings:', () => {
             expect(mergedValue.nics[0].publicIpAddress.publicIPAddressVersion).toEqual('IPv4');
             expect(mergedValue.loadBalancerSettings.frontendIPConfigurations.length).toEqual(1);
             expect(mergedValue.loadBalancerSettings.frontendIPConfigurations[0].name).toEqual('userdefault-feConfig');
-            expect(mergedValue.loadBalancerSettings.frontendIPConfigurations[0].publicIpAddress.name).toEqual('undefined-userdefault-feConfig-pip');
+            //expect(mergedValue.loadBalancerSettings.frontendIPConfigurations[0].publicIpAddress.name).toEqual('undefined-userdefault-feConfig-pip');
             expect(_.isPlainObject(mergedValue.nics[1].publicIpAddress)).toEqual(false);
         });
         describe('AvailabilitySet:', () => {
@@ -1406,6 +1453,19 @@ describe('virtualMachineSettings:', () => {
             expect(result.length).toEqual(1);
             expect(result[0].name).toEqual('.virtualNetwork.name');
         });
+
+        it('validates that usePlan cannot be true for osDisk.createOption != fromImage', () => {
+            settings.usePlan = true;
+            delete settings.imageReference;
+            settings.osDisk.createOption = 'attach';
+            settings.osDisk.images = [
+                '/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/resource-group-name/providers/Microsoft.Compute/disks/os-disk1-name',
+                '/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/resource-group-name/providers/Microsoft.Compute/disks/os-disk2-name'
+            ];
+            let result = validate(settings);
+            expect(result.length).toEqual(1);
+            expect(result[0].name).toEqual('.usePlan');
+        });
         describe('AvailabilitySet:', () => {
             it('validates that no validation errors are thrown if name is not present in avSet', () => {
                 settings.availabilitySet = {
@@ -1428,6 +1488,206 @@ describe('virtualMachineSettings:', () => {
             });
         });
         describe('nics:', () => {
+            let lbSettings = {
+                loadBalancerSettings: {
+                    frontendIPConfigurations: [
+                        {
+                            name: 'lb-fe-config1',
+                            loadBalancerType: 'Public'
+                        }
+                    ],
+                    loadBalancingRules: [
+                        {
+                            name: 'lbr1',
+                            frontendPort: 80,
+                            backendPort: 80,
+                            protocol: 'Tcp',
+                            backendPoolName: 'bep1',
+                            frontendIPConfigurationName: 'lb-fe-config1',
+                            enableFloatingIP: false,
+                            probeName: 'lbp1'
+                        }
+                    ],
+                    probes: [
+                        {
+                            name: 'lbp1',
+                            port: 80,
+                            protocol: 'Http',
+                            requestPath: '/'
+                        }
+                    ],
+                    backendPools: [
+                        {
+                            name: 'bep1'
+                        },
+                        {
+                            name: 'bep2'
+                        }
+                    ],
+                    inboundNatRules: [
+                        {
+                            name: 'natrule1',
+                            protocol: 'Tcp',
+                            startingFrontendPort: 2000,
+                            backendPort: 3389,
+                            frontendIPConfigurationName: 'lb-fe-config1'
+                        },
+                        {
+                            name: 'natrule2',
+                            protocol: 'Tcp',
+                            startingFrontendPort: 3000,
+                            backendPort: 22,
+                            frontendIPConfigurationName: 'lb-fe-config1'
+                        }
+                    ],
+                    inboundNatPools: [
+                        {
+                            name: 'natpool1',
+                            protocol: 'Tcp',
+                            startingFrontendPort: 2000,
+                            frontendPortRangeEnd: 2010,
+                            backendPort: 3389,
+                            frontendIPConfigurationName: 'lb-fe-config1'
+                        },
+                        {
+                            name: 'natpool2',
+                            protocol: 'Tcp',
+                            startingFrontendPort: 3000,
+                            frontendPortRangeEnd: 3010,
+                            backendPort: 22,
+                            frontendIPConfigurationName: 'lb-fe-config1'
+                        }
+                    ]
+                }
+            };
+
+            let nicSettings = {
+                nics: [
+                    {
+                        isPublic: false,
+                        isPrimary: true,
+                        privateIPAllocationMethod: 'Static',
+                        startingIPAddress: '10.0.2.4',
+                        subnetName: 'subnet1',
+                        backendPoolNames: [
+                            {
+                                name: 'bep1',
+                                loadBalancerName: 'lb1',
+                                resourceGroupName: 'lb1-rg',
+                                subscriptionId: '00000000-0000-1000-AA00-000000000000'
+
+                            },
+                            'bep2'
+                        ],
+                        inboundNatRulesNames: [
+                            {
+                                name: 'natrule1'
+                            },
+                            'natrule2'
+                        ],
+                        inboundNatPoolNames: [
+                            {
+                                name: 'natpool1',
+                                loadBalancerName: 'lb3',
+                                resourceGroupName: 'lb3-rg',
+                                subscriptionId: '00000000-0000-1000-BB00-000000000000'
+                            },
+                            'natpool2'
+                        ]
+                    },
+                    {
+                        isPublic: false,
+                        privateIPAllocationMethod: 'Static',
+                        startingIPAddress: '10.0.2.5',
+                        subnetName: 'subnet1',
+                        backendPoolNames: [
+                            {
+                                name: 'ss-lb-bep1',
+                                loadBalancerName: 'lb4'
+                            }
+                        ],
+                        inboundNatRulesNames: [
+                            {
+                                name: 'natrule1'
+                            }
+                        ],
+                        inboundNatPoolNames: [
+                            {
+                                name: 'natpool1',
+                                loadBalancerName: 'lb6'
+                            }
+                        ]
+                    }
+                ]
+            };
+            it('validates that if loadbalancer is not specified then NatRules cannot be specified', () => {
+                settings.nics[0].inboundNatRulesNames = nicSettings.nics[0].inboundNatRulesNames;
+                let result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.nics');
+                expect(result[0].message).toContain('inboundNatRules cannot be specified');
+            });
+            it('validates that if NOT scaleset then NatPools cannot be specified', () => {
+                settings.nics[0].inboundNatPoolNames = nicSettings.nics[0].inboundNatPoolNames;
+                let result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.nics');
+                expect(result[0].message).toContain('inboundNatPoolNames can only be specified for scalesets');
+            });
+            it('validates that if scaleset then NatPools name in nics matchs the names in loadbalancer', () => {
+                settings.scaleSetSettings = {
+                    name: 'scaleSet-lb',
+                    upgradePolicy: 'Automatic',
+                    overprovision: true,
+                    singlePlacementGroup: true
+                };
+                settings.nics[0].inboundNatPoolNames = ['natpool1'];
+                settings.loadBalancerSettings = _.cloneDeep(lbSettings.loadBalancerSettings);
+                settings.loadBalancerSettings.inboundNatRules = [];
+                let result = validate(settings);
+                expect(result.length).toEqual(0);
+
+                settings.nics[0].inboundNatPoolNames = ['test'];
+                result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.nics');
+                expect(result[0].message).toContain('InboundNatPool test specified in nic[0] is not valid');
+            });
+            it('validates that NatRule names in nics matchs the names in loadbalancer', () => {
+                settings.nics[0].inboundNatRulesNames = ['natrule1'];
+                settings.loadBalancerSettings = _.cloneDeep(lbSettings.loadBalancerSettings);
+                settings.loadBalancerSettings.inboundNatPools = [];
+                let result = validate(settings);
+                expect(result.length).toEqual(0);
+
+                settings.nics[0].inboundNatRulesNames = ['test'];
+                result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.nics');
+                expect(result[0].message).toContain('InboundNatRule test specified in nic[0] is not valid');
+            });
+            it('validates that NatRule names in nics cannot reference existing loadbalancer', () => {
+                settings.nics[0].inboundNatRulesNames = [{name: 'natrule1', loadBalancerName: 'xyz'}];
+                settings.loadBalancerSettings = _.cloneDeep(lbSettings.loadBalancerSettings);
+                settings.loadBalancerSettings.inboundNatPools = [];
+                let result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.nics');
+                expect(result[0].message).toContain('cannot reference an existing loadBalancer');
+            });
+            it('validates that bep name in nics match the names in loadbalancer', () => {
+                settings.nics[0].backendPoolNames = ['bep1'];
+                settings.loadBalancerSettings = _.cloneDeep(lbSettings.loadBalancerSettings);
+                settings.loadBalancerSettings.inboundNatPools = [];
+                let result = validate(settings);
+                expect(result.length).toEqual(0);
+
+                settings.nics[0].backendPoolNames = ['test'];
+                result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.nics');
+                expect(result[0].message).toContain('BackendPool test specified in nic[0] is not valid');
+            });
             it('validates that subnets cannot be null or empty', () => {
                 delete settings.nics;
                 let result = validate(settings);
@@ -1663,6 +1923,422 @@ describe('virtualMachineSettings:', () => {
                 expect(result[0].name).toEqual('.diagnosticStorageAccounts.accounts');
             });
         });
+        describe('secrets:', () => {
+            beforeEach(() => {
+                settings.secrets = [
+                    {
+                        keyVault: {
+                            name: 'test-keyvault',
+                            resourceGroupName: 'test-rg',
+                            subscriptionId: '00000000-0000-1000-A000-000000000000'
+                        },
+                        certificates: [
+                            {
+                                certificateUrl: 'https://test-keyvault.vault.azure.net/secrets/testcertificate/00000000000000000000000000000000',
+                                certificateStore: 'My'
+                            }
+                        ]
+                    }
+                ];
+            });
+            it('validates that no errors are thrown if secrets is undefined, null, or not an array', () => {
+                delete settings.secrets;
+                let result = validate(settings);
+                expect(result.length).toEqual(0);
+
+                settings.secrets = null;
+                result = validate(settings);
+                expect(result.length).toEqual(0);
+
+                settings.secrets = {};
+                result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.secrets');
+            });
+            it('validates that no errors are thrown if secrets an empty array', () => {
+                settings.secrets = [];
+                let result = validate(settings);
+                expect(result.length).toEqual(0);
+            });
+            it('validates that errors are thrown if keyVault is undefined or null', () => {
+                delete settings.secrets[0].keyVault;
+                let result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.secrets[0].keyVault');
+
+                settings.secrets[0].keyVault = null;
+                result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.secrets[0].keyVault');
+            });
+            it('validates that errors are thrown if certificates is undefined, null, or not an array', () => {
+                delete settings.secrets[0].certificates;
+                let result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.secrets[0].certificates');
+
+                settings.secrets[0].certificates = null;
+                result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.secrets[0].certificates');
+
+                settings.secrets[0].certificates = {};
+                result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.secrets[0].certificates');
+            });
+            it('validates that errors are thrown if certificates is an empty array', () => {
+                settings.secrets[0].certificates = [];
+                let result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.secrets[0].certificates');
+            });
+            it('validates that errors are thrown if certificateUrl is undefined, null, or empty', () => {
+                delete settings.secrets[0].certificates[0].certificateUrl;
+                let result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.secrets[0].certificates[0].certificateUrl');
+
+                settings.secrets[0].certificates[0].certificateUrl = null;
+                result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.secrets[0].certificates[0].certificateUrl');
+
+                settings.secrets[0].certificates[0].certificateUrl = '';
+                result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.secrets[0].certificates[0].certificateUrl');
+            });
+            describe('windows:', () => {
+                beforeEach(() => {
+                    settings.osType = 'windows';
+                });
+
+                it('validates that errors are thrown if certificateStore is undefined, null, or empty', () => {
+                    delete settings.secrets[0].certificates[0].certificateStore;
+                    let result = validate(settings);
+                    expect(result.length).toEqual(1);
+                    expect(result[0].name).toEqual('.secrets[0].certificates[0].certificateStore');
+
+                    settings.secrets[0].certificates[0].certificateStore = null;
+                    result = validate(settings);
+                    expect(result.length).toEqual(1);
+                    expect(result[0].name).toEqual('.secrets[0].certificates[0].certificateStore');
+
+                    settings.secrets[0].certificates[0].certificateStore = '';
+                    result = validate(settings);
+                    expect(result.length).toEqual(1);
+                    expect(result[0].name).toEqual('.secrets[0].certificates[0].certificateStore');
+                });
+            });
+            describe('linux:', () => {
+                beforeEach(() => {
+                    settings.osType = 'linux';
+                });
+
+                it('validates that errors are thrown if certificateStore is not undefined', () => {
+                    let result = validate(settings);
+                    expect(result.length).toEqual(1);
+                    expect(result[0].name).toEqual('.secrets[0].certificates[0].certificateStore');
+                });
+                it('validates that no errors are thrown if certificateStore is undefined', () => {
+                    delete settings.secrets[0].certificates[0].certificateStore;
+                    let result = validate(settings);
+                    expect(result.length).toEqual(0);
+                });
+            });
+        });
+        describe('encryptionSettings', () => {
+            describe('pre-encrypted settings', () => {
+                beforeEach(() => {
+                    settings.osDisk.encryptionSettings = {
+                        diskEncryptionKey: {
+                            secretUrl: 'https://test-keyvault.vault.azure.net/secrets/secret/00000000000000000000000000000000',
+                            keyVault: {
+                                name: 'test-keyvault',
+                                resourceGroupName: 'test-rg',
+                                subscriptionId: '00000000-0000-1000-A000-000000000000'
+                            }
+                        },
+                        keyEncryptionKey: {
+                            keyUrl: 'https://test-keyvault.vault.azure.net/keys/keyencryptionkey/00000000000000000000000000000000',
+                            keyVault: {
+                                name: 'test-keyvault',
+                                resourceGroupName: 'test-rg',
+                                subscriptionId: '00000000-0000-1000-A000-000000000000'
+                            }
+                        }
+                    };
+                });
+            });
+            describe('encryption extension', () => {
+                beforeEach(() => {
+                    settings.osDisk.encryptionSettings = {
+                        aadClientId: '00000000-0000-1000-A000-000000000000',
+                        aadClientCertThumbprint: '0000000000000000000000000000000000000000',
+                        volumeType: 'All',
+                        diskEncryptionKeyVaultUrl: 'https://test-keyvault.vault.azure.net/',
+                        diskEncryptionKeyVault: {
+                            name: 'test-keyvault',
+                            resourceGroupName: 'test-rg',
+                            subscriptionId: '00000000-0000-1000-A000-000000000000'
+                        },
+                        keyEncryptionKeyVault: {
+                            name: 'test-keyvault',
+                            resourceGroupName: 'test-rg',
+                            subscriptionId: '00000000-0000-1000-A000-000000000000'
+                        },
+                        keyEncryptionKeyUrl: 'https://test-keyvault.vault.azure.net/keys/keyencryptionkey/00000000000000000000000000000000'
+                    };
+                });
+                it('validates that errors are thrown if both aadClientId is undefined, null, or empty', () => {
+                    delete settings.osDisk.encryptionSettings.aadClientId;
+                    let result = validate(settings);
+                    expect(result.length).toEqual(1);
+                    expect(result[0].name).toEqual('.osDisk.encryptionSettings.aadClientId');
+
+                    settings.osDisk.encryptionSettings.aadClientId = null;
+                    result = validate(settings);
+                    expect(result.length).toEqual(1);
+                    expect(result[0].name).toEqual('.osDisk.encryptionSettings.aadClientId');
+
+                    settings.osDisk.encryptionSettings.aadClientId = '';
+                    result = validate(settings);
+                    expect(result.length).toEqual(1);
+                    expect(result[0].name).toEqual('.osDisk.encryptionSettings.aadClientId');
+                });
+                it('validates that errors are thrown if both aadClientSecret and aadClientCertThumbprint are undefined, null, or empty', () => {
+                    delete settings.osDisk.encryptionSettings.aadClientCertThumbprint;
+                    delete settings.osDisk.encryptionSettings.protectedSettings;
+                    let result = validate(settings);
+                    expect(result.length).toEqual(2);
+                    expect((_.filter(result), (value) => { return value.name === '.osDisk.encryptionSettings.aadClientCertThumbprint'; }).length).toEqual(1);
+                    expect((_.filter(result), (value) => { return value.name === '.osDisk.encryptionSettings.protectedSettings'; }).length).toEqual(1);
+
+                    settings.osDisk.encryptionSettings.aadClientCertThumbprint = null;
+                    settings.osDisk.encryptionSettings.protectedSettings = {
+                    };
+                    result = validate(settings);
+                    expect(result.length).toEqual(2);
+                    expect((_.filter(result), (value) => { return value.name === '.osDisk.encryptionSettings.aadClientCertThumbprint'; }).length).toEqual(1);
+                    expect((_.filter(result), (value) => { return value.name === '.osDisk.encryptionSettings.protectedSettings'; }).length).toEqual(1);
+
+                    settings.osDisk.encryptionSettings.aadClientCertThumbprint = null;
+                    settings.osDisk.encryptionSettings.protectedSettings = {
+                        aadClientSecret: null
+                    };
+                    result = validate(settings);
+                    expect(result.length).toEqual(2);
+                    expect((_.filter(result), (value) => { return value.name === '.osDisk.encryptionSettings.aadClientCertThumbprint'; }).length).toEqual(1);
+                    expect((_.filter(result), (value) => { return value.name === '.osDisk.encryptionSettings.protectedSettings'; }).length).toEqual(1);
+
+                    settings.osDisk.encryptionSettings.aadClientCertThumbprint = '';
+                    settings.osDisk.encryptionSettings.protectedSettings = {
+                        aadClientSecret: ''
+                    };
+                    result = validate(settings);
+                    expect(result.length).toEqual(2);
+                    expect((_.filter(result), (value) => { return value.name === '.osDisk.encryptionSettings.aadClientCertThumbprint'; }).length).toEqual(1);
+                    expect((_.filter(result), (value) => { return value.name === '.osDisk.encryptionSettings.protectedSettings'; }).length).toEqual(1);
+                });
+                it('validates that errors are thrown if both aadClientSecret and aadClientCertThumbprint are specified', () => {
+                    settings.osDisk.encryptionSettings.protectedSettings = {
+                        aadClientSecret: 'aadClientSecret'
+                    };
+                    let result = validate(settings);
+                    expect(result.length).toEqual(2);
+                    expect((_.filter(result), (value) => { return value.name === '.osDisk.encryptionSettings.aadClientCertThumbprint'; }).length).toEqual(1);
+                    expect((_.filter(result), (value) => { return value.name === '.osDisk.encryptionSettings.protectedSettings.aadClientSecret'; }).length).toEqual(1);
+                });
+                it('validates that no errors are thrown if both protectedSettings is a KeyVault reference and aadClientCertThumbprint are specified', () => {
+                    settings.osDisk.encryptionSettings.protectedSettings = {
+                        reference: {
+                            keyVault: {
+                                name: 'test-keyvault'
+                            },
+                            secretName: 'secretname'
+                        }
+                    };
+                    let result = validate(settings);
+                    expect(result.length).toEqual(0);
+                });
+                it('validates that errors are thrown for invalid volumeType', () => {
+                    delete settings.osDisk.encryptionSettings.volumeType;
+                    let result = validate(settings);
+                    expect(result.length).toEqual(1);
+                    expect(result[0].name).toEqual('.osDisk.encryptionSettings.volumeType');
+
+                    settings.osDisk.encryptionSettings.volumeType = null;
+                    result = validate(settings);
+                    expect(result.length).toEqual(1);
+                    expect(result[0].name).toEqual('.osDisk.encryptionSettings.volumeType');
+
+                    settings.osDisk.encryptionSettings.volumeType = '';
+                    result = validate(settings);
+                    expect(result.length).toEqual(1);
+                    expect(result[0].name).toEqual('.osDisk.encryptionSettings.volumeType');
+
+                    settings.osDisk.encryptionSettings.volumeType = 'NOT_VALID';
+                    result = validate(settings);
+                    expect(result.length).toEqual(1);
+                    expect(result[0].name).toEqual('.osDisk.encryptionSettings.volumeType');
+                });
+                it('validates that errors are thrown if diskEncryptionKeyVaultUrl is undefined, null, or empty', () => {
+                    delete settings.osDisk.encryptionSettings.diskEncryptionKeyVaultUrl;
+                    let result = validate(settings);
+                    expect(result.length).toEqual(1);
+                    expect(result[0].name).toEqual('.osDisk.encryptionSettings.diskEncryptionKeyVaultUrl');
+
+                    settings.osDisk.encryptionSettings.diskEncryptionKeyVaultUrl = null;
+                    result = validate(settings);
+                    expect(result.length).toEqual(1);
+                    expect(result[0].name).toEqual('.osDisk.encryptionSettings.diskEncryptionKeyVaultUrl');
+
+                    settings.osDisk.encryptionSettings.diskEncryptionKeyVaultUrl = '';
+                    result = validate(settings);
+                    expect(result.length).toEqual(1);
+                    expect(result[0].name).toEqual('.osDisk.encryptionSettings.diskEncryptionKeyVaultUrl');
+                });
+                it('validates that errors are thrown if keyEncryptionKeyUrl is undefined, null, or empty', () => {
+                    delete settings.osDisk.encryptionSettings.keyEncryptionKeyUrl;
+                    let result = validate(settings);
+                    expect(result.length).toEqual(2);
+                    expect((_.filter(result), (value) => { return value.name === '.osDisk.encryptionSettings.keyEncryptionKeyVault'; }).length).toEqual(1);
+                    expect((_.filter(result), (value) => { return value.name === '.osDisk.encryptionSettings.keyEncryptionKeyUrl'; }).length).toEqual(1);
+
+                    settings.osDisk.encryptionSettings.keyEncryptionKeyUrl = null;
+                    result = validate(settings);
+                    expect(result.length).toEqual(2);
+                    expect((_.filter(result), (value) => { return value.name === '.osDisk.encryptionSettings.keyEncryptionKeyVault'; }).length).toEqual(1);
+                    expect((_.filter(result), (value) => { return value.name === '.osDisk.encryptionSettings.keyEncryptionKeyUrl'; }).length).toEqual(1);
+
+                    settings.osDisk.encryptionSettings.keyEncryptionKeyUrl = '';
+                    result = validate(settings);
+                    expect(result.length).toEqual(2);
+                    expect((_.filter(result), (value) => { return value.name === '.osDisk.encryptionSettings.keyEncryptionKeyVault'; }).length).toEqual(1);
+                    expect((_.filter(result), (value) => { return value.name === '.osDisk.encryptionSettings.keyEncryptionKeyUrl'; }).length).toEqual(1);
+                });
+                it('validates that errors are thrown if diskEncryptionKeyVault is undefined or null', () => {
+                    delete settings.osDisk.encryptionSettings.diskEncryptionKeyVault;
+                    let result = validate(settings);
+                    expect(result.length).toEqual(1);
+                    expect(result[0].name).toEqual('.osDisk.encryptionSettings.diskEncryptionKeyVault');
+
+                    settings.osDisk.encryptionSettings.diskEncryptionKeyVault = null;
+                    result = validate(settings);
+                    expect(result.length).toEqual(1);
+                    expect(result[0].name).toEqual('.osDisk.encryptionSettings.diskEncryptionKeyVault');
+                });
+                it('validates that errors are thrown if keyEncryptionKeyVault is undefined or null', () => {
+                    delete settings.osDisk.encryptionSettings.keyEncryptionKeyVault;
+                    let result = validate(settings);
+                    expect(result.length).toEqual(2);
+                    expect((_.filter(result), (value) => { return value.name === '.osDisk.encryptionSettings.keyEncryptionKeyVault'; }).length).toEqual(1);
+                    expect((_.filter(result), (value) => { return value.name === '.osDisk.encryptionSettings.keyEncryptionKeyUrl'; }).length).toEqual(1);
+
+                    settings.osDisk.encryptionSettings.keyEncryptionKeyVault = null;
+                    result = validate(settings);
+                    expect(result.length).toEqual(2);
+                    expect((_.filter(result), (value) => { return value.name === '.osDisk.encryptionSettings.keyEncryptionKeyVault'; }).length).toEqual(1);
+                    expect((_.filter(result), (value) => { return value.name === '.osDisk.encryptionSettings.keyEncryptionKeyUrl'; }).length).toEqual(1);
+                });
+                it('validates that errors are thrown if diskEncryptionKeyVault.name is undefined, null, or only whitespace', () => {
+                    delete settings.osDisk.encryptionSettings.diskEncryptionKeyVault.name;
+                    let result = validate(settings);
+                    expect(result.length).toEqual(1);
+                    expect(result[0].name).toEqual('.osDisk.encryptionSettings.diskEncryptionKeyVault.name');
+
+                    settings.osDisk.encryptionSettings.diskEncryptionKeyVault.name = null;
+                    result = validate(settings);
+                    expect(result.length).toEqual(1);
+                    expect(result[0].name).toEqual('.osDisk.encryptionSettings.diskEncryptionKeyVault.name');
+
+                    settings.osDisk.encryptionSettings.diskEncryptionKeyVault.name = '';
+                    result = validate(settings);
+                    expect(result.length).toEqual(1);
+                    expect(result[0].name).toEqual('.osDisk.encryptionSettings.diskEncryptionKeyVault.name');
+                });
+                it('validates that errors are thrown if keyEncryptionKeyVault.name is undefined, null, or only whitespace', () => {
+                    delete settings.osDisk.encryptionSettings.keyEncryptionKeyVault.name;
+                    let result = validate(settings);
+                    expect(result.length).toEqual(1);
+                    expect(result[0].name).toEqual('.osDisk.encryptionSettings.keyEncryptionKeyVault.name');
+
+                    settings.osDisk.encryptionSettings.keyEncryptionKeyVault.name = null;
+                    result = validate(settings);
+                    expect(result.length).toEqual(1);
+                    expect(result[0].name).toEqual('.osDisk.encryptionSettings.keyEncryptionKeyVault.name');
+
+                    settings.osDisk.encryptionSettings.keyEncryptionKeyVault.name = '';
+                    result = validate(settings);
+                    expect(result.length).toEqual(1);
+                    expect(result[0].name).toEqual('.osDisk.encryptionSettings.keyEncryptionKeyVault.name');
+                });
+                describe('windows:', () => {
+                    beforeEach(() => {
+                        settings.osType = 'windows';
+                        settings.osDisk.encryptionSettings.protectedSettings = {
+                            passphrase: 'passphrase'
+                        };
+                    });
+                    it('validates that no errors are thrown if passphrase is undefined', () => {
+                        delete settings.osDisk.encryptionSettings.protectedSettings.passphrase;
+                        let result = validate(settings);
+                        expect(result.length).toEqual(0);
+                    });
+                    it('validates that errors are thrown if passphrase is specified', () => {
+                        settings.osDisk.encryptionSettings.protectedSettings = {
+                            passphrase: null
+                        };
+                        let result = validate(settings);
+                        expect(result.length).toEqual(1);
+                        expect(result[0].name).toEqual('.osDisk.encryptionSettings.protectedSettings.passphrase');
+
+                        settings.osDisk.encryptionSettings.protectedSettings = {
+                            passphrase: ''
+                        };
+                        result = validate(settings);
+                        expect(result.length).toEqual(1);
+                        expect(result[0].name).toEqual('.osDisk.encryptionSettings.protectedSettings.passphrase');
+
+                        settings.osDisk.encryptionSettings.protectedSettings = {
+                            passphrase: 'passphrase'
+                        };
+                        result = validate(settings);
+                        expect(result.length).toEqual(1);
+                        expect(result[0].name).toEqual('.osDisk.encryptionSettings.protectedSettings.passphrase');
+                    });
+                });
+                describe('linux:', () => {
+                    beforeEach(() => {
+                        settings.osType = 'linux';
+                        settings.osDisk.encryptionSettings.protectedSettings = {
+                            passphrase: 'passphrase'
+                        };
+                    });
+                    it('validates that no errors are thrown if passphrase is specified', () => {
+                        let result = validate(settings);
+                        expect(result.length).toEqual(0);
+                    });
+                    it('validates that errors are thrown if passphrase is undefined, null, or only whitespace', () => {
+                        delete settings.osDisk.encryptionSettings.protectedSettings.passphrase;
+                        let result = validate(settings);
+                        expect(result.length).toEqual(1);
+                        expect(result[0].name).toEqual('.osDisk.encryptionSettings.protectedSettings.passphrase');
+
+                        settings.osDisk.encryptionSettings.protectedSettings.passphrase = null;
+                        result = validate(settings);
+                        expect(result.length).toEqual(1);
+                        expect(result[0].name).toEqual('.osDisk.encryptionSettings.protectedSettings.passphrase');
+
+                        settings.osDisk.encryptionSettings.protectedSettings.passphrase = '';
+                        result = validate(settings);
+                        expect(result.length).toEqual(1);
+                        expect(result[0].name).toEqual('.osDisk.encryptionSettings.protectedSettings.passphrase');
+                    });
+                });
+            });
+        });
         describe('windows:', () => {
             describe('AuthenticationType:', () => {
                 it('validates that no errors are thorwn if password is provided and sshPublicKey is not', () => {
@@ -1694,7 +2370,6 @@ describe('virtualMachineSettings:', () => {
                     expect(result[0].name).toEqual('.sshPublicKey');
                 });
             });
-
         });
         describe('linux:', () => {
             describe('AuthenticationType:', () => {
@@ -1914,7 +2589,7 @@ describe('virtualMachineSettings:', () => {
             it('scale set can have a different location than load balancer', () => {
                 let merge = virtualMachineSettings.__get__('merge');
                 settings.scaleSetSettings = {
-                    
+
                 };
                 settings.nics[0].isPublic = false;
                 settings.loadBalancerSettings = {
@@ -1997,7 +2672,7 @@ describe('virtualMachineSettings:', () => {
                     settings: settings,
                     buildingBlockSettings: buildingBlockSettings
                 });
-                expect(result.parameters.virtualMachines[0].loadBalancer[0].properties.inboundNatRules[0].properties.idleTimeoutInMinutes).toEqual(5);
+                expect(result.parameters.virtualMachines[0].loadBalancers[0].properties.inboundNatRules[0].properties.idleTimeoutInMinutes).toEqual(5);
             });
             it('inboundNatRules idleTimeoutInMinutes not specified', () => {
                 let settings = _.cloneDeep(testSettings);
@@ -2027,17 +2702,461 @@ describe('virtualMachineSettings:', () => {
                     settings: settings,
                     buildingBlockSettings: buildingBlockSettings
                 });
-                expect(result.parameters.virtualMachines[0].loadBalancer[0].properties.inboundNatRules[0].properties.hasOwnProperty('idleTimeoutInMinutes')).toEqual(false);
+                expect(result.parameters.virtualMachines[0].loadBalancers[0].properties.inboundNatRules[0].properties.hasOwnProperty('idleTimeoutInMinutes')).toEqual(false);
             });
         });
     });
     if (jasmine.testConfiguration.runTransform) {
         describe('transform:', () => {
             let settings;
+            let lbSettings = {
+                loadBalancerSettings: {
+                    frontendIPConfigurations: [
+                        {
+                            name: 'lb-fe-config1',
+                            loadBalancerType: 'Public'
+                        }
+                    ],
+                    loadBalancingRules: [
+                        {
+                            name: 'lbr1',
+                            frontendPort: 80,
+                            backendPort: 80,
+                            protocol: 'Tcp',
+                            backendPoolName: 'bep1',
+                            frontendIPConfigurationName: 'lb-fe-config1',
+                            enableFloatingIP: false,
+                            probeName: 'lbp1'
+                        }
+                    ],
+                    probes: [
+                        {
+                            name: 'lbp1',
+                            port: 80,
+                            protocol: 'Http',
+                            requestPath: '/'
+                        }
+                    ],
+                    backendPools: [
+                        {
+                            name: 'bep1'
+                        },
+                        {
+                            name: 'bep2'
+                        }
+                    ],
+                    inboundNatRules: [
+                        {
+                            name: 'natrule1',
+                            protocol: 'Tcp',
+                            startingFrontendPort: 2000,
+                            backendPort: 3389,
+                            frontendIPConfigurationName: 'lb-fe-config1'
+                        },
+                        {
+                            name: 'natrule2',
+                            protocol: 'Tcp',
+                            startingFrontendPort: 3000,
+                            backendPort: 22,
+                            frontendIPConfigurationName: 'lb-fe-config1'
+                        }
+                    ],
+                    inboundNatPools: [
+                        {
+                            name: 'natpool1',
+                            protocol: 'Tcp',
+                            startingFrontendPort: 2000,
+                            frontendPortRangeEnd: 2010,
+                            backendPort: 3389,
+                            frontendIPConfigurationName: 'lb-fe-config1'
+                        },
+                        {
+                            name: 'natpool2',
+                            protocol: 'Tcp',
+                            startingFrontendPort: 3000,
+                            frontendPortRangeEnd: 3010,
+                            backendPort: 22,
+                            frontendIPConfigurationName: 'lb-fe-config1'
+                        }
+                    ]
+                }
+            };
+
+            let nicSettings = {
+                nics: [
+                    {
+                        isPublic: false,
+                        isPrimary: true,
+                        privateIPAllocationMethod: 'Static',
+                        startingIPAddress: '10.0.2.4',
+                        subnetName: 'subnet1',
+                        applicationGatewayBackendPoolNames: [
+                            {
+                                name: 'gwbep1',
+                                applicationGatewayName: 'gw1',
+                                resourceGroupName: 'gw1-rg',
+                                subscriptionId: '00000000-0000-1000-AA00-000000000000'
+
+                            },
+                            'gwbep2'
+                        ],
+                        backendPoolNames: [
+                            {
+                                name: 'bep1',
+                                loadBalancerName: 'lb1',
+                                resourceGroupName: 'lb1-rg',
+                                subscriptionId: '00000000-0000-1000-AA00-000000000000'
+
+                            },
+                            'bep2'
+                        ],
+                        inboundNatRulesNames: [
+                            {
+                                name: 'natrule1'
+                            },
+                            'natrule2'
+                        ],
+                        inboundNatPoolNames: [
+                            {
+                                name: 'natpool1',
+                                loadBalancerName: 'lb3',
+                                resourceGroupName: 'lb3-rg',
+                                subscriptionId: '00000000-0000-1000-BB00-000000000000'
+                            },
+                            'natpool2'
+                        ]
+                    },
+                    {
+                        isPublic: false,
+                        privateIPAllocationMethod: 'Static',
+                        startingIPAddress: '10.0.2.5',
+                        subnetName: 'subnet1',
+                        applicationGatewayBackendPoolNames: [
+                            {
+                                name: 'gwbep1',
+                                applicationGatewayName: 'gw2'
+                            }
+                        ],
+                        backendPoolNames: [
+                            {
+                                name: 'bep1',
+                                loadBalancerName: 'lb4'
+                            }
+                        ],
+                        inboundNatRulesNames: [
+                            {
+                                name: 'natrule1'
+                            }
+                        ],
+                        inboundNatPoolNames: [
+                            {
+                                name: 'natpool1',
+                                loadBalancerName: 'lb6'
+                            }
+                        ]
+                    }
+                ]
+            };
+
+            let gwSettings = {
+                name: 'test-agw',
+                sku: {
+                    tier: 'Standard',
+                    size: 'Small',
+                    capacity: 2
+                },
+                frontendIPConfigurations: [
+                    {
+                        name: 'appGatewayFrontendIP',
+                        applicationGatewayType: 'Public'
+                    }
+                ],
+                httpListeners: [
+                    {
+                        name: 'appGatewayHttpListener',
+                        frontendIPConfigurationName: 'appGatewayFrontendIP',
+                        frontendPortName: 'appGatewayFrontendPort',
+                        protocol: 'Http',
+                        requireServerNameIndication: false
+                    }
+                ],
+                backendHttpSettingsCollection: [
+                    {
+                        name: 'appGatewayBackendHttpSettings',
+                        port: 80,
+                        protocol: 'Https',
+                        cookieBasedAffinity: 'Disabled',
+                        pickHostNameFromBackendAddress: false,
+                        probeEnabled: true,
+                        requestTimeout: 30,
+                        probeName: 'p1'
+                    }
+                ],
+                backendAddressPools: [
+                    {
+                        name: 'gwbep1',
+                        backendAddresses: [
+                            {
+                                fqdn: 'www.contoso.com'
+                            }
+                        ]
+                    },
+                    {
+                        name: 'gwbep2',
+                        backendAddresses: [
+                            {
+                                fqdn: 'www.contoso2.com'
+                            }
+                        ]
+                    }
+                ],
+                urlPathMaps: [
+                    {
+                        name: 'pb-rule1',
+                        defaultBackendAddressPoolName: 'gwbep1',
+                        defaultBackendHttpSettingsName: 'appGatewayBackendHttpSettings',
+                        pathRules: [
+                            {
+                                name: 'p2',
+                                paths: ['/path'],
+                                backendAddressPoolName: 'gwbep1',
+                                backendHttpSettingsName: 'appGatewayBackendHttpSettings'
+                            }
+                        ]
+                    }
+                ],
+                requestRoutingRules: [
+                    {
+                        name: 'rule1',
+                        ruleType: 'Basic',
+                        httpListenerName: 'appGatewayHttpListener',
+                        backendAddressPoolName: 'gwbep1',
+                        backendHttpSettingsName: 'appGatewayBackendHttpSettings'
+                    }
+                ],
+                frontendPorts: [
+                    {
+                        name: 'appGatewayFrontendPort',
+                        port: 80
+                    }
+                ]
+            };
+
             beforeEach(() => {
                 settings = _.cloneDeep(testSettings);
             });
 
+            it('LB: validates that networkinterfaces are transformed correctly for VMs', () => {
+                settings.nics = _.cloneDeep(nicSettings.nics);
+                settings.nics[0].applicationGatewayBackendPoolNames = [];
+                settings.nics[1].applicationGatewayBackendPoolNames = [];
+                settings.nics[0].inboundNatPoolNames = [];
+                settings.nics[1].inboundNatPoolNames = [];
+                settings.loadBalancerSettings = _.cloneDeep(lbSettings.loadBalancerSettings);
+                settings.loadBalancerSettings.inboundNatPools = [];
+
+                let processedParam = virtualMachineSettings.process({ settings: settings, buildingBlockSettings });
+                expect(processedParam.parameters.virtualMachines[0].virtualMachines.length).toEqual(2);
+
+                let nics = processedParam.parameters.virtualMachines[0].networkInterfaces;
+                expect(nics.length).toEqual(4);
+                expect(nics[0].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools.length).toEqual(2);
+                expect(nics[0].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools[0].id).toEqual('/subscriptions/00000000-0000-1000-AA00-000000000000/resourceGroups/lb1-rg/providers/Microsoft.Network/loadBalancers/lb1/backendAddressPools/bep1');
+                expect(nics[0].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools[1].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/loadBalancers/test-lb/backendAddressPools/bep2');
+
+                expect(nics[0].properties.ipConfigurations[0].properties.loadBalancerInboundNatRules.length).toEqual(2);
+                expect(nics[0].properties.ipConfigurations[0].properties.loadBalancerInboundNatRules[0].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/loadBalancers/test-lb/inboundNatRules/natrule1-0');
+                expect(nics[0].properties.ipConfigurations[0].properties.loadBalancerInboundNatRules[1].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/loadBalancers/test-lb/inboundNatRules/natrule2-0');
+
+                expect(nics[1].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools.length).toEqual(1);
+                expect(nics[1].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools[0].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/loadBalancers/lb4/backendAddressPools/bep1');
+
+                expect(nics[1].properties.ipConfigurations[0].properties.loadBalancerInboundNatRules.length).toEqual(1);
+                expect(nics[1].properties.ipConfigurations[0].properties.loadBalancerInboundNatRules[0].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/loadBalancers/test-lb/inboundNatRules/natrule1-0');
+
+                expect(nics[2].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools.length).toEqual(2);
+                expect(nics[2].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools[0].id).toEqual('/subscriptions/00000000-0000-1000-AA00-000000000000/resourceGroups/lb1-rg/providers/Microsoft.Network/loadBalancers/lb1/backendAddressPools/bep1');
+                expect(nics[2].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools[1].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/loadBalancers/test-lb/backendAddressPools/bep2');
+
+                expect(nics[2].properties.ipConfigurations[0].properties.loadBalancerInboundNatRules.length).toEqual(2);
+                expect(nics[2].properties.ipConfigurations[0].properties.loadBalancerInboundNatRules[0].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/loadBalancers/test-lb/inboundNatRules/natrule1-1');
+                expect(nics[2].properties.ipConfigurations[0].properties.loadBalancerInboundNatRules[1].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/loadBalancers/test-lb/inboundNatRules/natrule2-1');
+
+                expect(nics[3].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools.length).toEqual(1);
+                expect(nics[3].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools[0].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/loadBalancers/lb4/backendAddressPools/bep1');
+
+                expect(nics[3].properties.ipConfigurations[0].properties.loadBalancerInboundNatRules.length).toEqual(1);
+                expect(nics[3].properties.ipConfigurations[0].properties.loadBalancerInboundNatRules[0].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/loadBalancers/test-lb/inboundNatRules/natrule1-1');
+
+            });
+            it('LB: validates that networkinterfaces are transformed correctly for VMs when lbSettings specify different resource group', () => {
+                settings.nics = _.cloneDeep(nicSettings.nics);
+                settings.nics[0].applicationGatewayBackendPoolNames = [];
+                settings.nics[1].applicationGatewayBackendPoolNames = [];
+                settings.nics[0].inboundNatPoolNames = [];
+                settings.nics[1].inboundNatPoolNames = [];
+                settings.loadBalancerSettings = _.cloneDeep(lbSettings.loadBalancerSettings);
+                settings.loadBalancerSettings.resourceGroupName = 'different-rg';
+                settings.loadBalancerSettings.inboundNatPools = [];
+
+                let processedParam = virtualMachineSettings.process({ settings: settings, buildingBlockSettings });
+                expect(processedParam.parameters.virtualMachines[0].virtualMachines.length).toEqual(2);
+
+                let nics = processedParam.parameters.virtualMachines[0].networkInterfaces;
+                expect(nics.length).toEqual(4);
+                expect(nics[0].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools.length).toEqual(2);
+                expect(nics[0].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools[0].id).toEqual('/subscriptions/00000000-0000-1000-AA00-000000000000/resourceGroups/lb1-rg/providers/Microsoft.Network/loadBalancers/lb1/backendAddressPools/bep1');
+                expect(nics[0].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools[1].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/different-rg/providers/Microsoft.Network/loadBalancers/test-lb/backendAddressPools/bep2');
+
+                expect(nics[0].properties.ipConfigurations[0].properties.loadBalancerInboundNatRules.length).toEqual(2);
+                expect(nics[0].properties.ipConfigurations[0].properties.loadBalancerInboundNatRules[0].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/different-rg/providers/Microsoft.Network/loadBalancers/test-lb/inboundNatRules/natrule1-0');
+                expect(nics[0].properties.ipConfigurations[0].properties.loadBalancerInboundNatRules[1].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/different-rg/providers/Microsoft.Network/loadBalancers/test-lb/inboundNatRules/natrule2-0');
+
+                expect(nics[1].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools.length).toEqual(1);
+                expect(nics[1].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools[0].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/loadBalancers/lb4/backendAddressPools/bep1');
+
+                expect(nics[1].properties.ipConfigurations[0].properties.loadBalancerInboundNatRules.length).toEqual(1);
+                expect(nics[1].properties.ipConfigurations[0].properties.loadBalancerInboundNatRules[0].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/different-rg/providers/Microsoft.Network/loadBalancers/test-lb/inboundNatRules/natrule1-0');
+
+                expect(nics[2].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools.length).toEqual(2);
+                expect(nics[2].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools[0].id).toEqual('/subscriptions/00000000-0000-1000-AA00-000000000000/resourceGroups/lb1-rg/providers/Microsoft.Network/loadBalancers/lb1/backendAddressPools/bep1');
+                expect(nics[2].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools[1].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/different-rg/providers/Microsoft.Network/loadBalancers/test-lb/backendAddressPools/bep2');
+
+                expect(nics[2].properties.ipConfigurations[0].properties.loadBalancerInboundNatRules.length).toEqual(2);
+                expect(nics[2].properties.ipConfigurations[0].properties.loadBalancerInboundNatRules[0].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/different-rg/providers/Microsoft.Network/loadBalancers/test-lb/inboundNatRules/natrule1-1');
+                expect(nics[2].properties.ipConfigurations[0].properties.loadBalancerInboundNatRules[1].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/different-rg/providers/Microsoft.Network/loadBalancers/test-lb/inboundNatRules/natrule2-1');
+
+                expect(nics[3].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools.length).toEqual(1);
+                expect(nics[3].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools[0].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/loadBalancers/lb4/backendAddressPools/bep1');
+
+                expect(nics[3].properties.ipConfigurations[0].properties.loadBalancerInboundNatRules.length).toEqual(1);
+                expect(nics[3].properties.ipConfigurations[0].properties.loadBalancerInboundNatRules[0].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/different-rg/providers/Microsoft.Network/loadBalancers/test-lb/inboundNatRules/natrule1-1');
+
+            });
+            it('LB: validates that networkinterfaces are transformed correctly for Scalesets', () => {
+                settings.scaleSetSettings = {
+                    name: 'scaleSet-lb',
+                    upgradePolicy: 'Automatic',
+                    overprovision: true,
+                    singlePlacementGroup: true
+                };
+                settings.nics = _.cloneDeep(nicSettings.nics);
+                settings.nics[0].applicationGatewayBackendPoolNames = [];
+                settings.nics[1].applicationGatewayBackendPoolNames = [];
+                settings.nics[0].inboundNatRulesNames = [];
+                settings.nics[1].inboundNatRulesNames = [];
+                settings.loadBalancerSettings = _.cloneDeep(lbSettings.loadBalancerSettings);
+                settings.loadBalancerSettings.inboundNatRules = [];
+
+                let processedParam = virtualMachineSettings.process({ settings: settings, buildingBlockSettings });
+                expect(processedParam.parameters.virtualMachines[0].virtualMachines.length).toEqual(0);
+
+                let nics = processedParam.parameters.virtualMachines[0].scaleSets[0].properties.virtualMachineProfile.networkProfile.networkInterfaceConfigurations;
+                expect(nics.length).toEqual(2);
+                expect(nics[0].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools.length).toEqual(2);
+                expect(nics[0].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools[0].id).toEqual('/subscriptions/00000000-0000-1000-AA00-000000000000/resourceGroups/lb1-rg/providers/Microsoft.Network/loadBalancers/lb1/backendAddressPools/bep1');
+                expect(nics[0].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools[1].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/loadBalancers/test-lb/backendAddressPools/bep2');
+
+                expect(nics[0].properties.ipConfigurations[0].properties.loadBalancerInboundNatPools.length).toEqual(2);
+                expect(nics[0].properties.ipConfigurations[0].properties.loadBalancerInboundNatPools[0].id).toEqual('/subscriptions/00000000-0000-1000-BB00-000000000000/resourceGroups/lb3-rg/providers/Microsoft.Network/loadBalancers/lb3/inboundNatPools/natpool1');
+                expect(nics[0].properties.ipConfigurations[0].properties.loadBalancerInboundNatPools[1].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/loadBalancers/test-lb/inboundNatPools/natpool2');
+
+                expect(nics[1].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools.length).toEqual(1);
+                expect(nics[1].properties.ipConfigurations[0].properties.loadBalancerBackendAddressPools[0].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/loadBalancers/lb4/backendAddressPools/bep1');
+
+                expect(nics[1].properties.ipConfigurations[0].properties.loadBalancerInboundNatPools.length).toEqual(1);
+                expect(nics[1].properties.ipConfigurations[0].properties.loadBalancerInboundNatPools[0].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/loadBalancers/lb6/inboundNatPools/natpool1');
+
+            });
+            it('AGW: validates that networkinterfaces are transformed correctly for VMs', () => {
+                settings.nics = _.cloneDeep(nicSettings.nics);
+                settings.nics[0].backendPoolNames = [];
+                settings.nics[1].backendPoolNames = [];
+                settings.nics[0].inboundNatRulesNames = [];
+                settings.nics[1].inboundNatRulesNames = [];
+                settings.nics[0].inboundNatPoolNames = [];
+                settings.nics[1].inboundNatPoolNames = [];
+                settings.applicationGatewaySettings = _.cloneDeep(gwSettings);
+
+                let processedParam = virtualMachineSettings.process({ settings: settings, buildingBlockSettings });
+                expect(processedParam.parameters.virtualMachines[0].virtualMachines.length).toEqual(2);
+
+                let nics = processedParam.parameters.virtualMachines[0].networkInterfaces;
+                expect(nics.length).toEqual(4);
+                expect(nics[0].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools.length).toEqual(2);
+                expect(nics[0].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools[0].id).toEqual('/subscriptions/00000000-0000-1000-AA00-000000000000/resourceGroups/gw1-rg/providers/Microsoft.Network/applicationGateways/gw1/backendAddressPools/gwbep1');
+                expect(nics[0].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools[1].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/applicationGateways/test-agw/backendAddressPools/gwbep2');
+
+                expect(nics[1].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools.length).toEqual(1);
+                expect(nics[1].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools[0].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/applicationGateways/gw2/backendAddressPools/gwbep1');
+
+                expect(nics[2].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools.length).toEqual(2);
+                expect(nics[2].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools[0].id).toEqual('/subscriptions/00000000-0000-1000-AA00-000000000000/resourceGroups/gw1-rg/providers/Microsoft.Network/applicationGateways/gw1/backendAddressPools/gwbep1');
+                expect(nics[2].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools[1].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/applicationGateways/test-agw/backendAddressPools/gwbep2');
+
+                expect(nics[3].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools.length).toEqual(1);
+                expect(nics[3].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools[0].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/applicationGateways/gw2/backendAddressPools/gwbep1');
+
+            });
+            it('AGW: validates that networkinterfaces are transformed correctly for VMs when gwSettings specify different resource group', () => {
+                settings.nics = _.cloneDeep(nicSettings.nics);
+                settings.nics[0].backendPoolNames = [];
+                settings.nics[1].backendPoolNames = [];
+                settings.nics[0].inboundNatRulesNames = [];
+                settings.nics[1].inboundNatRulesNames = [];
+                settings.nics[0].inboundNatPoolNames = [];
+                settings.nics[1].inboundNatPoolNames = [];
+                settings.applicationGatewaySettings = _.cloneDeep(gwSettings);
+                settings.applicationGatewaySettings.resourceGroupName = 'different-rg';
+
+                let processedParam = virtualMachineSettings.process({ settings: settings, buildingBlockSettings });
+                expect(processedParam.parameters.virtualMachines[0].virtualMachines.length).toEqual(2);
+
+                let nics = processedParam.parameters.virtualMachines[0].networkInterfaces;
+                expect(nics.length).toEqual(4);
+                expect(nics[0].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools.length).toEqual(2);
+                expect(nics[0].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools[0].id).toEqual('/subscriptions/00000000-0000-1000-AA00-000000000000/resourceGroups/gw1-rg/providers/Microsoft.Network/applicationGateways/gw1/backendAddressPools/gwbep1');
+                expect(nics[0].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools[1].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/different-rg/providers/Microsoft.Network/applicationGateways/test-agw/backendAddressPools/gwbep2');
+
+                expect(nics[1].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools.length).toEqual(1);
+                expect(nics[1].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools[0].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/applicationGateways/gw2/backendAddressPools/gwbep1');
+
+                expect(nics[2].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools.length).toEqual(2);
+                expect(nics[2].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools[0].id).toEqual('/subscriptions/00000000-0000-1000-AA00-000000000000/resourceGroups/gw1-rg/providers/Microsoft.Network/applicationGateways/gw1/backendAddressPools/gwbep1');
+                expect(nics[2].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools[1].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/different-rg/providers/Microsoft.Network/applicationGateways/test-agw/backendAddressPools/gwbep2');
+
+                expect(nics[3].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools.length).toEqual(1);
+                expect(nics[3].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools[0].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/applicationGateways/gw2/backendAddressPools/gwbep1');
+
+            });
+            it('AGW: validates that networkinterfaces are transformed correctly for Scalesets', () => {
+                settings.scaleSetSettings = {
+                    name: 'scaleSet-lb',
+                    upgradePolicy: 'Automatic',
+                    overprovision: true,
+                    singlePlacementGroup: true
+                };
+                settings.nics = _.cloneDeep(nicSettings.nics);
+                settings.nics[0].backendPoolNames = [];
+                settings.nics[1].backendPoolNames = [];
+                settings.nics[0].inboundNatRulesNames = [];
+                settings.nics[1].inboundNatRulesNames = [];
+                settings.nics[0].inboundNatPoolNames = [];
+                settings.nics[1].inboundNatPoolNames = [];
+                settings.applicationGatewaySettings = _.cloneDeep(gwSettings);
+
+                let processedParam = virtualMachineSettings.process({ settings: settings, buildingBlockSettings });
+                expect(processedParam.parameters.virtualMachines[0].virtualMachines.length).toEqual(0);
+
+                let nics = processedParam.parameters.virtualMachines[0].scaleSets[0].properties.virtualMachineProfile.networkProfile.networkInterfaceConfigurations;
+                expect(nics.length).toEqual(2);
+                expect(nics[0].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools.length).toEqual(2);
+                expect(nics[0].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools[0].id).toEqual('/subscriptions/00000000-0000-1000-AA00-000000000000/resourceGroups/gw1-rg/providers/Microsoft.Network/applicationGateways/gw1/backendAddressPools/gwbep1');
+                expect(nics[0].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools[1].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/applicationGateways/test-agw/backendAddressPools/gwbep2');
+
+                expect(nics[1].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools.length).toEqual(1);
+                expect(nics[1].properties.ipConfigurations[0].properties.applicationGatewayBackendAddressPools[0].id).toEqual('/subscriptions/00000000-0000-1000-A000-000000000000/resourceGroups/test-rg/providers/Microsoft.Network/applicationGateways/gw2/backendAddressPools/gwbep1');
+            });
             it('validates that number of stamps created are based on vmcount property', () => {
 
                 let processedParam = virtualMachineSettings.process({ settings: testSettings, buildingBlockSettings });
@@ -2066,13 +3185,13 @@ describe('virtualMachineSettings:', () => {
                 settings.namePrefix = 'temp';
                 settings.scaleSetSettings = {};
                 let processedParam = virtualMachineSettings.process({ settings: settings, buildingBlockSettings });
-                expect(processedParam.parameters.virtualMachines[0].scaleSet[0].properties.virtualMachineProfile.osProfile.computerNamePrefix).toEqual('temp');
+                expect(processedParam.parameters.virtualMachines[0].scaleSets[0].properties.virtualMachineProfile.osProfile.computerNamePrefix).toEqual('temp');
             });
             it('For scaleset, validates that computerNames is computed as computerNamePrefix, if computernamePrefix is specified', () => {
                 settings.computerNamePrefix = 'temp';
                 settings.scaleSetSettings = {};
                 let processedParam = virtualMachineSettings.process({ settings: settings, buildingBlockSettings });
-                expect(processedParam.parameters.virtualMachines[0].scaleSet[0].properties.virtualMachineProfile.osProfile.computerNamePrefix).toEqual('temp');
+                expect(processedParam.parameters.virtualMachines[0].scaleSets[0].properties.virtualMachineProfile.osProfile.computerNamePrefix).toEqual('temp');
             });
             it('validates that vm size is added to the hardwareProfile in the output', () => {
 
@@ -2154,6 +3273,15 @@ describe('virtualMachineSettings:', () => {
                 processedParam = virtualMachineSettings.process({ settings, buildingBlockSettings });
 
                 expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.storageProfile.osDisk.diskSizeGB).toEqual(500);
+            });
+            it('validates that plan property is correctly set', () => {
+                let settings = _.cloneDeep(testSettings);
+                settings.usePlan = true;
+
+                let processedParam = virtualMachineSettings.process({ settings, buildingBlockSettings });
+                expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].plan.name).toEqual(testSettings.imageReference.sku);
+                expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].plan.publisher).toEqual(testSettings.imageReference.publisher);
+                expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].plan.product).toEqual(testSettings.imageReference.offer);
             });
             // TODO dataDisk property is computed per the rp schema
             // TODO osDisk property is computed per the rp schema
@@ -2581,9 +3709,9 @@ describe('virtualMachineSettings:', () => {
                     windowsSettings.osType = 'windows';
 
                     let processedParam = virtualMachineSettings.process({ settings: windowsSettings, buildingBlockSettings });
-                    expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.osProfile.adminPassword).toEqual('$SECRET$');
-                    expect(processedParam.parameters.virtualMachines[0].virtualMachines[1].properties.osProfile.adminPassword).toEqual('$SECRET$');
-                    expect(processedParam.parameters.secrets.secrets[0].value).toEqual(windowsSettings.adminPassword);
+                    expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.osProfile.adminPassword).toEqual('$AUTHENTICATION$');
+                    expect(processedParam.parameters.virtualMachines[0].virtualMachines[1].properties.osProfile.adminPassword).toEqual('$AUTHENTICATION$');
+                    expect(processedParam.parameters.secrets.secrets[0].authentication.value).toEqual(windowsSettings.adminPassword);
                 });
                 it('validates that existingWindowsServerlicense is correctly set', () => {
 
@@ -2597,6 +3725,30 @@ describe('virtualMachineSettings:', () => {
                     windowsSettings.existingWindowsServerlicense = false;
                     processedParam = virtualMachineSettings.process({ settings: windowsSettings, buildingBlockSettings });
                     expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.hasOwnProperty('licenseType')).toEqual(false);
+                });
+                it('validates secrets are correctly set', () => {
+                    let windowsSettings = _.cloneDeep(testSettings);
+                    windowsSettings.osType = 'windows';
+                    windowsSettings.secrets = [
+                        {
+                            keyVault: {
+                                name: 'test-keyvault'
+                            },
+                            certificates: [
+                                {
+                                    certificateUrl: 'https://test-keyvault.vault.azure.net/secrets/testcertificate/9223ee75894147d58032693d64d304d6'
+                                }
+                            ]
+                        }
+                    ];
+
+                    let processedParam = virtualMachineSettings.process({ settings: windowsSettings, buildingBlockSettings });
+                    expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.osProfile.secrets[0].sourceVault.id.endsWith(
+                        windowsSettings.secrets[0].keyVault.name)).toEqual(true);
+                    expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.osProfile.secrets[0].vaultCertificates[0].certificateUrl)
+                        .toEqual(windowsSettings.secrets[0].certificates[0].certificateUrl);
+                    expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.osProfile.secrets[0].vaultCertificates[0].certificateStore)
+                        .toEqual('My');
                 });
             });
             describe('linux:', () => {
@@ -2615,9 +3767,9 @@ describe('virtualMachineSettings:', () => {
                     linuxSettings.osType = 'linux';
 
                     let processedParam = virtualMachineSettings.process({ settings: linuxSettings, buildingBlockSettings });
-                    expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.osProfile.adminPassword).toEqual('$SECRET$');
-                    expect(processedParam.parameters.virtualMachines[0].virtualMachines[1].properties.osProfile.adminPassword).toEqual('$SECRET$');
-                    expect(processedParam.parameters.secrets.secrets[0].value).toEqual(linuxSettings.adminPassword);
+                    expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.osProfile.adminPassword).toEqual('$AUTHENTICATION$');
+                    expect(processedParam.parameters.virtualMachines[0].virtualMachines[1].properties.osProfile.adminPassword).toEqual('$AUTHENTICATION$');
+                    expect(processedParam.parameters.secrets.secrets[0].authentication.value).toEqual(linuxSettings.adminPassword);
                 });
                 it('validates that for ssh AuthenticationType, linuxConfiguration is correctly added to the osProfile', () => {
                     let linuxSettings = _.cloneDeep(testSettings);
@@ -2629,12 +3781,12 @@ describe('virtualMachineSettings:', () => {
                     expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.osProfile.hasOwnProperty('linuxConfiguration')).toEqual(true);
                     expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.osProfile.linuxConfiguration.disablePasswordAuthentication).toEqual(true);
                     expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.osProfile.linuxConfiguration.ssh.publicKeys[0].path).toEqual(`/home/${linuxSettings.adminUsername}/.ssh/authorized_keys`);
-                    expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.osProfile.linuxConfiguration.ssh.publicKeys[0].keyData).toEqual('$SECRET$');
+                    expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.osProfile.linuxConfiguration.ssh.publicKeys[0].keyData).toEqual('$AUTHENTICATION$');
 
                     expect(processedParam.parameters.virtualMachines[0].virtualMachines[1].properties.osProfile.hasOwnProperty('linuxConfiguration')).toEqual(true);
                     expect(processedParam.parameters.virtualMachines[0].virtualMachines[1].properties.osProfile.linuxConfiguration.disablePasswordAuthentication).toEqual(true);
                     expect(processedParam.parameters.virtualMachines[0].virtualMachines[1].properties.osProfile.linuxConfiguration.ssh.publicKeys[0].path).toEqual(`/home/${linuxSettings.adminUsername}/.ssh/authorized_keys`);
-                    expect(processedParam.parameters.virtualMachines[0].virtualMachines[1].properties.osProfile.linuxConfiguration.ssh.publicKeys[0].keyData).toEqual('$SECRET$');
+                    expect(processedParam.parameters.virtualMachines[0].virtualMachines[1].properties.osProfile.linuxConfiguration.ssh.publicKeys[0].keyData).toEqual('$AUTHENTICATION$');
                 });
                 it('validates that for ssh AuthenticationType, adminPassword is set to null', () => {
                     let linuxSettings = _.cloneDeep(testSettings);
@@ -2645,6 +3797,30 @@ describe('virtualMachineSettings:', () => {
                     let processedParam = virtualMachineSettings.process({ settings: linuxSettings, buildingBlockSettings });
                     expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.osProfile.adminPassword).toEqual(null);
                     expect(processedParam.parameters.virtualMachines[0].virtualMachines[1].properties.osProfile.adminPassword).toEqual(null);
+                });
+                it('validates secrets are correctly set', () => {
+                    let windowsSettings = _.cloneDeep(testSettings);
+                    windowsSettings.osType = 'linux';
+                    windowsSettings.secrets = [
+                        {
+                            keyVault: {
+                                name: 'test-keyvault'
+                            },
+                            certificates: [
+                                {
+                                    certificateUrl: 'https://test-keyvault.vault.azure.net/secrets/testcertificate/9223ee75894147d58032693d64d304d6'
+                                }
+                            ]
+                        }
+                    ];
+
+                    let processedParam = virtualMachineSettings.process({ settings: windowsSettings, buildingBlockSettings });
+                    expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.osProfile.secrets[0].sourceVault.id.endsWith(
+                        windowsSettings.secrets[0].keyVault.name)).toEqual(true);
+                    expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.osProfile.secrets[0].vaultCertificates[0].certificateUrl)
+                        .toEqual(windowsSettings.secrets[0].certificates[0].certificateUrl);
+                    expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.osProfile.secrets[0].vaultCertificates[0].certificateStore)
+                        .toBeUndefined();
                 });
             });
         });

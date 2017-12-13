@@ -40,7 +40,7 @@
           "description": "Settings for availability set"
         }
       },
-      "loadBalancer": {
+      "loadBalancers": {
         "type": "array",
         "defaultValue": [],
         "metadata": {
@@ -54,13 +54,13 @@
           "description": "Settings for virtual machines"
         }
       },
-      "secret": {
-        "type": "securestring",
+      "secrets": {
+        "type": "secureObject",
         "metadata": {
-          "description": "secret"
+          "description": "secrets"
         }
       },
-      "scaleSet": {
+      "scaleSets": {
         "type": "array",
         "defaultValue": [],
         "metadata": {
@@ -83,7 +83,7 @@
       }
     },
     "variables": {
-      "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('storageAccounts')), string(parameters('diagnosticStorageAccounts')), string(parameters('networkInterfaces')), string(parameters('publicIpAddresses')), string(parameters('availabilitySet')), string(parameters('virtualMachines')), string(parameters('scaleSet')), string(parameters('autoScaleSettings')), string(parameters('applicationGateways'))))]",
+      "templateUniqueString": "[uniqueString(concat(string(parameters('deploymentContext')), string(parameters('storageAccounts')), string(parameters('diagnosticStorageAccounts')), string(parameters('networkInterfaces')), string(parameters('publicIpAddresses')), string(parameters('availabilitySet')), string(parameters('virtualMachines')), string(parameters('scaleSets')), string(parameters('autoScaleSettings')), string(parameters('applicationGateways'))))]",
       "pipTemplate": "[concat(uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/publicIPAddresses.json'), parameters('deploymentContext').sasToken)]",
       "nicTemplate": "[concat(uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Network/networkInterfaces.json'), parameters('deploymentContext').sasToken)]",
       "storageTemplate": "[concat(uri(deployment().properties.templateLink.uri, '../../resources/Microsoft.Storage/storageAccounts.json'), parameters('deploymentContext').sasToken)]",
@@ -154,7 +154,7 @@
               "value": "[parameters('networkInterfaces')]"
             },
             "mode": {
-              "value": "[length(parameters('loadBalancer'))]"
+              "value": "[length(parameters('loadBalancers'))]"
             }
           }
         }
@@ -232,7 +232,7 @@
         "type": "Microsoft.Resources/deployments",
         "apiVersion": "2017-05-10",
         "name": "[variables('lbDeploymentName')]",
-        "condition": "[greater(length(parameters('loadBalancer')), 0)]",
+        "condition": "[greater(length(parameters('loadBalancers')), 0)]",
         "dependsOn": [
           "[variables('pipDeploymentName')]"
         ],
@@ -248,8 +248,8 @@
                 "sasToken": "[parameters('deploymentContext').sasToken]"
               }
             },
-            "loadBalancer": {
-              "value": "[parameters('loadBalancer')]"
+            "loadBalancers": {
+              "value": "[parameters('loadBalancers')]"
             }
           }
         }
@@ -281,8 +281,9 @@
             "virtualMachines": {
               "value": "[parameters('virtualMachines')]"
             },
-            "secret": {
-              "value": "[parameters('secret')]"
+            "authentication": "[parameters('secrets').authentication]",
+            "secrets": {
+              "value": "[parameters('secrets')]"
             }
           }
         }
@@ -317,7 +318,7 @@
         "type": "Microsoft.Resources/deployments",
         "apiVersion": "2017-05-10",
         "name": "[variables('vmssDeploymentName')]",
-        "condition": "[greater(length(parameters('scaleSet')), 0)]",
+        "condition": "[greater(length(parameters('scaleSets')), 0)]",
         "dependsOn": [
           "[variables('vmStorageDeploymentName')]",
           "[variables('diagnosticStorageDeploymentName')]",
@@ -337,13 +338,14 @@
                 "sasToken": "[parameters('deploymentContext').sasToken]"
               }
             },
-            "scaleSet": {
-              "value": "[parameters('scaleSet')]"
+            "scaleSets": {
+              "value": "[parameters('scaleSets')]"
             },
-            "secret": {
-              "value": "[parameters('secret')]"
+            "authentication": "[parameters('secrets').authentication]",
+            "secrets": {
+              "value": "[parameters('secrets')]"
             }
-          }
+          } 
         }
       },
       {
