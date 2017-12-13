@@ -9,7 +9,7 @@
 
 ![Build status](https://travis-ci.org/mspnp/template-building-blocks.svg?branch=master)
 
-> Version 2.0.4 was published 11/27/2017 to address a few minor bugs, and implement a more robust versioning scheme. Customers using earlier versions will see breaking changes in our next releases. To avoid future breaking changes, upgrade to v2.0.4 now. Follow the steps in Getting Started below to upgrade to v2.0.4.
+> __Important Note__: Version 2.1.0 of Azure Building Blocks introduced breaking changes to versions earlier than 2.0.4. Versions earlier than 2.0.4 will no longer function. Please upgrade to version 2.0.4 or greater to continue using Azure Building Blocks. 
 
 # Azure Building Blocks: Simplifying Resource Deployment
 
@@ -59,7 +59,7 @@ The command line tool merges best practice defaults to the parameters as follows
 -	OS is latest Windows Server 2016 image
 -	Public IP created for each VM
 
-To add a load balancer in front of the three identical VMs:
+To add a scaleset with three identical VMs:
 
 ```json
 "type": "VirtualMachine",
@@ -70,16 +70,30 @@ To add a load balancer in front of the three identical VMs:
     "adminPassword": "testPassw0rd!23",
     "nics": [{
         "subnetName": "web",
-        "isPublic": false,
-        "backendPoolsNames": ["bp1"]
+        "isPublic": false
         }],
     "virtualNetwork": {"name": "ra-vnet"},
-    "loadBalancerSettings": {
-        "backendPools": [{"name": "bp1"}]
-    }
+    "scaleSetSettings": { }
 }
 ```
 
-# License 
+# Version history
+
+The list below shows changes introduced with the latest versions.
+
+## 2.0.4
+
+- Fixed minor bugs
+- Introduced a more rigorous versioning scheme
+
+## 2.1.0
+
+- Introduced breaking changes to versions less than 2.0.4
+- Added standalone load balancer building block
+- Added standalone application gateway building block
+- Changes to VM building block to allow use of pre-existing load balancer and application gateway
+- Added support for 'single-step' disk encryption to VM building block
+
+# License
 
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
