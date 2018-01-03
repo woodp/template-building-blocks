@@ -585,10 +585,15 @@ function process ({ settings, buildingBlockSettings, defaultSettings }) {
         });
     });
 
-    pips = publicIpAddressSettings.process({
-        settings: pips,
-        buildingBlockSettings: buildingBlockSettings
-    });
+    if (pips.length > 0) {
+        pips = publicIpAddressSettings.process({
+            settings: pips,
+            buildingBlockSettings: buildingBlockSettings
+        });
+
+        // Just so we have a our default
+        pips = pips.parameters.publicIpAddresses;
+    }
 
     results = _.transform(results, (result, setting) => {
         let transformed = transform(setting);
@@ -597,7 +602,7 @@ function process ({ settings, buildingBlockSettings, defaultSettings }) {
         loadBalancers: []
     });
 
-    results.publicIpAddresses = pips.parameters.publicIpAddresses;
+    results.publicIpAddresses = pips;
 
     let resourceGroups = resources.extractResourceGroups(
         results.loadBalancers,
