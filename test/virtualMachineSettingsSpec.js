@@ -8,6 +8,7 @@ describe('virtualMachineSettings:', () => {
         computerNamePrefix: 'test',
         size: 'Standard_DS2',
         osType: 'windows',
+        customData: 'custom data',
         osDisk: {
             caching: 'ReadWrite',
             createOption: 'fromImage'
@@ -1465,6 +1466,31 @@ describe('virtualMachineSettings:', () => {
             let result = validate(settings);
             expect(result.length).toEqual(1);
             expect(result[0].name).toEqual('.usePlan');
+        });
+        describe('customData: ', () => {
+            it('undefined', () => {
+                delete settings.customData;
+                let result = validate(settings);
+                expect(result.length).toEqual(0);
+            });
+            it('null', () => {
+                settings.customData = null;
+                let result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.customData');
+            });
+            it('empty string', () => {
+                settings.customData = '';
+                let result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.customData');
+            });
+            it('whitespace', () => {
+                settings.customData = ' ';
+                let result = validate(settings);
+                expect(result.length).toEqual(1);
+                expect(result[0].name).toEqual('.customData');
+            });
         });
         describe('AvailabilitySet:', () => {
             it('validates that no validation errors are thrown if name is not present in avSet', () => {
@@ -3282,6 +3308,19 @@ describe('virtualMachineSettings:', () => {
                 expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].plan.name).toEqual(testSettings.imageReference.sku);
                 expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].plan.publisher).toEqual(testSettings.imageReference.publisher);
                 expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].plan.product).toEqual(testSettings.imageReference.offer);
+            });
+            it('For VMs, validates that customData is correctly set', () => {
+                let settings = _.cloneDeep(testSettings);
+                let processedParam = virtualMachineSettings.process({ settings, buildingBlockSettings });
+                expect(processedParam.parameters.virtualMachines[0].virtualMachines[0].properties.osProfile.customData).toEqual(
+                    testSettings.customData);
+            });
+            it('For ScaleSets, validates that customData is correctly set', () => {
+                let settings = _.cloneDeep(testSettings);
+                settings.scaleSetSettings = {};
+                let processedParam = virtualMachineSettings.process({ settings, buildingBlockSettings });
+                expect(processedParam.parameters.virtualMachines[0].scaleSets[0].properties.virtualMachineProfile.osProfile.customData).toEqual(
+                    testSettings.customData);
             });
             // TODO dataDisk property is computed per the rp schema
             // TODO osDisk property is computed per the rp schema
