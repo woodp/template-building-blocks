@@ -343,6 +343,17 @@ let virtualMachineValidations = {
             message: `Valid values are ${validOSTypes.join(', ')}`
         };
     },
+    customData: (value) => {
+        if (_.isUndefined(value)) {
+            return {
+                result: true
+            };
+        }
+
+        return {
+            validations: v.validationUtilities.isNotNullOrWhitespace
+        };
+    },
     imageReference: (value, parent) => {
         if (_.isNil(value)) {
             // We will allow null or undefined, since any issues should be caught in os and data disks.
@@ -1280,6 +1291,13 @@ let processorProperties = {
         return {
             hardwareProfile: {
                 vmSize: value
+            }
+        };
+    },
+    customData: (value) => {
+        return {
+            osProfile: {
+                customData: value
             }
         };
     },

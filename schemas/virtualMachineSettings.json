@@ -433,6 +433,9 @@
                         "size": {
                             "type": "string"
                         },
+                        "customData": {
+                            "type": "string"
+                        },
                         "storageAccounts": {
                             "$ref": "storageSettings.json#/definitions/storageSettings"
                         },
