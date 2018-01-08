@@ -94,6 +94,11 @@ The list below shows changes introduced with the latest versions.
 - Changes to VM building block to allow use of pre-existing load balancer and application gateway
 - Added support for 'single-step' disk encryption to VM building block
 
+## 2.1.2
+
+- Fixed bug on internal load balancer
+- Added support for 'custom data' to VM building block
+
 # License
 
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
