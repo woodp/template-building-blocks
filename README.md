@@ -1,19 +1,11 @@
-![Azure Building Blocks](/images/az-building-blocks-50.png)
+![Azure Building Blocks](/images/azbb-ascii.png) &nbsp; &nbsp; &nbsp; ![Azure Building Blocks](/images/az-building-blocks-150.png) 
 
-```
-           _     _     
-          | |   | |    
-  __ _ ___| |__ | |__  
- / _` |_  / '_ \| '_ \ 
-| (_| |/ /| |_) | |_) |
- \__,_/___|_.__/|_.__/ 
-```
+# Azure Building Blocks: Simplifying Resource Deployment
+
 
 ![Build status](https://travis-ci.org/mspnp/template-building-blocks.svg?branch=master)
 
 > __Important Note__: Version 2.1.1 of Azure Building Blocks introduced breaking changes to versions earlier than 2.0.4. Versions earlier than 2.0.4 will no longer function. Please upgrade to version 2.0.4 or greater to continue using Azure Building Blocks. 
-
-# Azure Building Blocks: Simplifying Resource Deployment
 
 The Azure Building Blocks project is a command line tool and set of Azure Resource Manager templates designed to simplify deployment of Azure resources. Users author a set of simplified parameters to specify settings for Azure resources, and the command line tool merges these parameters with best practice defaults to produce a set of final parameter files that can be deployed with the Azure Resource Manager templates.
 
