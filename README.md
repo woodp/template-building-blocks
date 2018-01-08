@@ -1,3 +1,5 @@
+![Azure Building Blocks](/images/az-building-blocks-50.png)
+
 ```
            _     _     
           | |   | |    
