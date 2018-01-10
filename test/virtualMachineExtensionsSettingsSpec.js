@@ -329,38 +329,33 @@ describe('extensionSettings:', () => {
             it('validates that process handles empty protected settings', () => {
                 let result = extensionSettings.process({settings, buildingBlockSettings});
 
-                _.forEach(result.parameters.extensions, (ext) => {
-                    if (ext.name === 'testCustomExtension1') {
-                        expect(ext.extensionProtectedSettings).toEqual({
-                            value: '{}'
-                        });
-                    }
+                let index = _.findIndex(result.parameters.extensions, (value) => {
+                    return value.name === 'testCustomExtension1';
                 });
+                expect(result.parameters.extensionsProtectedSettings[index.toString()]).toEqual({ value: '{}' });
             });
             it('validates that process handles plain text protected settings', () => {
                 let result = extensionSettings.process({settings, buildingBlockSettings});
 
-                _.forEach(result.parameters.extensions, (ext) => {
-                    if (ext.name === 'testCustomExtension3') {
-                        expect(ext.extensionProtectedSettings).toEqual({
-                            value: '{\"storageAccountName\":\"STORAGE-ACCOUNT\",\"storageAccountKey\":\"STORAGE-ACCOUNT-KEY\"}'
-                        });
-                    }
+                let index = _.findIndex(result.parameters.extensions, (value) => {
+                    return value.name === 'testCustomExtension3';
+                });
+                expect(result.parameters.extensionsProtectedSettings[index.toString()]).toEqual({
+                    value: '{\"storageAccountName\":\"STORAGE-ACCOUNT\",\"storageAccountKey\":\"STORAGE-ACCOUNT-KEY\"}'
                 });
             });
             it('validates that process handles keyvault reference for protected settings', () => {
                 let result = extensionSettings.process({settings, buildingBlockSettings});
 
-                _.forEach(result.parameters.extensions, (ext) => {
-                    if (ext.name === 'testCustomExtension2') {
-                        expect(ext.extensionProtectedSettings).toEqual({
-                            reference: {
-                                keyVault: {
-                                    id: '/subscriptions/SUB-ID/resourceGroups/KEYVAULT-RG/providers/Microsoft.KeyVault/vaults/VAULT-NAME'
-                                },
-                                secretName: 'TEST-SECRET'
-                            }
-                        });
+                let index = _.findIndex(result.parameters.extensions, (value) => {
+                    return value.name === 'testCustomExtension2';
+                });
+                expect(result.parameters.extensionsProtectedSettings[index.toString()]).toEqual({
+                    reference: {
+                        keyVault: {
+                            id: '/subscriptions/SUB-ID/resourceGroups/KEYVAULT-RG/providers/Microsoft.KeyVault/vaults/VAULT-NAME'
+                        },
+                        secretName: 'TEST-SECRET'
                     }
                 });
             });
@@ -393,6 +388,28 @@ describe('extensionSettings:', () => {
                 expect(mergedValue.parameters.extensions[0].vms[0]).toEqual('test-vm1');
                 expect(mergedValue.parameters.extensions[0].hasOwnProperty('name')).toEqual(true);
                 expect(mergedValue.parameters.extensions[0].extensionSettings.autoUpgradeMinorVersion).toEqual(true);
+            });
+
+            it('test settings validation errors', () => {
+                let testSettings = _.cloneDeep(settings);
+                delete testSettings[0].extensions[0].name;
+                expect(() => {
+                    extensionSettings.process({
+                        settings: testSettings,
+                        buildingBlockSettings: buildingBlockSettings
+                    });
+                }).toThrow();
+            });
+
+            it('test building blocks validation errors', () => {
+                let bbSettings = _.cloneDeep(buildingBlockSettings);
+                delete bbSettings.subscriptionId;
+                expect(() => {
+                    extensionSettings.process({
+                        settings: settings,
+                        buildingBlockSettings: bbSettings
+                    });
+                }).toThrow();
             });
         });
     }

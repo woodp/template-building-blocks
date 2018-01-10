@@ -81,6 +81,13 @@ function process({ settings, buildingBlockSettings, defaultSettings }) {
     }
 
     let results = transform(merged);
+    // WARNING!  We have to transform this differently for the extension building block!!!!
+    results.extensionsProtectedSettings = {};
+    results.extensions = _.map(results.extensions, (extension, index) => {
+        results.extensionsProtectedSettings[index.toString()] = extension.extensionProtectedSettings;
+        delete extension.extensionProtectedSettings;
+        return extension;
+    });
     return {
         resourceGroups: [],
         parameters: results
@@ -96,6 +103,7 @@ function transform(param) {
                 vms: value.vms
             };
 
+            setting.extensionProtectedSettings = { value: '{}' };
             if (ext.protectedSettings.hasOwnProperty('reference') && ext.protectedSettings.reference.hasOwnProperty('keyVault')) {
                 setting.extensionProtectedSettings = ext.protectedSettings;
             } else {
