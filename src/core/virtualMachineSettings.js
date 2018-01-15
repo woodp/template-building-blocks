@@ -852,6 +852,17 @@ let virtualMachineValidations = {
         let result = {
             result: true
         };
+        if (!_.isNil(value) && (value.reference)) {
+            // It is a keyvault reference, so we need to validate
+            return {
+                validations: {
+                    reference: {
+                        keyVault: v.resourceReferenceValidations,
+                        secretName: v.validationUtilities.isNotNullOrWhitespace
+                    }
+                }
+            };
+        }
         if (v.utilities.isNullOrWhitespace(value)) {
             if (parent.osType === 'windows') {
                 return {
@@ -1838,6 +1849,19 @@ function transform(settings, buildingBlockSettings) {
         accumulator.authentication = {
             value: accumulator.authentication
         };
+    } else {
+        // Build the reference id
+        accumulator.authentication.reference = {
+            keyVault: {
+                id: resources.resourceId(
+                    accumulator.authentication.reference.keyVault.subscriptionId,
+                    accumulator.authentication.reference.keyVault.resourceGroupName,
+                    'Microsoft.KeyVault/vaults',
+                    accumulator.authentication.reference.keyVault.name
+                )
+            },
+            secretName: accumulator.authentication.reference.secretName
+        }
     }
 
     // process load balancer if specified

@@ -5,6 +5,23 @@
         "buildingBlocks": {
             "value": [
                 {
+                    "type": "VirtualNetwork",
+                    "settings": [
+                        {
+                            "name": "simple-vnet",
+                            "addressPrefixes": [
+                                "10.0.0.0/16"
+                            ],
+                            "subnets": [
+                                {
+                                    "name": "default",
+                                    "addressPrefix": "10.0.1.0/24"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
                     "type": "VirtualMachine",
                     "settings": {
                         "vmCount": 2,
@@ -13,19 +30,19 @@
                         "adminPassword": {
                             "reference": {
                                 "keyVault": {
-                                    "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/resource-group-name/providers/Microsoft.KeyVault/vaults/kv-name"
+                                    "name": "kv-name"
                                 },
                                 "secretName": "adminPassword"
                             }
                         },                                                  
                         "nics": [
                             {
-                                "subnetName": "web",
+                                "subnetName": "default",
                                 "isPublic": true
                             }
                         ],
                         "virtualNetwork": {
-                            "name": "vnet-rg1-centralus"
+                            "name": "simple-vnet"
                         }
                     }
                 }
