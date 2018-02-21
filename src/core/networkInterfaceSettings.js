@@ -18,7 +18,8 @@ const NETWORKINTERFACE_SETTINGS_DEFAULTS = {
     applicationGatewayBackendPoolNames: [],
     backendPoolNames: [],
     inboundNatRulesNames: [],
-    inboundNatPoolNames: []
+    inboundNatPoolNames: [],
+    enableAcceleratedNetworking: false
 };
 
 function merge({ settings, buildingBlockSettings, defaultSettings }) {
@@ -113,7 +114,8 @@ let networkInterfaceValidations = {
                 validations: pipValidations
             };
         }
-    }
+    },
+    enableAcceleratedNetworking: v.validationUtilities.isBoolean
 };
 
 function intToIP(int) {
@@ -172,7 +174,8 @@ function transform(settings, parent, vmIndex) {
                     dnsServers: nic.dnsServers,
                     appliedDnsServers: nic.dnsServers
                 },
-                primary: nic.isPrimary
+                primary: nic.isPrimary,
+                enableAcceleratedNetworking: nic.enableAcceleratedNetworking
             }
         };
 
