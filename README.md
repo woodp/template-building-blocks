@@ -1,4 +1,4 @@
- ![Azure Building Blocks](/images/azbb-ascii.png) &nbsp; &nbsp; &nbsp; ![Azure Building Blocks](/images/az-building-blocks-150.png) 
+![Azure Building Blocks](/images/azbb-ascii.png) &nbsp; &nbsp; &nbsp; ![Azure Building Blocks](/images/az-building-blocks-150.png) 
 
 # Azure Building Blocks: Simplifying Resource Deployment
 
