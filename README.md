@@ -3,7 +3,7 @@
 # Azure Building Blocks: Simplifying Resource Deployment
 
 
-![Build status](https://travis-ci.org/mspnp/template-building-blocks.svg?branch=master)
+![Build status](https://travis-ci.org/mspnp/template-building-blocks.svg?branch=master) [![npm version](https://img.shields.io/npm/v/@mspnp/azure-building-blocks.svg?style=flat)](https://www.npmjs.com/package/@mspnp/azure-building-blocks)
 
 > __Important Note__: Version 2.1.1 of Azure Building Blocks introduced breaking changes to versions earlier than 2.0.4. Versions earlier than 2.0.4 will no longer function. Please upgrade to version 2.0.4 or greater to continue using Azure Building Blocks. 
 
