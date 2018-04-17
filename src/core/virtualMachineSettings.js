@@ -1861,7 +1861,7 @@ function transform(settings, buildingBlockSettings) {
                 )
             },
             secretName: accumulator.authentication.reference.secretName
-        }
+        };
     }
 
     // process load balancer if specified
