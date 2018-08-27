@@ -53,7 +53,8 @@ describe('virtualMachineSettings:', () => {
                 applicationGatewayBackendPoolNames: [],
                 backendPoolNames: [],
                 inboundNatRulesNames: [],
-                inboundNatPoolNames: []
+                inboundNatPoolNames: [],
+                enableAcceleratedNetworking: false
             },
             {
                 isPublic: false,
@@ -68,7 +69,8 @@ describe('virtualMachineSettings:', () => {
                 applicationGatewayBackendPoolNames: [],
                 backendPoolNames: [],
                 inboundNatRulesNames: [],
-                inboundNatPoolNames: []
+                inboundNatPoolNames: [],
+                enableAcceleratedNetworking: false
             }
         ],
         imageReference: {

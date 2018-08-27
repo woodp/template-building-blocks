@@ -22,7 +22,8 @@ describe('networkInterfaceSettings:', () => {
         enableIPForwarding: false,
         domainNameLabelPrefix: '',
         dnsServers: [],
-        isPrimary: false
+        isPrimary: false,
+        enableAcceleratedNetworking: false
     };
 
     describe('merge:', () => {
