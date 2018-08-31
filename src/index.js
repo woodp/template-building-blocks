@@ -122,21 +122,6 @@ let processParameters = ({buildingBlock, parameters, buildingBlockSettings, defa
         throw new Error(message);
     }
 
-    let invalidSubscriptions = _.filter(_.uniq(_.map(groupedResourceGroups, (value) => {
-        return value.subscriptionId;
-    })), (value) => {
-        return value !== buildingBlockSettings.subscriptionId;
-    });
-
-    if (invalidSubscriptions.length > 0) {
-        let message = 'Resource groups for created resources can only be in the deployment subscription';
-        _.forEach(invalidSubscriptions, (value) => {
-            message = message.concat(
-                `${os.EOL}    invalid subscriptionId: '${value}'`);
-        });
-        throw new Error(message);
-    }
-
     return results;
 };
 
